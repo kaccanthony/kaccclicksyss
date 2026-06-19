@@ -1,0 +1,10 @@
+RewriteEngine On
+
+RewriteRule ^$ /login/login.php [L,R=302]
+
+Header set Connection keep-alive
+AddType text/cache-manifest .manifest
+
+ErrorDocument 403 https://errors.infinityfree.net/errors/403/
+ErrorDocument 404 https://errors.infinityfree.net/errors/404/
+ErrorDocument 500 https://errors.infinityfree.net/errors/500/
