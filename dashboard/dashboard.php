@@ -19,15 +19,15 @@ if (empty($user['role'])) {
 }
 
 $allCards = [
-    'booking'       => ['label' => 'Booking Session',                    'icon' => 'fa-calendar-plus',   'href' => 'booking.php'],
-    'setup'         => ['label' => 'Session Setup',                      'icon' => 'fa-sliders',          'href' => 'setup.php'],
-    'panel_host'    => ['label' => 'Session Panel',   'sub' => 'Host',   'icon' => 'fa-crown',            'href' => 'panel_host.php'],
-    'panel_cohost'  => ['label' => 'Session Panel',   'sub' => 'Co-Host','icon' => 'fa-user-shield',      'href' => 'panel_cohost.php'],
-    'panel_asst'    => ['label' => 'Session Panel',   'sub' => 'Assistant','icon' => 'fa-headset',        'href' => 'panel_asst.php'],
-    'active'        => ['label' => 'Active Session',                      'icon' => 'fa-circle-dot',      'href' => 'active.php'],
-    'upcoming'      => ['label' => 'Upcoming Sessions',                   'icon' => 'fa-clock',           'href' => 'upcoming.php'],
-    'past'          => ['label' => 'Past Sessions',                       'icon' => 'fa-rectangle-list',  'href' => 'past.php'],
-    'staff'         => ['label' => 'Staff Overview',                      'icon' => 'fa-users',           'href' => 'staff.php'],
+    'booking'       => ['label' => 'Booking Session',                    'icon' => 'fa-calendar-plus',   'href' => 'booking.php'], // session booking
+    'setup'         => ['label' => 'Session Setup',                      'icon' => 'fa-sliders',          'href' => 'setup.php'], // session setup
+    'panel_host'    => ['label' => 'Session Panel',   'sub' => 'Host',   'icon' => 'fa-crown',            'href' => 'panel_host.php'], // session panel host quick access
+    'panel_cohost'  => ['label' => 'Session Panel',   'sub' => 'Co-Host','icon' => 'fa-user-shield',      'href' => 'panel_cohost.php'], // session panel co-host quick access
+    'panel_asst'    => ['label' => 'Session Panel',   'sub' => 'Assistant','icon' => 'fa-headset',        'href' => 'panel_asst.php'], // session panel assistant quick access
+    'active'        => ['label' => 'Active Session',                      'icon' => 'fa-circle-dot',      'href' => 'active.php'], // active session
+    'upcoming'      => ['label' => 'Upcoming Sessions',                   'icon' => 'fa-clock',           'href' => 'upcoming.php'], // upcoming sessions
+    'past'          => ['label' => 'Past Sessions',                       'icon' => 'fa-rectangle-list',  'href' => 'past.php'], // past sessions
+    'staff'         => ['label' => 'Staff Overview',                      'icon' => 'fa-users',           'href' => 'staff.php'], // staff overview 
 ];
 
 $roleCards = [
