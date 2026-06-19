@@ -5,6 +5,7 @@
     /* ── Page ───────────────────────────────────────────── */
     html, body {
     height: 100%;
+    position: relative;
     background-color: #0a0a0a;
     background:
         linear-gradient(
@@ -17,6 +18,7 @@
     justify-content: center;
     font-family: 'Libre Baskerville', serif;
     overflow: hidden;
+    background: #000;
     }
 
     body::before {
@@ -28,6 +30,18 @@
     pointer-events: none;
     z-index: 0;
     }
+
+    body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+        linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)),
+        url("../images/YSSbgweb.png") center/cover no-repeat;
+    filter: blur(4px);
+    scale: 1.05; /* slightly oversize to hide blur edges */
+    z-index: -1;
+}
 
     /* ── Background glow blob (lags behind cursor) ──────── */
     #bg-glow {
