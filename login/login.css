@@ -40,7 +40,7 @@ z-index: 0;
 .card {
 position: relative;
 z-index: 1;
-width: min(360px, 110vw);
+width: min(460px, 110vw);
 padding: 44px 40px 40px;
 border-radius: 20px;
 background: rgba(255, 255, 255, 0.07);
