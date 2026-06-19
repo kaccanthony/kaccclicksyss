@@ -28,8 +28,8 @@ if (empty($user['role'])) {
 }
 
 $allCards = [
-    'booking'       => ['label' => 'Manage Session(s)',                    'icon' => '../icons/OM.png',   'href' => 'booking.php'], // session booking
-    'setup'         => ['label' => 'Session Setup',                      'icon' => '../icons/HS.png',          'href' => 'setup.php'], // session setup
+    'booking'       => ['label' => 'Manage Session(s)', 'sub' => 'Manager', 'icon' => '../icons/OM.png',   'href' => 'booking.php'], // session booking
+    'setup'         => ['label' => 'Session Setup'  ,  'sub' => 'Head-Staff' , 'icon' => '../icons/HS.png',          'href' => 'setup.php'], // session setup
     'panel_host'    => ['label' => 'Session Panel',   'sub' => 'Host',   'icon' => '../icons/HS.png',            'href' => 'panel_host.php'], // session panel host quick access
     'panel_cohost'  => ['label' => 'Session Panel',   'sub' => 'Co-Host','icon' => '../icons/ST.png',      'href' => 'panel_cohost.php'], // session panel co-host quick access
     'panel_asst'    => ['label' => 'Session Panel',   'sub' => 'Assistant','icon' => '../icons/ST.png',        'href' => 'panel_asst.php'], // session panel assistant quick access
