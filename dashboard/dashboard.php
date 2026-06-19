@@ -33,7 +33,7 @@ $allCards = [
 $roleCards = [
     'Operations Manager'  => ['booking','setup','panel_host','panel_cohost','panel_asst','active','upcoming','past','staff'],
     'Community Manager'   => ['booking','setup','panel_host','panel_cohost','panel_asst','active','upcoming','past','staff'],
-    'Host Authorized'     => ['setup','panel_host','panel_cohost','panel_asst','active','upcoming','past','staff'],
+    'Head Staff'     => ['setup','panel_host','panel_cohost','panel_asst','active','upcoming','past','staff'],
     'Co-Host Authorized'  => ['panel_cohost','panel_asst','active','upcoming','past','staff'],
     'Assistant Authorized'=> ['panel_asst','active','upcoming','past','staff'],
 ];
