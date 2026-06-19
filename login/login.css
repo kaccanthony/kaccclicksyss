@@ -1,0 +1,213 @@
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;600&display=swap');
+/* ── Reset ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Page ───────────────────────────────────────────── */
+html, body {
+height: 100%;
+background: #000;
+display: flex;
+align-items: center;
+justify-content: center;
+font-family: 'Libre Baskerville', serif;
+overflow: hidden;
+}
+
+/* Subtle center glow to keep black from feeling flat */
+body::before {
+content: '';
+position: fixed;
+inset: 0;
+background-image:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(255,255,255,.03) 0%, transparent 70%);
+pointer-events: none;
+z-index: 0;
+}
+
+/* ── Background glow blob (lags behind cursor) ──────── */
+#bg-glow {
+position: fixed;
+width: 480px;
+height: 480px;
+border-radius: 50%;
+background: radial-gradient(circle, rgba(255,255,255,.13) 0%, rgba(255,255,255,.05) 40%, transparent 70%);
+pointer-events: none;
+transform: translate(-50%, -50%);
+z-index: 0;
+}
+
+/* ── Glass card ─────────────────────────────────────── */
+.card {
+position: relative;
+z-index: 1;
+width: min(360px, 90vw);
+padding: 44px 40px 40px;
+border-radius: 20px;
+background: rgba(255, 255, 255, 0.07);
+backdrop-filter: blur(18px) saturate(160%);
+-webkit-backdrop-filter: blur(18px) saturate(160%);
+border: 1px solid rgba(255, 255, 255, 0.14);
+box-shadow:
+    0 8px 40px rgba(0,0,0,.6),
+    inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+/* ── Heading ────────────────────────────────────────── */
+.card h1 {
+color: #fff;
+font-size: 1.55rem;
+font-weight: 600;
+letter-spacing: .02em;
+margin-bottom: 6px;
+}
+.card .subtitle {
+color: rgba(255,255,255,.40);
+font-size: .82rem;
+margin-bottom: 32px;
+}
+
+/* ── Fields ─────────────────────────────────────────── */
+.field {
+margin-bottom: 18px;
+}
+.field label {
+display: block;
+font-size: .75rem;
+font-weight: 500;
+letter-spacing: .08em;
+text-transform: uppercase;
+color: rgba(255,255,255,.45);
+margin-bottom: 7px;
+}
+.field input {
+width: 100%;
+padding: 11px 14px;
+border-radius: 10px;
+border: 1px solid rgba(255,255,255,.16);
+background: rgba(255,255,255,.06);
+color: #fff;
+font-size: .95rem;
+outline: none;
+transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.field input::placeholder { color: rgba(255,255,255,.22); }
+.field input:focus {
+border-color: rgba(255,255,255,.40);
+background: rgba(255,255,255,.10);
+box-shadow: 0 0 0 3px rgba(255,255,255,.07);
+}
+
+/* ── Password wrapper (eye toggle) ─────────────────── */
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 42px; }
+.pw-toggle {
+position: absolute;
+right: 12px;
+top: 50%;
+transform: translateY(-50%);
+background: none;
+border: none;
+color: rgba(255,255,255,.35);
+font-size: .85rem;
+cursor: pointer;
+padding: 4px;
+transition: color .2s;
+line-height: 1;
+}
+.pw-toggle:hover { color: rgba(255,255,255,.70); }
+
+/* ── Forgot link ────────────────────────────────────── */
+.forgot-row {
+text-align: right;
+margin-top: -8px;
+margin-bottom: 26px;
+}
+.forgot-row button {
+background: none;
+border: none;
+color: rgba(255,255,255,.38);
+font-size: .78rem;
+cursor: pointer;
+padding: 0;
+transition: color .2s;
+}
+.forgot-row button:hover { color: rgba(255,255,255,.75); }
+
+/* ── Forgot modal ───────────────────────────────────── */
+.modal-backdrop {
+display: none;
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,.55);
+backdrop-filter: blur(4px);
+z-index: 100;
+align-items: center;
+justify-content: center;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+background: rgba(255,255,255,.10);
+backdrop-filter: blur(24px);
+-webkit-backdrop-filter: blur(24px);
+border: 1px solid rgba(255,255,255,.18);
+border-radius: 16px;
+padding: 32px 36px;
+color: #fff;
+text-align: center;
+max-width: 280px;
+box-shadow: 0 8px 40px rgba(0,0,0,.5);
+animation: popIn .18s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes popIn {
+from { transform: scale(.88); opacity: 0; }
+to   { transform: scale(1);   opacity: 1; }
+}
+.modal p { font-size: .95rem; line-height: 1.5; color: rgba(255,255,255,.80); }
+.modal strong { color: #fff; font-size: 1.05rem; display: block; margin-bottom: 8px; }
+.modal-close {
+margin-top: 22px;
+padding: 9px 24px;
+border-radius: 8px;
+border: 1px solid rgba(255,255,255,.22);
+background: rgba(255,255,255,.08);
+color: #fff;
+font-size: .85rem;
+cursor: pointer;
+transition: background .2s;
+}
+.modal-close:hover { background: rgba(255,255,255,.18); }
+
+/* ── Submit button ──────────────────────────────────── */
+.btn-login {
+width: 100%;
+padding: 13px;
+border-radius: 10px;
+border: none;
+background: rgba(255,255,255,.92);
+color: #000;
+font-size: .95rem;
+font-weight: 600;
+letter-spacing: .03em;
+cursor: pointer;
+transition: background .2s, transform .12s;
+}
+.btn-login:hover  { background: #fff; }
+.btn-login:active { transform: scale(.98); }
+
+/* ── Alert messages ─────────────────────────────────── */
+.alert {
+padding: 10px 14px;
+border-radius: 9px;
+font-size: .83rem;
+margin-bottom: 18px;
+}
+.alert-error {
+background: rgba(255,80,80,.15);
+border: 1px solid rgba(255,80,80,.35);
+color: #ff9090;
+}
+.alert-success {
+background: rgba(80,255,140,.12);
+border: 1px solid rgba(80,255,140,.28);
+color: #80ffb0;
+}
