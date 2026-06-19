@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div id="bg-glow"></div>
 
 <div class="card">
-<h1>YSS Session Manager</h1>
+<h1>YSS Session Managers</h1>
 <p class="subtitle">Sign in to continue</p>
 
 <?php if ($error): ?>
