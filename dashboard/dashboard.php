@@ -8,9 +8,15 @@ if (!isset($_SESSION['user'])) {
 
 $user     = $_SESSION['user'];
 $username = htmlspecialchars($user['username']);
-$role     = htmlspecialchars($user['role'] ?? 'Staff');
-$permLevel  = $user['perm_level'];  // 20
-$roblox     = $user['roblox_name'];
+$role     = htmlspecialchars($user['role'] ?? '');
+$permLevel = (int)($user['perm_level'] ?? 0);
+$roblox    = htmlspecialchars($user['roblox_name'] ?? '');
+
+if (empty($row['role'])) {
+    $_SESSION['error'] = 'Your account has no role assigned. Contact an admin.';
+    header('Location: ../login/login.php');
+    exit;
+}
 
 $allCards = [
     'booking'       => ['label' => 'Booking Session',                    'icon' => 'fa-calendar-plus',   'href' => 'booking.php'],
@@ -35,12 +41,6 @@ $roleCards = [
 $cards = [];
 foreach (($roleCards[$role] ?? []) as $key) {
     if (isset($allCards[$key])) $cards[] = $allCards[$key];
-}
-
-if (empty($row['staff_rank'])) {
-    $_SESSION['error'] = 'Your account has no role assigned. Contact an admin.';
-    header('Location: ../login/login.php');
-    exit;
 }
 ?>
 <!DOCTYPE html>
