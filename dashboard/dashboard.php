@@ -1,7 +1,6 @@
 <?php
 session_start();
 
-// Redirect if not logged in
 if (!isset($_SESSION['user'])) {
     header('Location: ../login/login.php');
     exit;
@@ -10,8 +9,9 @@ if (!isset($_SESSION['user'])) {
 $user     = $_SESSION['user'];
 $username = htmlspecialchars($user['username']);
 $role     = htmlspecialchars($user['role'] ?? 'Staff');
+$permLevel  = $user['perm_level'];  // 20
+$roblox     = $user['roblox_name'];
 
-// Define nav cards per role
 $allCards = [
     'booking'       => ['label' => 'Booking Session',                    'icon' => 'fa-calendar-plus',   'href' => 'booking.php'],
     'setup'         => ['label' => 'Session Setup',                      'icon' => 'fa-sliders',          'href' => 'setup.php'],
@@ -35,6 +35,12 @@ $roleCards = [
 $cards = [];
 foreach (($roleCards[$role] ?? []) as $key) {
     if (isset($allCards[$key])) $cards[] = $allCards[$key];
+}
+
+if (empty($row['staff_rank'])) {
+    $_SESSION['error'] = 'Your account has no role assigned. Contact an admin.';
+    header('Location: ../login/login.php');
+    exit;
 }
 ?>
 <!DOCTYPE html>

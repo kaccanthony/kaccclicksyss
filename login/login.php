@@ -11,10 +11,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    $stmt = mysqli_prepare($conn, "SELECT * FROM pp_staff_pp WHERE user_name = ?");
-    mysqli_stmt_bind_param($stmt, "s", $username);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
+$stmt = mysqli_prepare($conn, "
+    SELECT s.user_id, s.user_name, l.staff_rank, l.staff_perm_level, l.staff_roblox_name
+    FROM pp_staff_pp s
+    LEFT JOIN staff_list l ON l.staff_id = s.user_id
+    WHERE s.user_name = ?
+");
+mysqli_stmt_bind_param($stmt, "s", $username);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
 
     if (mysqli_num_rows($result) == 0) {
         $_SESSION['error'] = 'Invalid username or password';
@@ -31,10 +36,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $_SESSION['user'] = [
-        'id'       => $row['id'],
-        'username' => $row['user_name'],
-    ];
+$_SESSION['user'] = [
+    'id'          => $row['user_id'],
+    'username'    => $row['user_name'],
+    'role'        => $row['staff_rank'],
+    'perm_level'  => $row['staff_perm_level'],
+    'roblox_name' => $row['staff_roblox_name'],
+];
     $_SESSION['success'] = 'Login successful! Redirecting…';
     header('Location: ../dashboard/dashboard.php');
     exit;
