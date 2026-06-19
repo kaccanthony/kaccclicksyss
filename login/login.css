@@ -219,3 +219,26 @@ html, body {
     transition: background .2s;
 }
 .modal-close:hover { background: rgba(255, 255, 255, .18); }
+
+/* ── Remember me row ────────────────────────────────── */
+.remember-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: -8px;
+    margin-bottom: 26px;
+}
+.remember-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255,255,255,.38);
+    font-size: .78rem;
+    cursor: pointer;
+}
+.remember-label input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: #fff;
+    cursor: pointer;
+}

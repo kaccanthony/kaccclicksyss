@@ -1,6 +1,14 @@
 <?php
 session_start();
 
+// ── Logout ──
+if (isset($_GET['logout'])) {
+    session_destroy();
+    setcookie('remember_token', '', time() - 3600, '/', '', true, true);
+    header('Location: ../login/login.php');
+    exit;
+}
+
 if (!isset($_SESSION['user'])) {
     header('Location: ../login/login.php');
     exit;
