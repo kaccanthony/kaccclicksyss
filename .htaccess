@@ -1,5 +1,6 @@
 RewriteEngine On
 
+RewriteRule ^$ /dashboard/dashboard.php [L,R=302]
 RewriteRule ^$ /login/login.php [L,R=302]
 
 Header set Connection keep-alive
