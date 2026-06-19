@@ -13,7 +13,6 @@ font-family: 'Libre Baskerville', serif;
 overflow: hidden;
 }
 
-/* Subtle center glow to keep black from feeling flat */
 body::before {
 content: '';
 position: fixed;

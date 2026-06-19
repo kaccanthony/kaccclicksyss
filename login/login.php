@@ -11,7 +11,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    // Prepared statement to prevent SQL injection
     $stmt = mysqli_prepare($conn, "SELECT * FROM pp_staff_pp WHERE user_name = ?");
     mysqli_stmt_bind_param($stmt, "s", $username);
     mysqli_stmt_execute($stmt);
@@ -58,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div id="bg-glow"></div>
 
 <div class="card">
-<h1>YSS Session Management System</h1>
+<h1>YSS Session Manager</h1>
 <p class="subtitle">Sign in to continue</p>
 
 <?php if ($error): ?>
