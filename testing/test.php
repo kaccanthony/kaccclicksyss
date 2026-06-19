@@ -1,4 +1,6 @@
 <?php
+include '../login/cnn.php';
+
 $username = 'Yoshi5336';
 $password = 'eQudR82cV9MF';
 $stmt = mysqli_prepare($conn, "
