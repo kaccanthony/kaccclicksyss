@@ -5,7 +5,12 @@
 /* ── Page ───────────────────────────────────────────── */
 html, body {
 height: 100%;
-background: #000;
+background:
+    linear-gradient(
+        rgba(0,0,0,0.65),
+        rgba(0,0,0,0.65)
+    ),
+    url("../images/YSSbgweb.png") center/cover no-repeat;
 display: flex;
 align-items: center;
 justify-content: center;
@@ -39,7 +44,7 @@ z-index: 0;
 .card {
 position: relative;
 z-index: 1;
-width: min(460px, 110vw);
+width: min(560px, 90vw);
 padding: 44px 40px 40px;
 border-radius: 20px;
 background: rgba(255, 255, 255, 0.07);
