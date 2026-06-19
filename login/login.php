@@ -32,7 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Store only what's needed in session, never the hash
     $_SESSION['user'] = [
         'id'       => $row['id'],
         'username' => $row['user_name'],
@@ -59,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div id="bg-glow"></div>
 
 <div class="card">
-<h1>YSS Web App</h1>
+<h1>YSS Session Management System</h1>
 <p class="subtitle">Sign in to continue</p>
 
 <?php if ($error): ?>
