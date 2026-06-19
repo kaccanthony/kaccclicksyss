@@ -131,7 +131,13 @@ foreach (($roleCards[$role] ?? []) as $key) {
     <div class="bento-grid" id="bento-grid">
         <?php foreach ($cards as $i => $card): ?>
         <a href="<?= htmlspecialchars($card['href']) ?>" class="bento-card" style="--i:<?= $i ?>">
-            <div class="bento-icon"><i class="fas <?= $card['icon'] ?>"></i></div>
+            <div class="bento-icon">
+                <?php if (str_starts_with($card['icon'], '../icons/')): ?>
+                    <img src="<?= htmlspecialchars($card['icon']) ?>" alt="<?= htmlspecialchars($card['label']) ?>" style="width:32px;height:32px;object-fit:contain;" />
+                <?php else: ?>
+                    <i class="fas <?= htmlspecialchars($card['icon']) ?>"></i>
+                <?php endif; ?>
+            </div>
             <div class="bento-text">
                 <span class="bento-label"><?= htmlspecialchars($card['label']) ?></span>
                 <?php if (!empty($card['sub'])): ?>
