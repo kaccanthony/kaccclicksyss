@@ -12,7 +12,7 @@ $role     = htmlspecialchars($user['role'] ?? '');
 $permLevel = (int)($user['perm_level'] ?? 0);
 $roblox    = htmlspecialchars($user['roblox_name'] ?? '');
 
-if (empty($row['role'])) {
+if (empty($user['role'])) {
     $_SESSION['error'] = 'Your account has no role assigned. Contact an admin.';
     header('Location: ../login/login.php');
     exit;
