@@ -3,6 +3,7 @@ include '../login/cnn.php';
 
 $username = 'Yoshi5336';
 $password = 'eQudR82cV9MF';
+
 $stmt = mysqli_prepare($conn, "
     SELECT s.user_id, s.user_name, s.password_hash,
         l.staff_rank, l.staff_perm_level, l.staff_roblox_name
@@ -14,5 +15,23 @@ mysqli_stmt_bind_param($stmt, "s", $username);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 
-echo $result;
+// Check if user was found
+if (mysqli_num_rows($result) == 0) {
+    echo "❌ No user found with username: $username";
+    exit;
+}
+
+$row = mysqli_fetch_assoc($result);
+
+// Dump everything from DB
+echo "<pre>";
+print_r($row);
+echo "</pre>";
+
+// Test password verify
+if (password_verify($password, $row['password_hash'])) {
+    echo "✅ Password is CORRECT";
+} else {
+    echo "❌ Password is WRONG";
+}
 ?>
