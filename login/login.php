@@ -62,7 +62,7 @@ $_SESSION['user'] = [
     <link rel="stylesheet" href="login.css" />
 </head>
 <body>
-
+<div id="bg"></div>
 <div id="bg-glow"></div>
 
 <div class="card">
