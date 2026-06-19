@@ -1,10 +1,9 @@
 name: Deploy to kaccclicks.great-site.net
 
 on:
-  worklfow_dispatch:
-    push:
-      branches:
-        - main
+  push:
+    branches:
+      - main
 
 jobs:
   deploy:
