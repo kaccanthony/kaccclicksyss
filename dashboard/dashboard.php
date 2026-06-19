@@ -11,6 +11,7 @@ $username = htmlspecialchars($user['username']);
 $role     = htmlspecialchars($user['role'] ?? '');
 $permLevel = (int)($user['perm_level'] ?? 0);
 $roblox    = htmlspecialchars($user['roblox_name'] ?? '');
+$avatar = htmlspecialchars($user['avatar'] ?? '');
 
 if (empty($user['role'])) {
     $_SESSION['error'] = 'Your account has no role assigned. Contact an admin.';
@@ -75,7 +76,11 @@ foreach (($roleCards[$role] ?? []) as $key) {
         <!-- Profile button -->
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
-                <i class="fas fa-user"></i>
+                <?php if ($avatar): ?>
+                    <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                <?php else: ?>
+                    <i class="fas fa-user"></i> 
+                <?php endif; ?>
             </div>
             <div class="profile-meta">
                 <span class="profile-name"><?= $username ?></span>
@@ -87,7 +92,13 @@ foreach (($roleCards[$role] ?? []) as $key) {
         <!-- Slide-down popup -->
         <div class="profile-popup" id="profile-popup">
             <div class="popup-header">
-                <div class="popup-avatar"><i class="fas fa-user"></i></div>
+                <div class="popup-avatar">
+                    <?php if ($avatar): ?>
+                        <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                    <?php else: ?>
+                        <i class="fas fa-user"></i> 
+                    <?php endif; ?>
+                </div>
                 <div>
                     <div class="popup-name"><?= $username ?></div>
                     <div class="popup-role"><?= $role ?></div>

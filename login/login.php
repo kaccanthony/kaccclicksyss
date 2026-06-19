@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $stmt = mysqli_prepare($conn, "
     SELECT s.user_id, s.user_name, s.password_hash,
-        l.staff_rank, l.staff_perm_level, l.staff_roblox_name
+        l.staff_rank, l.staff_perm_level, l.staff_roblox_name, l.staff_avatar
     FROM pp_staff_pp s
     LEFT JOIN staff_list l ON l.staff_id = s.user_id
     WHERE s.user_name = ?
@@ -43,7 +43,10 @@ $_SESSION['user'] = [
     'role'        => $row['staff_rank'],
     'perm_level'  => $row['staff_perm_level'],
     'roblox_name' => $row['staff_roblox_name'],
+    'avatar'      => $row['staff_avatar'],
 ];
+include '../roblox/fetchpfp.php';
+
     $_SESSION['success'] = 'Login successful! Redirecting…';
     header('Location: ../dashboard/dashboard.php');
     exit;
