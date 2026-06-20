@@ -345,6 +345,7 @@ function statusBadge($status) {
             <div class="form-group">
                 <label>Time* (in BST)</label>
                 <input type="text" name="session_time" id="f-session_time" maxlength="5" placeholder="HH:MM" required/>
+                    <span id="time-error" style="color:red; font-size:12px; display:none;"></span>
             </div>
             <div class="form-group">
                 <label>Expected Duration* (minutes)</label>

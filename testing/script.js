@@ -112,24 +112,28 @@ document.addEventListener('keydown', (e) => {
 
 document.addEventListener("DOMContentLoaded", () => {
     const timeInput = document.getElementById("f-session_time");
+    const timeError = document.getElementById("time-error");
 
     timeInput.addEventListener("input", () => {
         let value = timeInput.value.replace(/\D/g, ""); // remove non-numbers
-
-        // Limit to 4 digits (HHMM)
-        value = value.slice(0, 4);
+        value = value.slice(0, 4); // max HHMM
 
         let hours = value.slice(0, 2);
         let minutes = value.slice(2, 4);
+
+        // Clear error by default
+        timeError.style.display = "none";
+        timeError.textContent = "";
 
         // Validate hours
         if (hours.length === 2) {
             let hourNum = parseInt(hours);
 
             if (hourNum === 24) {
-                hours = "00"; // convert 24 to 00
+                hours = "00"; // convert 24 -> 00
             } else if (hourNum > 24) {
-                alert("Invalid hour. Please enter 00-23.");
+                timeError.textContent = "Invalid hour. Please enter 00-23.";
+                timeError.style.display = "inline";
                 hours = "";
             }
         }
@@ -139,7 +143,8 @@ document.addEventListener("DOMContentLoaded", () => {
             let minuteNum = parseInt(minutes);
 
             if (minuteNum >= 60) {
-                alert("Invalid minutes. Please enter 00-59.");
+                timeError.textContent = "Invalid minutes. Please enter 00-59.";
+                timeError.style.display = "inline";
                 minutes = "";
             }
         }
