@@ -65,46 +65,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
         $as4  = $_POST['assistant_4']         ?? '';
         $add  = $_POST['additional_staff']    ?? '';
 
-        // Validate date — reject if empty or clearly invalid
+        // Validate date
         if (empty($sdate) || !strtotime($sdate)) {
             $_SESSION['error'] = 'Invalid or missing session date.';
             header('Location: managesession.php');
             exit;
         }
 
-        // Validate time — must match HH:MM
+        // Validate time and append seconds for MySQL TIME column
         if (!preg_match('/^\d{2}:\d{2}$/', $stime)) {
             $_SESSION['error'] = 'Invalid or missing session time.';
             header('Location: managesession.php');
             exit;
         }
-        // Append seconds for MySQL TIME column
         $stime .= ':00';
 
         if ($action === 'add') {
             $sql = "INSERT INTO session_upcoming
-                (session_name,session_desc,session_status,session_booked,
-                 session_duration,num_slots,session_date,session_time,trainee_timer,
-                 host,co_host1,co_host2,co_host3,`co_host4/supervisor`,
-                 assistant_1,assistant_2,assistant_3,assistant_4,additional_staff)
+                (session_name, session_desc, session_status, session_booked,
+                 session_duration, num_slots, session_date, session_time, trainee_timer,
+                 host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
+                 assistant_1, assistant_2, assistant_3, assistant_4, additional_staff)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             $stmt = mysqli_prepare($conn, $sql);
-            mysqli_stmt_bind_param($stmt,'sssisiissssssssssss',
-                $sn,$sd,$ss,$sb,$sdur,$ns,$sdate,$stime,$tt,
-                $host,$ch1,$ch2,$ch3,$ch4,$as1,$as2,$as3,$as4,$add);
+            // s s s i s i s s i s s s s s s s s s s  (19)
+            mysqli_stmt_bind_param($stmt, 'sssisissiSSSSSSSSSS',
+                $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
+                $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add);
         } else {
             $eid = (int)$_POST['session_id'];
             $sql = "UPDATE session_upcoming SET
-                session_name=?,session_desc=?,session_status=?,session_booked=?,
-                session_duration=?,num_slots=?,session_date=?,session_time=?,
-                trainee_timer=?,host=?,co_host1=?,co_host2=?,co_host3=?,
-                `co_host4/supervisor`=?,assistant_1=?,assistant_2=?,
-                assistant_3=?,assistant_4=?,additional_staff=?
+                session_name=?, session_desc=?, session_status=?, session_booked=?,
+                session_duration=?, num_slots=?, session_date=?, session_time=?,
+                trainee_timer=?, host=?, co_host1=?, co_host2=?, co_host3=?,
+                `co_host4/supervisor`=?, assistant_1=?, assistant_2=?,
+                assistant_3=?, assistant_4=?, additional_staff=?
                 WHERE session_id=?";
             $stmt = mysqli_prepare($conn, $sql);
-            mysqli_stmt_bind_param($stmt,'sssisiissssssssssssi',
-                $sn,$sd,$ss,$sb,$sdur,$ns,$sdate,$stime,$tt,
-                $host,$ch1,$ch2,$ch3,$ch4,$as1,$as2,$as3,$as4,$add,$eid);
+            // s s s i s i s s i s s s s s s s s s s i  (20)
+            mysqli_stmt_bind_param($stmt, 'sssisissiSSSSSSSSSSi',
+                $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
+                $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add, $eid);
         }
         mysqli_stmt_execute($stmt);
         header('Location: managesession.php');
