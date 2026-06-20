@@ -116,10 +116,39 @@ document.addEventListener("DOMContentLoaded", () => {
     timeInput.addEventListener("input", () => {
         let value = timeInput.value.replace(/\D/g, ""); // remove non-numbers
 
-        if (value.length > 2) {
-            value = value.slice(0, 2) + ":" + value.slice(2, 4);
+        // Limit to 4 digits (HHMM)
+        value = value.slice(0, 4);
+
+        let hours = value.slice(0, 2);
+        let minutes = value.slice(2, 4);
+
+        // Validate hours
+        if (hours.length === 2) {
+            let hourNum = parseInt(hours);
+
+            if (hourNum === 24) {
+                hours = "00"; // convert 24 to 00
+            } else if (hourNum > 24) {
+                alert("Invalid hour. Please enter 00-23.");
+                hours = "";
+            }
         }
 
-        timeInput.value = value;
+        // Validate minutes
+        if (minutes.length === 2) {
+            let minuteNum = parseInt(minutes);
+
+            if (minuteNum >= 60) {
+                alert("Invalid minutes. Please enter 00-59.");
+                minutes = "";
+            }
+        }
+
+        // Rebuild value
+        if (value.length > 2) {
+            timeInput.value = hours + ":" + minutes;
+        } else {
+            timeInput.value = hours;
+        }
     });
 });
