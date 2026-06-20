@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
         $stmt = mysqli_prepare($conn, "DELETE FROM session_upcoming WHERE session_id = ?");
         mysqli_stmt_bind_param($stmt, "i", $del_id);
         mysqli_stmt_execute($stmt);
-        header('Location: upcoming.php');
+        header('Location: managesession.php');
         exit;
     }
 
@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
                 $host,$ch1,$ch2,$ch3,$ch4,$as1,$as2,$as3,$as4,$add,$eid);
         }
         mysqli_stmt_execute($stmt);
-        header('Location: upcoming.php');
+        header('Location: managesession.php');
         exit;
     }
 }
@@ -200,8 +200,8 @@ function statusBadge($status) {
         <div class="search-wrap">
             <i class="fas fa-magnifying-glass search-icon"></i>
             <input type="text" name="search" class="search-input"
-                   placeholder="Search by ID, host, or session name…"
-                   value="<?= htmlspecialchars($search) ?>" autocomplete="off"/>
+                placeholder="Search by ID, host, or session name…"
+                value="<?= htmlspecialchars($search) ?>" autocomplete="off"/>
             <?php if ($search): ?>
                 <button type="button" class="search-clear"
                     onclick="this.closest('form').search.value='';this.closest('form').submit()">
@@ -219,7 +219,7 @@ function statusBadge($status) {
                value="<?= htmlspecialchars($filter_host) ?>"/>
         <button type="submit" class="btn-filter"><i class="fas fa-filter"></i> Filter</button>
         <?php if ($search||$filter_status||$filter_host): ?>
-            <a href="upcoming.php" class="btn-clear-link">Clear</a>
+            <a href="managesession.php" class="btn-clear-link">Clear</a>
         <?php endif; ?>
     </form>
 
@@ -230,7 +230,7 @@ function statusBadge($status) {
             <i class="fas fa-calendar-xmark"></i>
             <p>No sessions found.</p>
             <?php if ($search||$filter_status||$filter_host): ?>
-                <a href="upcoming.php" class="btn-clear-link">Clear filters</a>
+                <a href="managesession.php" class="btn-clear-link">Clear filters</a>
             <?php endif; ?>
         </div>
         <?php else: ?>
