@@ -244,7 +244,7 @@ function statusBadge($status) {
             <?php endforeach; ?>
         </select>
         <input type="text" name="host" class="filter-input" placeholder="Filter by host…"
-               value="<?= htmlspecialchars($filter_host) ?>"/>
+                value="<?= htmlspecialchars($filter_host) ?>"/>
         <button type="submit" class="btn-filter"><i class="fas fa-filter"></i> Filter</button>
         <?php if ($search||$filter_status||$filter_host): ?>
             <a href="managesession.php" class="btn-clear-link">Clear</a>
@@ -338,7 +338,7 @@ function statusBadge($status) {
         <div class="form-row">
             <div class="form-group flex2">
                 <label>Session Name*</label>
-                <input type="text" name="session_name" id="f-session_name" placeholder="e.g. Training Session #42" required/>
+                <input type="text" name="session_name" id="f-session_name" placeholder="e.g. Training Session #42" value="PS x YSS SCR Shift : SG Practice" required/>
             </div>
             <div class="form-group">
                 <label>Status*</label>
