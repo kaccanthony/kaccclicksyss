@@ -109,3 +109,17 @@ document.addEventListener('keydown', (e) => {
     if (modalBackdrop.classList.contains('open'))  closeModal();
     if (deleteBackdrop.classList.contains('open')) closeDelete();
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    const timeInput = document.getElementById("f-session_time");
+
+    timeInput.addEventListener("input", () => {
+        let value = timeInput.value.replace(/\D/g, ""); // remove non-numbers
+
+        if (value.length > 2) {
+            value = value.slice(0, 2) + ":" + value.slice(2, 4);
+        }
+
+        timeInput.value = value;
+    });
+});

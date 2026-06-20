@@ -344,11 +344,11 @@ function statusBadge($status) {
             </div>
             <div class="form-group">
                 <label>Time* (in BST)</label>
-                <input type="time" name="session_time" id="f-session_time" required/>
+                <input type="text" name="session_time" id="f-session_time" maxlength="5" placeholder="HH:MM" required/>
             </div>
             <div class="form-group">
                 <label>Expected Duration* (minutes)</label>
-                <input type="number" name="session_duration" id="f-session_duration" min="60" max="120" placeholder="60" step="5"/>
+                <input type="number" name="session_duration" id="f-session_duration" min="60" max="180" placeholder="60" step="5"/>
             </div>
             <div class="form-group">
                 <label>Slots*</label>
