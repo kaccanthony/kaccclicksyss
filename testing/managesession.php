@@ -190,7 +190,7 @@ function statusBadge($status) {
         </div>
         <?php if ($permLevel >= 10): ?>
         <button class="btn-primary" onclick="openModal('add')">
-            <i class="fas fa-plus"></i> Book Session
+            <i class="fas fa-plus"></i> Add Session
         </button>
         <?php endif; ?>
     </div>
@@ -309,11 +309,11 @@ function statusBadge($status) {
         <!-- Name + Status + Booked toggle -->
         <div class="form-row">
             <div class="form-group flex2">
-                <label>Session Name</label>
-                <input type="text" name="session_name" id="f-session_name" placeholder="e.g. Training Session #42" required/>
+                <label>Session Name*</label>
+                <input type="text" name="session_name" id="f-session_name" placeholder="e.g. Training Session #42" value="PS x YSS SCR Shift : SG Practice" required/>
             </div>
             <div class="form-group">
-                <label>Status</label>
+                <label>Status*</label>
                 <select name="session_status" id="f-session_status">
                     <option value="Scheduled">Scheduled</option>
                     <option value="Booked">Booked</option>
@@ -339,24 +339,24 @@ function statusBadge($status) {
         <!-- Date / Time / Duration / Slots / Timer -->
         <div class="form-row">
             <div class="form-group">
-                <label>Date</label>
+                <label>Date*</label>
                 <input type="date" name="session_date" id="f-session_date" required/>
             </div>
             <div class="form-group">
-                <label>Time</label>
+                <label>Time* (in BST)</label>
                 <input type="time" name="session_time" id="f-session_time" required/>
             </div>
             <div class="form-group">
-                <label>Duration (hrs)</label>
-                <input type="number" name="session_duration" id="f-session_duration" min="1" max="12" placeholder="2"/>
+                <label>Expected Duration* (minutes)</label>
+                <input type="number" name="session_duration" id="f-session_duration" min="60" max="120" placeholder="60" step="5"/>
             </div>
             <div class="form-group">
-                <label>Slots</label>
-                <input type="number" name="num_slots" id="f-num_slots" min="1" max="10" placeholder="10"/>
+                <label>Slots*</label>
+                <input type="number" name="num_slots" id="f-num_slots" min="4" max="10" placeholder="4"/>
             </div>
             <div class="form-group">
-                <label>Trainee Timer (min)</label>
-                <input type="number" name="trainee_timer" id="f-trainee_timer" min="0" placeholder="15"/>
+                <label>Trainee Timer* (min)</label>
+                <input type="number" name="trainee_timer" id="f-trainee_timer" min="8" max="20" placeholder="15"/>
             </div>
         </div>
 
@@ -365,7 +365,7 @@ function statusBadge($status) {
         <!-- Host -->
         <div class="form-row">
             <div class="form-group flex2">
-                <label><i class="fas fa-crown" style="color:rgba(255,210,80,.7);font-size:.7rem;margin-right:4px;"></i> Host</label>
+                <label><i class="fas fa-crown" style="color:rgba(255,210,80,.7);font-size:.7rem;margin-right:4px;"></i> Host*</label>
                 <input type="text" name="host" id="f-host" list="staff-datalist" placeholder="Roblox username" required/>
             </div>
         </div>
@@ -425,7 +425,7 @@ function statusBadge($status) {
 
         <div class="modal-footer">
             <button type="button" class="btn-ghost" onclick="closeModal()">Cancel</button>
-            <button type="submit" class="btn-primary" id="form-submit-btn">Book Session</button>
+            <button type="submit" class="btn-primary" id="form-submit-btn">Add Session</button>
         </div>
     </form>
 </div>
