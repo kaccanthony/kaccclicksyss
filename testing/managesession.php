@@ -272,7 +272,7 @@ function statusBadge($status) {
                             <?= $filled ?>/<?= $s['num_slots'] ?>
                         </span>
                     </td>
-                    <td class="td-dur"><?= htmlspecialchars($s['session_duration']) ?>h</td>
+                    <td class="td-dur"><?= htmlspecialchars($s['session_duration']) ?>m</td>
                     <?php if ($permLevel >= 10): ?>
                     <td class="td-actions">
                         <button class="action-btn" title="Edit"
