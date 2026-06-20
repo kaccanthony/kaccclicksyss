@@ -32,8 +32,8 @@ function openModal(mode, data = null) {
     formAction.value = mode;
 
     if (mode === 'add') {
-        modalTitle.textContent = 'Book Session';
-        submitBtn.textContent  = 'Book Session';
+        modalTitle.textContent = 'Add Session';
+        submitBtn.textContent  = 'Add Session';
         formSessionId.value    = '';
         document.getElementById('session-form').reset();
     } else {
@@ -56,16 +56,16 @@ function openModal(mode, data = null) {
         document.getElementById('f-session_time').value = rawTime.length > 5 ? rawTime.slice(0, 5) : rawTime;
 
         // Staff fields
-        document.getElementById('f-host').value               = data.host                    ?? '';
-        document.getElementById('f-co_host1').value           = data.co_host1                ?? '';
-        document.getElementById('f-co_host2').value           = data.co_host2                ?? '';
-        document.getElementById('f-co_host3').value           = data.co_host3                ?? '';
-        document.getElementById('f-co_host4_supervisor').value= data['co_host4/supervisor']  ?? '';
-        document.getElementById('f-assistant_1').value        = data.assistant_1             ?? '';
-        document.getElementById('f-assistant_2').value        = data.assistant_2             ?? '';
-        document.getElementById('f-assistant_3').value        = data.assistant_3             ?? '';
-        document.getElementById('f-assistant_4').value        = data.assistant_4             ?? '';
-        document.getElementById('f-additional_staff').value   = data.additional_staff        ?? '';
+        document.getElementById('f-host').value                = data.host                   ?? '';
+        document.getElementById('f-co_host1').value            = data.co_host1               ?? '';
+        document.getElementById('f-co_host2').value            = data.co_host2               ?? '';
+        document.getElementById('f-co_host3').value            = data.co_host3               ?? '';
+        document.getElementById('f-co_host4_supervisor').value = data['co_host4/supervisor'] ?? '';
+        document.getElementById('f-assistant_1').value         = data.assistant_1            ?? '';
+        document.getElementById('f-assistant_2').value         = data.assistant_2            ?? '';
+        document.getElementById('f-assistant_3').value         = data.assistant_3            ?? '';
+        document.getElementById('f-assistant_4').value         = data.assistant_4            ?? '';
+        document.getElementById('f-additional_staff').value    = data.additional_staff       ?? '';
     }
 
     modalBackdrop.classList.add('open');
@@ -80,6 +80,72 @@ function closeModal() {
 // Close on backdrop click
 modalBackdrop.addEventListener('click', (e) => {
     if (e.target === modalBackdrop) closeModal();
+});
+
+// ── Form submit validation ───────────────────────────
+document.getElementById('session-form').addEventListener('submit', (e) => {
+    const timeVal   = document.getElementById('f-session_time').value.trim();
+    const dateVal   = document.getElementById('f-session_date').value.trim();
+    const timeError = document.getElementById('time-error');
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+    // Validate date
+    if (!dateVal) {
+        e.preventDefault();
+        alert('Please select a session date.');
+        document.getElementById('f-session_date').focus();
+        return;
+    }
+
+    // Validate time
+    if (!timeRegex.test(timeVal)) {
+        e.preventDefault();
+        timeError.textContent  = 'Please enter a valid time in HH:MM format (e.g. 14:30).';
+        timeError.style.display = 'inline';
+        document.getElementById('f-session_time').focus();
+        return;
+    }
+
+    timeError.style.display = 'none';
+});
+
+// ── Time input formatter ─────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const timeInput = document.getElementById('f-session_time');
+    const timeError = document.getElementById('time-error');
+
+    timeInput.addEventListener('input', () => {
+        let value = timeInput.value.replace(/\D/g, '');
+        value = value.slice(0, 4);
+
+        let hours   = value.slice(0, 2);
+        let minutes = value.slice(2, 4);
+
+        timeError.style.display = 'none';
+        timeError.textContent   = '';
+
+        if (hours.length === 2) {
+            const hourNum = parseInt(hours);
+            if (hourNum === 24) {
+                hours = '00';
+            } else if (hourNum > 24) {
+                timeError.textContent   = 'Invalid hour. Please enter 00–23.';
+                timeError.style.display = 'inline';
+                hours = '';
+            }
+        }
+
+        if (minutes.length === 2) {
+            const minuteNum = parseInt(minutes);
+            if (minuteNum >= 60) {
+                timeError.textContent   = 'Invalid minutes. Please enter 00–59.';
+                timeError.style.display = 'inline';
+                minutes = '';
+            }
+        }
+
+        timeInput.value = value.length > 2 ? hours + ':' + minutes : hours;
+    });
 });
 
 // ── Delete confirm modal ─────────────────────────────
@@ -109,7 +175,6 @@ document.addEventListener('keydown', (e) => {
     if (modalBackdrop.classList.contains('open'))  closeModal();
     if (deleteBackdrop.classList.contains('open')) closeDelete();
 });
-
 document.addEventListener("DOMContentLoaded", () => {
     const timeInput = document.getElementById("f-session_time");
     const timeError = document.getElementById("time-error");

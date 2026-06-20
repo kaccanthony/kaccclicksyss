@@ -29,6 +29,10 @@ if (empty($user['role'])) {
 
 // ── Handle POST: Add / Edit / Delete ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
+
+    // DEBUG: log POST data to file (remove after fixing)
+    file_put_contents(__DIR__ . '/debug.log', date('Y-m-d H:i:s') . "\n" . print_r($_POST, true) . "\n---\n", FILE_APPEND);
+
     $action = $_POST['action'] ?? '';
 
     if ($action === 'delete' && $permLevel >= 15) {
@@ -60,6 +64,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
         $as3  = $_POST['assistant_3']         ?? '';
         $as4  = $_POST['assistant_4']         ?? '';
         $add  = $_POST['additional_staff']    ?? '';
+
+        // Validate date — reject if empty or clearly invalid
+        if (empty($sdate) || !strtotime($sdate)) {
+            $_SESSION['error'] = 'Invalid or missing session date.';
+            header('Location: managesession.php');
+            exit;
+        }
+
+        // Validate time — must match HH:MM
+        if (!preg_match('/^\d{2}:\d{2}$/', $stime)) {
+            $_SESSION['error'] = 'Invalid or missing session time.';
+            header('Location: managesession.php');
+            exit;
+        }
+        // Append seconds for MySQL TIME column
+        $stime .= ':00';
 
         if ($action === 'add') {
             $sql = "INSERT INTO session_upcoming
@@ -195,6 +215,14 @@ function statusBadge($status) {
         <?php endif; ?>
     </div>
 
+    <?php if (!empty($_SESSION['error'])): ?>
+        <div class="error-banner">
+            <i class="fas fa-triangle-exclamation"></i>
+            <?= htmlspecialchars($_SESSION['error']) ?>
+        </div>
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
+
     <!-- Filter bar -->
     <form class="filter-bar" method="GET" action="">
         <div class="search-wrap">
@@ -263,8 +291,8 @@ function statusBadge($status) {
                         <?= htmlspecialchars($s['host']) ?>
                     </td>
                     <td class="td-date">
-                        <span class="date-main"><?= date('M j, Y',strtotime($s['session_date'])) ?></span>
-                        <span class="date-time"><?= date('g:i A',strtotime($s['session_time'])) ?></span>
+                        <span class="date-main"><?= date('M j, Y', strtotime($s['session_date'])) ?></span>
+                        <span class="date-time"><?= date('g:i A', strtotime($s['session_time'])) ?></span>
                     </td>
                     <td>
                         <?php $filled=0; for($i=1;$i<=10;$i++) if(!empty($s["trainee_{$i}_name"])) $filled++; ?>
@@ -272,7 +300,7 @@ function statusBadge($status) {
                             <?= $filled ?>/<?= $s['num_slots'] ?>
                         </span>
                     </td>
-                    <td class="td-dur"><?= htmlspecialchars($s['session_duration']) ?>m</td>
+                    <td class="td-dur"><?= htmlspecialchars($s['session_duration']) ?> min</td>
                     <?php if ($permLevel >= 10): ?>
                     <td class="td-actions">
                         <button class="action-btn" title="Edit"
@@ -310,7 +338,7 @@ function statusBadge($status) {
         <div class="form-row">
             <div class="form-group flex2">
                 <label>Session Name*</label>
-                <input type="text" name="session_name" id="f-session_name" placeholder="e.g. Training Session #42" value="PS x YSS SCR Shift : SG Practice" required/>
+                <input type="text" name="session_name" id="f-session_name" placeholder="e.g. Training Session #42" required/>
             </div>
             <div class="form-group">
                 <label>Status*</label>
@@ -345,7 +373,7 @@ function statusBadge($status) {
             <div class="form-group">
                 <label>Time* (in BST)</label>
                 <input type="text" name="session_time" id="f-session_time" maxlength="5" placeholder="HH:MM" required/>
-                    <span id="time-error" style="color:red; font-size:12px; display:none;"></span>
+                <span id="time-error" style="color:red; font-size:12px; display:none;"></span>
             </div>
             <div class="form-group">
                 <label>Expected Duration* (minutes)</label>
