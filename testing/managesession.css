@@ -337,6 +337,7 @@ html, body {
 .form-group {
     display: flex; flex-direction: column; gap: 6px;
     flex: 1; min-width: 120px;
+    padding-bottom: 10px;
 }
 .form-group.flex2 { flex: 2; }
 .form-group.form-check-group { flex: 0 0 auto; min-width: 80px; }

@@ -299,7 +299,7 @@ function statusBadge($status) {
 <div class="modal-backdrop" id="modal-backdrop">
 <div class="modal-box" id="modal-box">
     <div class="modal-header">
-        <h2 class="modal-title" id="modal-title">Book Session</h2>
+        <h2 class="modal-title" id="modal-title">Add Session</h2>
         <button class="modal-close-btn" onclick="closeModal()"><i class="fas fa-xmark"></i></button>
     </div>
     <form method="POST" action="" id="session-form" class="modal-form">
