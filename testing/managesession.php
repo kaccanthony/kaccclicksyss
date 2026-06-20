@@ -83,9 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
         if ($action === 'add') {
             $sql = "INSERT INTO session_upcoming
                 (session_name, session_desc, session_status, session_booked,
-                 session_duration, num_slots, session_date, session_time, trainee_timer,
-                 host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
-                 assistant_1, assistant_2, assistant_3, assistant_4, additional_staff)
+                session_duration, num_slots, session_date, session_time, trainee_timer,
+                host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
+                assistant_1, assistant_2, assistant_3, assistant_4, additional_staff)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             $stmt = mysqli_prepare($conn, $sql);
             // s s s i s i s s i s s s s s s s s s s  (19)
