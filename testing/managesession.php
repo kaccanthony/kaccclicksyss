@@ -135,7 +135,7 @@ function statusBadge($status) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/6c33013ae6.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="upcoming.css?v=<?= filemtime(__DIR__ . '/upcoming.css') ?>"/>
+    <link rel="stylesheet" href="managesession.css?v=<?= filemtime(__DIR__ . '/managesession.css') ?>"/>
 </head>
 <body>
 <div id="bg"></div>
