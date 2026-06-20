@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
     timeInput.addEventListener("input", () => {
         let value = timeInput.value.replace(/\D/g, ""); // remove non-numbers
 
-        if (value.length > 2) {
+        if (value.length > 1) {
             value = value.slice(0, 2) + ":" + value.slice(2, 4);
         }
 
