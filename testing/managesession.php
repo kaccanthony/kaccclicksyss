@@ -336,7 +336,7 @@ function statusBadge($status) {
         <div class="form-row">
             <div class="form-group flex2">
                 <label>Session Name*</label>
-                <input type="text" name="session_name" id="f-session_name" placeholder="e.g. Training Session #42" required/>
+                <input type="text" name="session_name" id="f-session_name" placeholder="e.g. Training Session #67" value="PS x YSS SCR Shift : SG Practice" required/>
             </div>
             <div class="form-group">
                 <label>Status*</label>
