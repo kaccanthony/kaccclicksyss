@@ -30,7 +30,6 @@ if (empty($user['role'])) {
 // ── Handle POST: Add / Edit / Delete ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
 
-    // DEBUG: log POST data to file (remove after fixing)
     file_put_contents(__DIR__ . '/debug.log', date('Y-m-d H:i:s') . "\n" . print_r($_POST, true) . "\n---\n", FILE_APPEND);
 
     $action = $_POST['action'] ?? '';
@@ -65,14 +64,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
         $as4  = $_POST['assistant_4']         ?? '';
         $add  = $_POST['additional_staff']    ?? '';
 
-        // Validate date
         if (empty($sdate) || !strtotime($sdate)) {
             $_SESSION['error'] = 'Invalid or missing session date.';
             header('Location: managesession.php');
             exit;
         }
 
-        // Validate time and append seconds for MySQL TIME column
         if (!preg_match('/^\d{2}:\d{2}$/', $stime)) {
             $_SESSION['error'] = 'Invalid or missing session time.';
             header('Location: managesession.php');
@@ -83,13 +80,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
         if ($action === 'add') {
             $sql = "INSERT INTO session_upcoming
                 (session_name, session_desc, session_status, session_booked,
-                session_duration, num_slots, session_date, session_time, trainee_timer,
-                host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
-                assistant_1, assistant_2, assistant_3, assistant_4, additional_staff)
+                 session_duration, num_slots, session_date, session_time, trainee_timer,
+                 host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
+                 assistant_1, assistant_2, assistant_3, assistant_4, additional_staff)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             $stmt = mysqli_prepare($conn, $sql);
-            // s s s i s i s s i s s s s s s s s s s  (19)
-            mysqli_stmt_bind_param($stmt, 'sssisissiSSSSSSSSSS',
+            $types = 'sssisissi' . 'ssssssssss';
+            mysqli_stmt_bind_param($stmt, $types,
                 $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
                 $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add);
         } else {
@@ -102,8 +99,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
                 assistant_3=?, assistant_4=?, additional_staff=?
                 WHERE session_id=?";
             $stmt = mysqli_prepare($conn, $sql);
-            // s s s i s i s s i s s s s s s s s s s i  (20)
-            mysqli_stmt_bind_param($stmt, 'sssisissiSSSSSSSSSSi',
+            $types = 'sssisissi' . 'ssssssssss' . 'i';
+            mysqli_stmt_bind_param($stmt, $types,
                 $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
                 $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add, $eid);
         }
@@ -245,7 +242,7 @@ function statusBadge($status) {
             <?php endforeach; ?>
         </select>
         <input type="text" name="host" class="filter-input" placeholder="Filter by host…"
-                value="<?= htmlspecialchars($filter_host) ?>"/>
+               value="<?= htmlspecialchars($filter_host) ?>"/>
         <button type="submit" class="btn-filter"><i class="fas fa-filter"></i> Filter</button>
         <?php if ($search||$filter_status||$filter_host): ?>
             <a href="managesession.php" class="btn-clear-link">Clear</a>
@@ -339,7 +336,7 @@ function statusBadge($status) {
         <div class="form-row">
             <div class="form-group flex2">
                 <label>Session Name*</label>
-                <input type="text" name="session_name" id="f-session_name" placeholder="e.g. Training Session #42" value="PS x YSS SCR Shift : SG Practice" required/>
+                <input type="text" name="session_name" id="f-session_name" placeholder="e.g. Training Session #42" required/>
             </div>
             <div class="form-group">
                 <label>Status*</label>
