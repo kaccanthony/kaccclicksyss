@@ -149,7 +149,7 @@ function statusBadge($status) {
     </div>
     <span class="app-name">YSS Session Manager</span>
     <div class="topbar-right">
-        <a href="dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        <a href="../dashboard/dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
                 <?php if ($avatar): ?>
@@ -176,7 +176,7 @@ function statusBadge($status) {
             </div>
             <div class="popup-divider"></div>
             <a href="settings.php" class="popup-item"><i class="fas fa-gear"></i> Settings</a>
-            <a href="dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-right-from-bracket"></i> Log out</a>
+            <a href="../dashboard/dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-right-from-bracket"></i> Log out</a>
         </div>
     </div>
 </header>
