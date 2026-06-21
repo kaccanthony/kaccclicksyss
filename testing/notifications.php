@@ -234,7 +234,7 @@ $saved = isset($_GET['saved']);
             <div class="notif-card">
                 <div class="notif-card-left">
                     <div class="notif-icon-wrap blue">
-                        <img class="fas fa-volume-high"></i>
+                        <i class="fas fa-volume-high"></i>
                     </div>
                     <div class="notif-info">
                         <div class="notif-title">Next Trainee Sound Alert</div>
@@ -350,7 +350,7 @@ $saved = isset($_GET['saved']);
             <div class="notif-card">
                 <div class="notif-card-left">
                     <div class="notif-icon-wrap blue">
-                        <img class="../icons/Nextrainee.png"></img>
+                        <img src="../icons/Nextrainee.png" style="width:22px;height:22px;object-fit:contain;"/></img>
                     </div>
                     <div class="notif-info">
                         <div class="notif-title">Next Trainee Sound Alert</div>
