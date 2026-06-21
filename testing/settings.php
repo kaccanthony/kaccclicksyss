@@ -425,9 +425,9 @@ if ($isStaff && $staffRow) {
                         <div class="form-input-wrap">
                             <i class="fas fa-signature form-input-icon"></i>
                             <input type="text" name="display_name" id="user-display-name"
-                                   class="form-input" maxlength="50"
-                                   placeholder="How you appear on the platform"
-                                   value="<?= htmlspecialchars($userRow['user_display_name']) ?>"/>
+                                class="form-input" maxlength="50"
+                                placeholder="How you appear on the platform"
+                                value="<?= htmlspecialchars($userRow['user_display_name']) ?>"/>
                         </div>
                     </div>
 
