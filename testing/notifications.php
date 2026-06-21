@@ -205,7 +205,7 @@ $saved = isset($_GET['saved']);
             <div class="notif-card">
                 <div class="notif-card-left">
                     <div class="notif-icon-wrap green">
-                        <i class="far fa-calendar-clock"></i>
+                        <i class="far fa-calendar-check"></i>
                     </div>
                     <div class="notif-info">
                         <div class="notif-title">Upcoming Session Reminder</div>
