@@ -180,7 +180,7 @@ if ($isStaff && $staffRow) {
     <div class="logo-wrap">
         <div class="pulse-ring"></div>
         <div class="pulse-ring ring2"></div>
-        <img src="/public/assets/images/icons/YSS Logo.png" alt="YSS Logo" class="logo-img"/>
+        <img src="/public/assets/images/YSS Logo.png" alt="YSS Logo" class="logo-img"/>
     </div>
     <span class="app-name">YSS Session Manager</span>
     <div class="topbar-right">
