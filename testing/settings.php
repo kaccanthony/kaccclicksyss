@@ -74,11 +74,9 @@ foreach ($notifDefaults as $k => $v) {
 function p($prefs, $key) { return $prefs[$key] ?? ''; }
 
 // ── Handle POST ──
-$profileError = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
-    // ── Save notification prefs ──
     if ($action === 'save_notifs') {
         $keys = [
             'staff_session_reminder','staff_reminder_time','staff_trainee_sound',
@@ -103,7 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // ── Save profile (staff) ──
     if ($action === 'save_profile_staff' && $isStaff) {
         $display_name     = trim($_POST['display_name']     ?? '');
         $discord_username = trim($_POST['discord_username'] ?? '');
@@ -111,30 +108,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $hide_stats       = isset($_POST['hide_stats']) ? 1 : 0;
 
         $s4 = mysqli_prepare($conn,
-            "UPDATE staff_list
-            SET staff_display_name=?, staff_name=?, staff_roblox_name=?, hide_stats=? 
-            WHERE staff_id=?");
+            "UPDATE staff_list SET staff_display_name=?, staff_name=?, staff_roblox_name=?, hide_stats=? WHERE staff_id=?");
         mysqli_stmt_bind_param($s4, "sssis", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
         mysqli_stmt_execute($s4);
 
-        // Update session display name
         if ($display_name) $_SESSION['user']['display_name'] = $display_name;
-
         header('Location: settings.php?saved=profile');
         exit;
     }
 
-    // ── Save profile (user) ──
     if ($action === 'save_profile_user' && $isUser) {
-        $display_name        = trim($_POST['display_name']        ?? '');
-        $discord_username    = trim($_POST['discord_username']    ?? '');
-        $roblox_name         = trim($_POST['roblox_name']         ?? '');
-        $hide_stats  = isset($_POST['hide_stats']) ? 1 : 0;
+        $display_name     = trim($_POST['display_name']     ?? '');
+        $discord_username = trim($_POST['discord_username'] ?? '');
+        $roblox_name      = trim($_POST['roblox_name']      ?? '');
+        $hide_stats       = isset($_POST['hide_stats']) ? 1 : 0;
 
         $s5 = mysqli_prepare($conn,
-            "UPDATE user_list 
-            SET user_display_name=?, user_name=?, user_roblox_name=?, hide_stats=? 
-            WHERE user_id=?");
+            "UPDATE user_list SET user_display_name=?, user_name=?, user_roblox_name=?, hide_stats=? WHERE user_id=?");
         mysqli_stmt_bind_param($s5, "sssis", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
         mysqli_stmt_execute($s5);
 
@@ -147,22 +137,21 @@ $saved   = $_GET['saved'] ?? '';
 $dbError = $_SESSION['db_error'] ?? '';
 unset($_SESSION['db_error']);
 
-// // ── Current profile values ──
+// ── Current profile values ──
 $cur = [];
 if ($isStaff && $staffRow) {
-    $cur['display_name']     = $staffRow['staff_display_name']     ?? '';
-    $cur['discord_username'] = $staffRow['staff_name'] ?? '';
-    $cur['discord_id']       = $staffRow['staff_id']         ?? '';
-    $cur['roblox_name']      = $staffRow['staff_roblox_name']?? '';
-    $cur['hide_stats']       = $staffRow['hide_stats']       ?? 0;
+    $cur['display_name']     = $staffRow['staff_display_name']  ?? '';
+    $cur['discord_username'] = $staffRow['staff_name']          ?? '';
+    $cur['discord_id']       = $staffRow['staff_id']            ?? '';
+    $cur['roblox_name']      = $staffRow['staff_roblox_name']   ?? '';
+    $cur['hide_stats']       = $staffRow['hide_stats']          ?? 0;
 } elseif ($isUser && $userRow) {
-    $cur['display_name']        = $userRow['user_display_name']        ?? '';
-    $cur['discord_username']    = $userRow['user_name']    ?? '';
-    $cur['discord_id']          = $userRow['user_id']             ?? '';
-    $cur['roblox_name']         = $userRow['roblox_name']         ?? '';
-    $cur['hide_trainee_stats']  = $userRow['hide_trainee_stats']  ?? 0;
+    $cur['display_name']       = $userRow['user_display_name']    ?? '';
+    $cur['discord_username']   = $userRow['user_name']            ?? '';
+    $cur['discord_id']         = $userRow['user_id']              ?? '';
+    $cur['roblox_name']        = $userRow['user_roblox_name']     ?? '';
+    $cur['hide_trainee_stats'] = $userRow['hide_trainee_stats']   ?? 0;
 } else {
-     // Fallback to session
     $cur['display_name']     = '';
     $cur['discord_username'] = $user['username'] ?? '';
     $cur['discord_id']       = $staffId;
@@ -182,6 +171,403 @@ if ($isStaff && $staffRow) {
     <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/6c33013ae6.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="settings.css?v=<?= filemtime(__DIR__ . '/settings.css') ?>"/>
+    <style>
+        /* ─── Avatar upload button ─── */
+        .profile-avatar-wrap {
+            position: relative;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .avatar-upload-btn {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--accent, #6c63ff);
+            border: 2px solid var(--bg-card, #1e1e2e);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            transition: transform .15s, background .15s;
+            z-index: 2;
+        }
+        .avatar-upload-btn:hover { transform: scale(1.12); background: var(--accent-hover, #5a54e0); }
+        #avatar-file-input { display: none; }
+
+        /* ─── Avatar upload progress overlay ─── */
+        .avatar-uploading-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(0,0,0,.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s;
+            z-index: 3;
+        }
+        .avatar-uploading-ring.active { opacity: 1; }
+        .avatar-uploading-ring .spinner {
+            width: 28px; height: 28px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── Change password button ─── */
+        .profile-header-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .profile-header-right {
+            margin-left: auto;
+        }
+        .btn-change-pw {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1.5px solid var(--border, rgba(255,255,255,.12));
+            background: transparent;
+            color: var(--text-muted, #a0a0b0);
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color .15s, color .15s, background .15s;
+        }
+        .btn-change-pw:hover {
+            border-color: var(--accent, #6c63ff);
+            color: var(--accent, #6c63ff);
+            background: rgba(108,99,255,.08);
+        }
+
+        /* ─── Password modal ─── */
+        .pw-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.55);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .pw-modal-backdrop.open { display: flex; }
+        .pw-modal {
+            background: var(--bg-card, #1e1e2e);
+            border: 1px solid var(--border, rgba(255,255,255,.12));
+            border-radius: 14px;
+            width: 100%;
+            max-width: 420px;
+            padding: 28px 28px 24px;
+            box-shadow: 0 24px 60px rgba(0,0,0,.45);
+            position: relative;
+            animation: modalIn .2s ease;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(14px) scale(.97); }
+            to   { opacity: 1; transform: none; }
+        }
+        .pw-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .pw-modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text, #e0e0f0);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pw-modal-title i { color: var(--accent, #6c63ff); }
+        .pw-modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted, #a0a0b0);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: color .15s, background .15s;
+        }
+        .pw-modal-close:hover { color: var(--text, #e0e0f0); background: rgba(255,255,255,.06); }
+        .pw-field {
+            margin-bottom: 14px;
+        }
+        .pw-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted, #a0a0b0);
+            margin-bottom: 6px;
+            letter-spacing: .4px;
+            text-transform: uppercase;
+        }
+        .pw-input-wrap {
+            position: relative;
+        }
+        .pw-input-wrap i.icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted, #a0a0b0);
+            font-size: 13px;
+            pointer-events: none;
+        }
+        .pw-input {
+            width: 100%;
+            padding: 10px 38px 10px 36px;
+            background: var(--bg-input, rgba(255,255,255,.05));
+            border: 1.5px solid var(--border, rgba(255,255,255,.1));
+            border-radius: 8px;
+            color: var(--text, #e0e0f0);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+            box-sizing: border-box;
+        }
+        .pw-input:focus {
+            border-color: var(--accent, #6c63ff);
+            box-shadow: 0 0 0 3px rgba(108,99,255,.18);
+        }
+        .pw-toggle-vis {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted, #a0a0b0);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 13px;
+        }
+        .pw-toggle-vis:hover { color: var(--text, #e0e0f0); }
+        .pw-error {
+            display: none;
+            margin: 12px 0 4px;
+            padding: 9px 12px;
+            background: rgba(220,60,60,.12);
+            border: 1px solid rgba(220,60,60,.3);
+            border-radius: 7px;
+            color: #f87171;
+            font-size: 13px;
+        }
+        .pw-error.show { display: flex; align-items: center; gap: 8px; }
+        .pw-forgot {
+            background: none;
+            border: none;
+            color: var(--text-muted, #a0a0b0);
+            font-size: 12px;
+            cursor: pointer;
+            padding: 0;
+            margin-top: 6px;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+        .pw-forgot:hover { color: var(--accent, #6c63ff); }
+        .pw-modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border, rgba(255,255,255,.08));
+        }
+        .pw-modal-footer .btn-ghost {
+            padding: 9px 18px;
+            border-radius: 8px;
+            border: 1.5px solid var(--border, rgba(255,255,255,.12));
+            background: transparent;
+            color: var(--text-muted, #a0a0b0);
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color .15s, color .15s;
+        }
+        .pw-modal-footer .btn-ghost:hover { border-color: var(--accent, #6c63ff); color: var(--text, #e0e0f0); }
+        .pw-modal-footer .btn-save {
+            padding: 9px 20px;
+            border-radius: 8px;
+            border: none;
+            background: var(--accent, #6c63ff);
+            color: #fff;
+            font-size: 13px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: background .15s, opacity .15s;
+        }
+        .pw-modal-footer .btn-save:hover { background: var(--accent-hover, #5a54e0); }
+        .pw-modal-footer .btn-save:disabled { opacity: .55; cursor: not-allowed; }
+        .pw-modal-footer .btn-save .pw-spinner {
+            width: 14px; height: 14px;
+            border: 2px solid rgba(255,255,255,.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            display: none;
+        }
+        .pw-modal-footer .btn-save.loading .pw-spinner { display: block; }
+        .pw-modal-footer .btn-save.loading .pw-btn-label { display: none; }
+
+        /* ─── Confirm modal (profile save) ─── */
+        .confirm-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.55);
+            backdrop-filter: blur(4px);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+        }
+        .confirm-backdrop.open { display: flex; }
+        .confirm-box {
+            background: var(--bg-card, #1e1e2e);
+            border: 1px solid var(--border, rgba(255,255,255,.12));
+            border-radius: 14px;
+            width: 100%;
+            max-width: 360px;
+            padding: 26px 24px 20px;
+            box-shadow: 0 24px 60px rgba(0,0,0,.45);
+            animation: modalIn .2s ease;
+        }
+        .confirm-box h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text, #e0e0f0);
+            margin: 0 0 8px;
+        }
+        .confirm-box p {
+            font-size: 13px;
+            color: var(--text-muted, #a0a0b0);
+            margin: 0 0 20px;
+            line-height: 1.5;
+        }
+        .confirm-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* ─── Profanity warning toast (bottom-right) ─── */
+        .profanity-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1e1e2e;
+            border: 1px solid rgba(220,60,60,.45);
+            border-radius: 12px;
+            padding: 14px 18px 14px 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            max-width: 340px;
+            box-shadow: 0 12px 36px rgba(0,0,0,.45);
+            z-index: 2000;
+            animation: toastIn .25s ease;
+            color: var(--text, #e0e0f0);
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: none; }
+        }
+        .profanity-toast.hiding {
+            animation: toastOut .25s ease forwards;
+        }
+        @keyframes toastOut {
+            to { opacity: 0; transform: translateY(14px); }
+        }
+        .profanity-toast-icon {
+            width: 32px; height: 32px; flex-shrink: 0;
+            border-radius: 8px;
+            background: rgba(220,60,60,.15);
+            display: flex; align-items: center; justify-content: center;
+            color: #f87171;
+            font-size: 15px;
+        }
+        .profanity-toast-body { flex: 1; }
+        .profanity-toast-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .profanity-toast-msg {
+            font-size: 12px;
+            color: var(--text-muted, #a0a0b0);
+            line-height: 1.4;
+        }
+        .profanity-toast-close {
+            background: none; border: none;
+            color: var(--text-muted, #a0a0b0);
+            cursor: pointer; font-size: 13px; padding: 2px;
+            flex-shrink: 0; align-self: flex-start;
+        }
+        .profanity-toast-close:hover { color: var(--text, #e0e0f0); }
+
+        /* ─── Forgot password mini-popup ─── */
+        .forgot-popup {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 0;
+            background: var(--bg-card, #1e1e2e);
+            border: 1px solid var(--border, rgba(255,255,255,.12));
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 12.5px;
+            color: var(--text-muted, #a0a0b0);
+            line-height: 1.5;
+            max-width: 260px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.35);
+            z-index: 10;
+            display: none;
+            animation: modalIn .15s ease;
+        }
+        .forgot-popup b { color: #7289da; }
+        .pw-forgot-wrap { position: relative; display: inline-block; }
+
+        /* ─── Profile picture section styling ─── */
+        .profile-avatar-row {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+        .profile-avatar-big {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: var(--bg-input, rgba(255,255,255,.06));
+            border: 2px solid var(--border, rgba(255,255,255,.12));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+            color: var(--text-muted, #a0a0b0);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+    </style>
 </head>
 <body>
 <div id="bg"></div>
@@ -262,88 +648,105 @@ if ($isStaff && $staffRow) {
         </button>
     </div>
 
-    <!-- ════════════════════════════════════════
-        PROFILE TAB
-    ════════════════════════════════════════ -->
+    <!-- ════════════════════════
+         PROFILE TAB
+    ════════════════════════ -->
     <div class="settings-panel" id="panel-profile">
 
         <?php if ($isStaff && $staffRow): ?>
-        <!-- ── STAFF PROFILE FORM ── -->
+        <!-- STAFF PROFILE -->
         <form method="POST" action="" id="form-profile-staff">
             <input type="hidden" name="action" value="save_profile_staff"/>
-
             <div class="settings-section">
                 <div class="settings-section-title">
                     <i class="fas fa-id-card"></i> Staff Profile
                 </div>
-                <p class="settings-section-desc">
-                    Changes to your display name and Roblox username will be reflected across the platform.
-                </p>
+                <p class="settings-section-desc">Changes to your display name and Roblox username will be reflected across the platform.</p>
 
-                <!-- Avatar row -->
-                <div class="profile-avatar-row">
-                    <div class="profile-avatar-big">
-                        <?php if ($avatar): ?>
-                            <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
-                        <?php else: ?>
-                            <i class="fas fa-user"></i>
-                        <?php endif; ?>
+                <!-- Profile header: avatar + name + change password button -->
+                <div class="profile-header-row">
+                    <div class="profile-avatar-wrap">
+                        <div class="profile-avatar-big" id="avatar-preview-wrap">
+                            <?php if ($avatar): ?>
+                                <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar"
+                                     id="avatar-preview"
+                                     style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                            <?php else: ?>
+                                <i class="fas fa-user" id="avatar-placeholder"></i>
+                            <?php endif; ?>
+                        </div>
+                        <!-- Upload spinner overlay -->
+                        <div class="avatar-uploading-ring" id="avatar-upload-ring">
+                            <div class="spinner"></div>
+                        </div>
+                        <!-- Upload button (camera icon, bottom-right of avatar) -->
+                        <label for="avatar-file-input" class="avatar-upload-btn" title="Upload photo (max 5 MiB)">
+                            <i class="fas fa-camera"></i>
+                        </label>
+                        <input type="file" id="avatar-file-input" name="avatar"
+                               accept="image/jpeg,image/png,image/gif,image/webp"/>
                     </div>
+
                     <div class="profile-avatar-info">
-                        <div class="profile-avatar-name"><?= htmlspecialchars($staffRow['staff_display_name'] ?: $staffRow['staff_name']) ?></div>
+                        <div class="profile-avatar-name">
+                            <?= htmlspecialchars($staffRow['staff_display_name'] ?: $staffRow['staff_name']) ?>
+                        </div>
                         <div class="profile-avatar-role"><?= htmlspecialchars($staffRow['staff_rank']) ?></div>
+                    </div>
+
+                    <!-- Change Password button — far right -->
+                    <div class="profile-header-right">
+                        <button type="button" class="btn-change-pw" onclick="openPwModal()">
+                            <i class="fas fa-key"></i> Change Password
+                        </button>
                     </div>
                 </div>
 
                 <div class="form-grid">
-                    <!-- Display Name -->
                     <div class="form-group">
                         <label class="form-label">Display Name</label>
                         <div class="form-input-wrap">
                             <i class="fas fa-signature form-input-icon"></i>
                             <input type="text" name="display_name" id="staff-display-name"
-                                class="form-input" maxlength="200"
-                                placeholder="How you appear on the platform"
-                                value="<?= htmlspecialchars($staffRow['staff_display_name']) ?>"/>
+                                   class="form-input" maxlength="200"
+                                   placeholder="How you appear on the platform"
+                                   value="<?= htmlspecialchars($staffRow['staff_display_name']) ?>"/>
                         </div>
                     </div>
 
-                    <!-- Discord Username -->
                     <div class="form-group">
                         <label class="form-label">Discord Username</label>
                         <div class="form-input-wrap">
                             <i class="fab fa-discord form-input-icon"></i>
                             <input type="text" name="discord_username" id="staff-discord-username"
-                                class="form-input" maxlength="200"
-                                placeholder="your_discord_username"
-                                value="<?= htmlspecialchars($staffRow['staff_name']) ?>"/>
+                                   class="form-input" maxlength="200"
+                                   placeholder="your_discord_username"
+                                   value="<?= htmlspecialchars($staffRow['staff_name']) ?>"/>
                         </div>
                     </div>
 
-                    <!-- Discord ID (read-only) -->
                     <div class="form-group">
                         <label class="form-label">Discord ID <span class="form-label-hint">read-only</span></label>
                         <div class="form-input-wrap">
                             <i class="fas fa-fingerprint form-input-icon"></i>
                             <input type="text" class="form-input readonly"
-                                value="<?= htmlspecialchars($cur['discord_id']) ?>" readonly/>
+                                   value="<?= htmlspecialchars($cur['discord_id']) ?>" readonly/>
                         </div>
                     </div>
 
-                    <!-- Roblox Username -->
                     <div class="form-group">
                         <label class="form-label">Roblox Username</label>
                         <div class="form-input-wrap">
                             <i class="fas fa-gamepad form-input-icon"></i>
                             <input type="text" name="roblox_name" id="staff-roblox-name"
-                                class="form-input" maxlength="100"
-                                placeholder="Your Roblox username"
-                                value="<?= htmlspecialchars($staffRow['staff_roblox_name']) ?>"/>
+                                   class="form-input" maxlength="100"
+                                   placeholder="Your Roblox username"
+                                   value="<?= htmlspecialchars($staffRow['staff_roblox_name']) ?>"/>
                         </div>
                     </div>
                 </div>
 
-                <!-- Hide stats toggle -->
+                <!-- Hide stats toggle (no confirmation needed) -->
                 <div class="notif-card" style="margin-top:16px;">
                     <div class="notif-card-left">
                         <div class="notif-icon-wrap purple"><i class="fas fa-eye-slash"></i></div>
@@ -361,8 +764,8 @@ if ($isStaff && $staffRow) {
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn-save" id="btn-save-staff-profile"
-                        onclick="submitProfileForm('form-profile-staff', 'staff')">
+                    <button type="button" class="btn-save"
+                            onclick="submitProfileForm('form-profile-staff','staff')">
                         <i class="fas fa-floppy-disk"></i> Save Profile
                     </button>
                 </div>
@@ -370,26 +773,46 @@ if ($isStaff && $staffRow) {
         </form>
 
         <?php elseif ($isUser && $userRow): ?>
-        <!-- ── USER PROFILE FORM ── -->
+        <!-- USER PROFILE -->
         <form method="POST" action="" id="form-profile-user">
             <input type="hidden" name="action" value="save_profile_user"/>
-
             <div class="settings-section">
                 <div class="settings-section-title">
                     <i class="fas fa-id-card"></i> User Profile
                 </div>
 
-                <div class="profile-avatar-row">
-                    <div class="profile-avatar-big">
-                        <?php if ($avatar): ?>
-                            <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
-                        <?php else: ?>
-                            <i class="fas fa-user"></i>
-                        <?php endif; ?>
+                <div class="profile-header-row">
+                    <div class="profile-avatar-wrap">
+                        <div class="profile-avatar-big" id="avatar-preview-wrap">
+                            <?php if ($avatar): ?>
+                                <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar"
+                                     id="avatar-preview"
+                                     style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                            <?php else: ?>
+                                <i class="fas fa-user" id="avatar-placeholder"></i>
+                            <?php endif; ?>
+                        </div>
+                        <div class="avatar-uploading-ring" id="avatar-upload-ring">
+                            <div class="spinner"></div>
+                        </div>
+                        <label for="avatar-file-input" class="avatar-upload-btn" title="Upload photo (max 5 MiB)">
+                            <i class="fas fa-camera"></i>
+                        </label>
+                        <input type="file" id="avatar-file-input" name="avatar"
+                               accept="image/jpeg,image/png,image/gif,image/webp"/>
                     </div>
+
                     <div class="profile-avatar-info">
-                        <div class="profile-avatar-name"><?= htmlspecialchars($userRow['display_name'] ?: $username) ?></div>
-                        <div class="profile-avatar-hint">Avatar is pulled from your Roblox account automatically.</div>
+                        <div class="profile-avatar-name">
+                            <?= htmlspecialchars($userRow['user_display_name'] ?: $username) ?>
+                        </div>
+                        <div class="profile-avatar-hint">Avatar is pulled from your uploaded photo.</div>
+                    </div>
+
+                    <div class="profile-header-right">
+                        <button type="button" class="btn-change-pw" onclick="openPwModal()">
+                            <i class="fas fa-key"></i> Change Password
+                        </button>
                     </div>
                 </div>
 
@@ -399,9 +822,9 @@ if ($isStaff && $staffRow) {
                         <div class="form-input-wrap">
                             <i class="fas fa-signature form-input-icon"></i>
                             <input type="text" name="display_name" id="user-display-name"
-                                class="form-input" maxlength="50"
-                                placeholder="How you appear on the platform"
-                                value="<?= htmlspecialchars($userRow['user_display_name']) ?>"/>
+                                   class="form-input" maxlength="50"
+                                   placeholder="How you appear on the platform"
+                                   value="<?= htmlspecialchars($userRow['user_display_name']) ?>"/>
                         </div>
                     </div>
 
@@ -410,9 +833,9 @@ if ($isStaff && $staffRow) {
                         <div class="form-input-wrap">
                             <i class="fab fa-discord form-input-icon"></i>
                             <input type="text" name="discord_username" id="user-discord-username"
-                                class="form-input" maxlength="100"
-                                placeholder="your_discord_username"
-                                value="<?= htmlspecialchars($userRow['user_name']) ?>"/>
+                                   class="form-input" maxlength="100"
+                                   placeholder="your_discord_username"
+                                   value="<?= htmlspecialchars($userRow['user_name']) ?>"/>
                         </div>
                     </div>
 
@@ -421,7 +844,7 @@ if ($isStaff && $staffRow) {
                         <div class="form-input-wrap">
                             <i class="fas fa-fingerprint form-input-icon"></i>
                             <input type="text" class="form-input readonly"
-                                value="<?= htmlspecialchars($cur['discord_id']) ?>" readonly/>
+                                   value="<?= htmlspecialchars($cur['discord_id']) ?>" readonly/>
                         </div>
                     </div>
 
@@ -430,9 +853,9 @@ if ($isStaff && $staffRow) {
                         <div class="form-input-wrap">
                             <i class="fas fa-gamepad form-input-icon"></i>
                             <input type="text" name="roblox_name" id="user-roblox-name"
-                                class="form-input" maxlength="100"
-                                placeholder="Your Roblox username"
-                                value="<?= htmlspecialchars($userRow['user_roblox_name']) ?>"/>
+                                   class="form-input" maxlength="100"
+                                   placeholder="Your Roblox username"
+                                   value="<?= htmlspecialchars($userRow['user_roblox_name']) ?>"/>
                         </div>
                     </div>
                 </div>
@@ -447,7 +870,8 @@ if ($isStaff && $staffRow) {
                     </div>
                     <div class="notif-card-right">
                         <label class="toggle-wrap">
-                            <input type="checkbox" name="hide_trainee_stats" <?= ($cur['hide_trainee_stats'] ?? 0) ? 'checked' : '' ?>/>
+                            <input type="checkbox" name="hide_trainee_stats"
+                                   <?= ($cur['hide_trainee_stats'] ?? 0) ? 'checked' : '' ?>/>
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         </label>
                     </div>
@@ -455,7 +879,7 @@ if ($isStaff && $staffRow) {
 
                 <div class="form-actions">
                     <button type="button" class="btn-save"
-                        onclick="submitProfileForm('form-profile-user', 'user')">
+                            onclick="submitProfileForm('form-profile-user','user')">
                         <i class="fas fa-floppy-disk"></i> Save Profile
                     </button>
                 </div>
@@ -471,14 +895,14 @@ if ($isStaff && $staffRow) {
 
     </div><!-- /panel-profile -->
 
-    <!-- ════════════════════════════════════════
-        STAFF NOTIFICATIONS TAB
-    ════════════════════════════════════════ -->
+
+    <!-- ════════════════════════
+         STAFF NOTIFICATIONS TAB
+    ════════════════════════ -->
     <?php if ($isStaff): ?>
     <div class="settings-panel hidden" id="panel-staff-notifs">
         <form method="POST" action="">
             <input type="hidden" name="action" value="save_notifs"/>
-
             <div class="settings-section">
                 <div class="settings-section-title"><i class="fas fa-shield-halved"></i> Staff Notifications</div>
                 <p class="settings-section-desc">Active only while you're in a live session as host, co-host, or assistant.</p>
@@ -494,7 +918,9 @@ if ($isStaff && $staffRow) {
                     <div class="notif-card-right">
                         <div class="inline-control">
                             <span class="inline-label">Remind me</span>
-                            <select name="staff_reminder_time" class="inline-select <?= p($prefs,'staff_session_reminder')==='0'?'disabled':'' ?>" id="staff-reminder-time">
+                            <select name="staff_reminder_time"
+                                    class="inline-select <?= p($prefs,'staff_session_reminder')==='0'?'disabled':'' ?>"
+                                    id="staff-reminder-time">
                                 <?php foreach (['5','10','15','30','60'] as $m): ?>
                                     <option value="<?= $m ?>" <?= p($prefs,'staff_reminder_time')===$m?'selected':'' ?>><?= $m ?> min before</option>
                                 <?php endforeach; ?>
@@ -502,8 +928,8 @@ if ($isStaff && $staffRow) {
                         </div>
                         <label class="toggle-wrap">
                             <input type="checkbox" name="staff_session_reminder"
-                                <?= p($prefs,'staff_session_reminder')==='1'?'checked':'' ?>
-                                onchange="toggleDependent(this,'staff-reminder-time')"/>
+                                   <?= p($prefs,'staff_session_reminder')==='1'?'checked':'' ?>
+                                   onchange="toggleDependent(this,'staff-reminder-time')"/>
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         </label>
                     </div>
@@ -521,7 +947,8 @@ if ($isStaff && $staffRow) {
                     </div>
                     <div class="notif-card-right">
                         <label class="toggle-wrap">
-                            <input type="checkbox" name="staff_trainee_sound" <?= p($prefs,'staff_trainee_sound')==='1'?'checked':'' ?>/>
+                            <input type="checkbox" name="staff_trainee_sound"
+                                   <?= p($prefs,'staff_trainee_sound')==='1'?'checked':'' ?>/>
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         </label>
                     </div>
@@ -537,7 +964,8 @@ if ($isStaff && $staffRow) {
                     </div>
                     <div class="notif-card-right">
                         <label class="toggle-wrap">
-                            <input type="checkbox" name="staff_trainee_warning" <?= p($prefs,'staff_trainee_warning')==='1'?'checked':'' ?>/>
+                            <input type="checkbox" name="staff_trainee_warning"
+                                   <?= p($prefs,'staff_trainee_warning')==='1'?'checked':'' ?>/>
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         </label>
                     </div>
@@ -554,7 +982,9 @@ if ($isStaff && $staffRow) {
                     <div class="notif-card-right">
                         <div class="inline-control">
                             <span class="inline-label">Display as</span>
-                            <select name="staff_announcement_display" class="inline-select <?= p($prefs,'staff_announcement_enabled')==='0'?'disabled':'' ?>" id="staff-announce-display">
+                            <select name="staff_announcement_display"
+                                    class="inline-select <?= p($prefs,'staff_announcement_enabled')==='0'?'disabled':'' ?>"
+                                    id="staff-announce-display">
                                 <option value="fullscreen" <?= p($prefs,'staff_announcement_display')==='fullscreen'?'selected':'' ?>>Full Screen</option>
                                 <option value="banner"     <?= p($prefs,'staff_announcement_display')==='banner'    ?'selected':'' ?>>Banner</option>
                                 <option value="toast"      <?= p($prefs,'staff_announcement_display')==='toast'     ?'selected':'' ?>>Toast</option>
@@ -562,8 +992,8 @@ if ($isStaff && $staffRow) {
                         </div>
                         <label class="toggle-wrap">
                             <input type="checkbox" name="staff_announcement_enabled"
-                                <?= p($prefs,'staff_announcement_enabled')==='1'?'checked':'' ?>
-                                onchange="toggleDependent(this,'staff-announce-display')"/>
+                                   <?= p($prefs,'staff_announcement_enabled')==='1'?'checked':'' ?>
+                                   onchange="toggleDependent(this,'staff-announce-display')"/>
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         </label>
                     </div>
@@ -577,13 +1007,13 @@ if ($isStaff && $staffRow) {
     </div>
     <?php endif; ?>
 
-    <!-- ════════════════════════════════════════
+
+    <!-- ════════════════════════
          USER NOTIFICATIONS TAB
-    ════════════════════════════════════════ -->
+    ════════════════════════ -->
     <div class="settings-panel hidden" id="panel-user-notifs">
         <form method="POST" action="">
             <input type="hidden" name="action" value="save_notifs"/>
-
             <div class="settings-section">
                 <div class="settings-section-title"><i class="fas fa-bell"></i> General Notifications</div>
                 <p class="settings-section-desc">These apply to your account at all times.</p>
@@ -599,7 +1029,9 @@ if ($isStaff && $staffRow) {
                     <div class="notif-card-right">
                         <div class="inline-control">
                             <span class="inline-label">Remind me</span>
-                            <select name="user_reminder_time" class="inline-select <?= p($prefs,'user_session_reminder')==='0'?'disabled':'' ?>" id="user-reminder-time">
+                            <select name="user_reminder_time"
+                                    class="inline-select <?= p($prefs,'user_session_reminder')==='0'?'disabled':'' ?>"
+                                    id="user-reminder-time">
                                 <?php foreach (['5','10','15','30','60'] as $m): ?>
                                     <option value="<?= $m ?>" <?= p($prefs,'user_reminder_time')===$m?'selected':'' ?>><?= $m ?> min before</option>
                                 <?php endforeach; ?>
@@ -607,8 +1039,8 @@ if ($isStaff && $staffRow) {
                         </div>
                         <label class="toggle-wrap">
                             <input type="checkbox" name="user_session_reminder"
-                                <?= p($prefs,'user_session_reminder')==='1'?'checked':'' ?>
-                                onchange="toggleDependent(this,'user-reminder-time')"/>
+                                   <?= p($prefs,'user_session_reminder')==='1'?'checked':'' ?>
+                                   onchange="toggleDependent(this,'user-reminder-time')"/>
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         </label>
                     </div>
@@ -626,7 +1058,8 @@ if ($isStaff && $staffRow) {
                     </div>
                     <div class="notif-card-right">
                         <label class="toggle-wrap">
-                            <input type="checkbox" name="user_trainee_sound" <?= p($prefs,'user_trainee_sound')==='1'?'checked':'' ?>/>
+                            <input type="checkbox" name="user_trainee_sound"
+                                   <?= p($prefs,'user_trainee_sound')==='1'?'checked':'' ?>/>
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         </label>
                     </div>
@@ -642,7 +1075,8 @@ if ($isStaff && $staffRow) {
                     </div>
                     <div class="notif-card-right">
                         <label class="toggle-wrap">
-                            <input type="checkbox" name="user_new_session" <?= p($prefs,'user_new_session')==='1'?'checked':'' ?>/>
+                            <input type="checkbox" name="user_new_session"
+                                   <?= p($prefs,'user_new_session')==='1'?'checked':'' ?>/>
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         </label>
                     </div>
@@ -658,7 +1092,8 @@ if ($isStaff && $staffRow) {
                     </div>
                     <div class="notif-card-right">
                         <label class="toggle-wrap">
-                            <input type="checkbox" name="user_cancellation" <?= p($prefs,'user_cancellation')==='1'?'checked':'' ?>/>
+                            <input type="checkbox" name="user_cancellation"
+                                   <?= p($prefs,'user_cancellation')==='1'?'checked':'' ?>/>
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         </label>
                     </div>
@@ -675,8 +1110,8 @@ if ($isStaff && $staffRow) {
                     <div class="notif-card-right">
                         <label class="toggle-wrap">
                             <input type="checkbox" name="user_browser_notifs"
-                                <?= p($prefs,'user_browser_notifs')==='1'?'checked':'' ?>
-                                onchange="requestBrowserPermission(this)"/>
+                                   <?= p($prefs,'user_browser_notifs')==='1'?'checked':'' ?>
+                                   onchange="requestBrowserPermission(this)"/>
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         </label>
                     </div>
@@ -691,20 +1126,98 @@ if ($isStaff && $staffRow) {
 
 </main>
 
-<!-- ════ CONFIRM MODAL ════ -->
-<div class="modal-backdrop" id="confirm-backdrop">
-    <div class="modal-box modal-sm" id="confirm-box">
-        <div class="modal-header">
-            <h2 class="modal-title">Confirm Change</h2>
-            <button class="modal-close-btn" onclick="closeConfirm()"><i class="fas fa-xmark"></i></button>
+
+<!-- ═══════════════════════════════════════
+     CHANGE PASSWORD MODAL
+═══════════════════════════════════════ -->
+<div class="pw-modal-backdrop" id="pw-modal-backdrop" onclick="closePwModalOnBackdrop(event)">
+    <div class="pw-modal" role="dialog" aria-modal="true" aria-labelledby="pw-modal-title">
+        <div class="pw-modal-header">
+            <div class="pw-modal-title" id="pw-modal-title">
+                <i class="fas fa-key"></i> Change Password
+            </div>
+            <button class="pw-modal-close" onclick="closePwModal()" aria-label="Close"><i class="fas fa-xmark"></i></button>
         </div>
-        <p class="delete-msg" id="confirm-msg">Are you sure you want to change your display name?</p>
-        <div class="modal-footer">
-            <button type="button" class="btn-ghost" onclick="closeConfirm()">Cancel</button>
-            <button type="button" class="btn-save" id="confirm-ok-btn">Confirm</button>
+
+        <div class="pw-field">
+            <label for="pw-old">Current Password</label>
+            <div class="pw-input-wrap">
+                <i class="fas fa-lock icon"></i>
+                <input type="password" id="pw-old" class="pw-input" placeholder="Enter your current password" autocomplete="current-password"/>
+                <button type="button" class="pw-toggle-vis" onclick="togglePwVis('pw-old', this)" tabindex="-1">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="pw-field">
+            <label for="pw-new">New Password</label>
+            <div class="pw-input-wrap">
+                <i class="fas fa-lock-open icon"></i>
+                <input type="password" id="pw-new" class="pw-input" placeholder="At least 8 characters" autocomplete="new-password"/>
+                <button type="button" class="pw-toggle-vis" onclick="togglePwVis('pw-new', this)" tabindex="-1">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="pw-field">
+            <label for="pw-re">Re-enter New Password</label>
+            <div class="pw-input-wrap">
+                <i class="fas fa-lock-open icon"></i>
+                <input type="password" id="pw-re" class="pw-input" placeholder="Repeat new password" autocomplete="new-password"/>
+                <button type="button" class="pw-toggle-vis" onclick="togglePwVis('pw-re', this)" tabindex="-1">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Error message -->
+        <div class="pw-error" id="pw-error">
+            <i class="fas fa-circle-exclamation"></i>
+            <span id="pw-error-msg"></span>
+        </div>
+
+        <!-- Forgot password -->
+        <div class="pw-forgot-wrap">
+            <button type="button" class="pw-forgot" onclick="toggleForgotPopup(event)">
+                Forgot your password?
+            </button>
+            <div class="forgot-popup" id="forgot-popup">
+                <i class="fas fa-circle-info" style="color:#7289da;margin-right:6px;"></i>
+                Contact <b>kacc</b> in Discord to reset or change your password.
+            </div>
+        </div>
+
+        <div class="pw-modal-footer">
+            <button type="button" class="btn-ghost" onclick="closePwModal()">Cancel</button>
+            <button type="button" class="btn-save" id="pw-submit-btn" onclick="submitPasswordChange()">
+                <div class="pw-spinner"></div>
+                <span class="pw-btn-label"><i class="fas fa-check"></i> Confirm</span>
+            </button>
         </div>
     </div>
 </div>
+
+
+<!-- ═══════════════════════════════════════
+     PROFILE SAVE CONFIRM MODAL
+═══════════════════════════════════════ -->
+<div class="confirm-backdrop" id="confirm-backdrop">
+    <div class="confirm-box" role="dialog" aria-modal="true">
+        <h3>Save changes?</h3>
+        <p id="confirm-desc">Review the fields below and confirm you want to save these profile changes.</p>
+        <div class="confirm-footer">
+            <button type="button" class="btn-ghost" onclick="closeConfirm()" style="padding:8px 16px;border-radius:8px;border:1.5px solid rgba(255,255,255,.12);background:transparent;color:#a0a0b0;font-size:13px;font-family:inherit;cursor:pointer;">Cancel</button>
+            <button type="button" class="btn-save" id="confirm-ok" style="padding:8px 18px;border-radius:8px;border:none;background:var(--accent,#6c63ff);color:#fff;font-size:13px;font-family:inherit;font-weight:600;cursor:pointer;">Save</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     PROFANITY WARNING TOAST (injected by JS)
+═══════════════════════════════════════ -->
 
 <script src="settings.js"></script>
 </body>
