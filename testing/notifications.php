@@ -94,8 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Upsert
         $stmt3 = mysqli_prepare($conn,
             "INSERT INTO user_notification_prefs (user_id, pref_key, pref_value)
-             VALUES (?, ?, ?)
-             ON DUPLICATE KEY UPDATE pref_value = VALUES(pref_value)"
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE pref_value = VALUES(pref_value)"
         );
         mysqli_stmt_bind_param($stmt3, "sss", $staffId, $k, $val);
         mysqli_stmt_execute($stmt3);
