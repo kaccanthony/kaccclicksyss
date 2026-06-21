@@ -1,7 +1,6 @@
 <?php
 session_start();
-
-require_once '/conf/cnn.php';
+require_once '/conf/cnn.php'; // adjust to your actual path
 
 if (isset($_GET['logout'])) {
     session_destroy();
