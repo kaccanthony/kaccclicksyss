@@ -57,7 +57,7 @@ foreach (($roleCards[$role] ?? []) as $key) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="../public/assets/images/icons/YSS Logo.png">
+    <link rel="icon" type="image/png" href="/public/assets/images/YSS Logo.png">
     <title>YSS – Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,7 +76,7 @@ foreach (($roleCards[$role] ?? []) as $key) {
     <div class="logo-wrap">
         <div class="pulse-ring"></div>
         <div class="pulse-ring ring2"></div>
-        <img src="/public/assets/images/icons/YSS Logo.png" alt="YSS Logo" class="logo-img" />
+        <img src="/public/assets/images/YSS Logo.png" alt="YSS Logo" class="logo-img" />
     </div>
     <span class="app-name">YSS Session Manager</span>
 
