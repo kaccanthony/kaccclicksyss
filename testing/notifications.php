@@ -200,7 +200,6 @@ unset($_SESSION['db_error']);
 
             <?php if ($isStaff): ?>
             <div class="panel-eyebrow"><i class="fas fa-shield-halved"></i> Staff Notifications</div>
-            <p class="panel-desc">These appear only while you are active in a session as host, co-host, or assistant.</p>
 
             <!-- Session Reminder -->
             <div class="notif-card">
@@ -311,7 +310,6 @@ unset($_SESSION['db_error']);
         <div class="notif-panel <?= $isStaff ? 'hidden' : '' ?>" id="panel-user">
 
             <div class="panel-eyebrow"><i class="fas fa-user"></i> General Notifications</div>
-            <p class="panel-desc">These apply to your account regardless of your staff role.</p>
 
             <!-- Session Reminder -->
             <div class="notif-card">

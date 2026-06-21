@@ -158,11 +158,6 @@ html, body {
     letter-spacing: .10em; text-transform: uppercase;
     color: rgba(255,255,255,.35); margin-bottom: 8px;
 }
-.panel-desc {
-    font-size: .83rem; color: rgba(255,255,255,.38);
-    margin-bottom: 20px; line-height: 1.5;
-}
-
 /* ── Notification card ── */
 .notif-card {
     display: flex; align-items: center;

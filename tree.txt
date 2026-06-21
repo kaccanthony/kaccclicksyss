@@ -1,0 +1,58 @@
+Session Management System
+│
+├── Owner
+│   ├── Full system access
+│   ├── Manage all roles
+│   ├── Change permissions
+│   └── View all logs
+│
+├── Management Team
+│   │
+│   ├── General Manager
+│   │   ├── Oversees the whole operation
+│   │   ├── Manages Head Staff
+│   │   ├── Approves major sessions
+│   │   └── Reviews reports
+│   │
+│   └── Manager
+│       ├── Creates and manages sessions
+│       ├── Assigns staff
+│       ├── Handles session problems
+│       └── Monitors activity
+│
+├── Head Staff Team
+│   │
+│   ├── Head Staff
+│   │   ├── Supervises Staff
+│   │   ├── Hosts large sessions
+│   │   ├── Trains new staff
+│   │   └── Reports to Managers
+│   │
+│   └── Senior Staff
+│       ├── Experienced session staff
+│       ├── Helps Head Staff
+│       └── Mentors Staff
+│
+├── Staff Team
+│   │
+│   ├── Staff
+│   │   ├── Runs assigned sessions
+│   │   ├── Handles users
+│   │   ├── Takes attendance
+│   │   └── Reports issues
+│   │
+│   └── Trainee Staff
+│       ├── Learning procedures
+│       ├── Can assist sessions
+│       └── Needs supervision
+│
+└── Users
+    │
+    ├── Verified User
+    │   ├── Join sessions
+    │   ├── View schedules
+    │   └── Update profile
+    │
+    └── Guest
+        ├── View public sessions
+        └── Request access
