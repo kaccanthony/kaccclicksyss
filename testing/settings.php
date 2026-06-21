@@ -112,9 +112,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $s4 = mysqli_prepare($conn,
             "UPDATE staff_list
-            SET staff_display_name=?, staff_username=?, staff_roblox_name=?, hide_stats=? 
+            SET staff_display_name=?, staff_name=?, staff_roblox_name=?, hide_stats=? 
             WHERE staff_id=?");
-        mysqli_stmt_bind_param($s4, "sssss", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
+        mysqli_stmt_bind_param($s4, "sssis", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
         mysqli_stmt_execute($s4);
 
         // Update session display name
@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             "UPDATE user_list 
             SET user_display_name=?, user_name=?, user_roblox_name=?, hide_stats=? 
             WHERE user_id=?");
-        mysqli_stmt_bind_param($s5, "sssss", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
+        mysqli_stmt_bind_param($s5, "sssis", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
         mysqli_stmt_execute($s5);
 
         header('Location: settings.php?saved=profile');
@@ -150,14 +150,14 @@ unset($_SESSION['db_error']);
 // // ── Current profile values ──
 $cur = [];
 if ($isStaff && $staffRow) {
-    $cur['display_name']     = $staffRow['display_name']     ?? '';
-    $cur['discord_username'] = $staffRow['discord_username'] ?? '';
+    $cur['display_name']     = $staffRow['staff_display_name']     ?? '';
+    $cur['discord_username'] = $staffRow['staff_name'] ?? '';
     $cur['discord_id']       = $staffRow['staff_id']         ?? '';
     $cur['roblox_name']      = $staffRow['staff_roblox_name']?? '';
     $cur['hide_stats']       = $staffRow['hide_stats']       ?? 0;
 } elseif ($isUser && $userRow) {
-    $cur['display_name']        = $userRow['display_name']        ?? '';
-    $cur['discord_username']    = $userRow['discord_username']    ?? '';
+    $cur['display_name']        = $userRow['user_display_name']        ?? '';
+    $cur['discord_username']    = $userRow['user_name']    ?? '';
     $cur['discord_id']          = $userRow['user_id']             ?? '';
     $cur['roblox_name']         = $userRow['roblox_name']         ?? '';
     $cur['hide_trainee_stats']  = $userRow['hide_trainee_stats']  ?? 0;
