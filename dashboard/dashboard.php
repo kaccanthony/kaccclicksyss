@@ -5,12 +5,12 @@ require_once '/conf/cnn.php'; // adjust to your actual path
 if (isset($_GET['logout'])) {
     session_destroy();
     setcookie('remember_token', '', time() - 3600, '/', '', true, true);
-    header('Location: /modules/auth/login.php');
+    header('Location: /login/login.php');
     exit;
 }
 
 if (!isset($_SESSION['user'])) {
-    header('Location: /modules/auth/login/login.php');
+    header('Location: /login/login.php');
     exit;
 }
 
@@ -40,7 +40,7 @@ if ($staffId) {
 
 if (empty($user['role'])) {
     $_SESSION['error'] = 'Your account has no role assigned. Contact an admin.';
-    header('Location: /modules/auth/login/login.php');
+    header('Location: /login/login.php');
     exit;
 }
 
@@ -80,7 +80,7 @@ foreach (($roleCards[$role] ?? []) as $key) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/6c33013ae6.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="/public/assets/css/dashboard.css"/>
+    <link rel="stylesheet" href="dashboard.css"/>
 </head>
 <body>
 <div id="bg"></div>
@@ -174,6 +174,6 @@ foreach (($roleCards[$role] ?? []) as $key) {
     </div>
 </main>
 
-<script src="/public/assets/js/dashboard.js"></script>
+<script src="dashboard.js"></script>
 </body>
 </html>
