@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             "UPDATE staff_list
             SET staff_display_name=?, staff_username=?, staff_roblox_name=?, hide_stats=? 
             WHERE staff_id=?");
-        mysqli_stmt_bind_param($s4, "sssii", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
+        mysqli_stmt_bind_param($s4, "ssssi", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
         mysqli_stmt_execute($s4);
 
         // Update session display name
@@ -129,13 +129,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $display_name        = trim($_POST['display_name']        ?? '');
         $discord_username    = trim($_POST['discord_username']    ?? '');
         $roblox_name         = trim($_POST['roblox_name']         ?? '');
-        $hide_trainee_stats  = isset($_POST['hide_trainee_stats']) ? 1 : 0;
+        $hide_trainee_stats  = isset($_POST['hide_stats']) ? 1 : 0;
 
         $s5 = mysqli_prepare($conn,
             "UPDATE user_list 
-            SET user_display_name=?, user_name=?, user_roblox_name=?, hide_trainee_stats=? 
+            SET user_display_name=?, user_name=?, user_roblox_name=?, hide_stats=? 
             WHERE user_id=?");
-        mysqli_stmt_bind_param($s5, "sssii", $display_name, $discord_username, $roblox_name, $hide_trainee_stats, $staffId);
+        mysqli_stmt_bind_param($s5, "ssssi", $display_name, $discord_username, $roblox_name, $hide_trainee_stats, $staffId);
         mysqli_stmt_execute($s5);
 
         header('Location: settings.php?saved=profile');
