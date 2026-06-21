@@ -812,7 +812,7 @@ if ($isStaff && $staffRow) {
         <p id="confirm-desc">Review the fields below and confirm you want to save these profile changes.</p>
         <div class="confirm-footer">
             <button type="button" class="btn-ghost" onclick="closeConfirm()" style="padding:8px 16px;border-radius:8px;border:1.5px solid rgba(255,255,255,.12);background:transparent;color:#a0a0b0;font-size:13px;font-family:inherit;cursor:pointer;">Cancel</button>
-            <button type="button" class="btn-save" id="confirm-ok" style="padding:8px 18px;border-radius:8px;border:none;background:var(--accent,#6c63ff);color:#fff;font-size:13px;font-family:inherit;font-weight:600;cursor:pointer;">Save</button>
+            <button type="button" class="btn-save" id="confirm-ok-btn" style="padding:8px 18px;border-radius:8px;border:none;background:var(--accent,#6c63ff);color:#fff;font-size:13px;font-family:inherit;font-weight:600;cursor:pointer;">Save</button>
         </div>
     </div>
 </div>
