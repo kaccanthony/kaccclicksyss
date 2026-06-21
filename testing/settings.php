@@ -259,7 +259,7 @@ if ($isStaff && $staffRow) {
     </div>
 
     <!-- ════════════════════════════════════════
-         PROFILE TAB
+        PROFILE TAB
     ════════════════════════════════════════ -->
     <div class="settings-panel" id="panel-profile">
 
@@ -286,8 +286,8 @@ if ($isStaff && $staffRow) {
                         <?php endif; ?>
                     </div>
                     <div class="profile-avatar-info">
-                        <div class="profile-avatar-name"><?= htmlspecialchars($cur['display_name'] ?: $username) ?></div>
-                        <div class="profile-avatar-role"><?= $role ?></div>
+                        <div class="profile-avatar-name"><?= htmlspecialchars($cur['staff_display_name'] ?: $cur['staff_name']) ?></div>
+                        <div class="profile-avatar-role"><?= htmlspecialchars($cur['staff_rank']) ?></div>
                     </div>
                 </div>
 
@@ -298,9 +298,9 @@ if ($isStaff && $staffRow) {
                         <div class="form-input-wrap">
                             <i class="fas fa-signature form-input-icon"></i>
                             <input type="text" name="display_name" id="staff-display-name"
-                                class="form-input" maxlength="50"
+                                class="form-input" maxlength="200"
                                 placeholder="How you appear on the platform"
-                                value="<?= htmlspecialchars($cur['display_name']) ?>"
+                                value="<?= htmlspecialchars($cur['staff_display_name']) ?>"
                                 data-confirm="display name"
                                 data-profanity-check="true"/>
                         </div>
@@ -312,9 +312,9 @@ if ($isStaff && $staffRow) {
                         <div class="form-input-wrap">
                             <i class="fab fa-discord form-input-icon"></i>
                             <input type="text" name="discord_username" id="staff-discord-username"
-                                class="form-input" maxlength="100"
+                                class="form-input" maxlength="200"
                                 placeholder="your_discord_username"
-                                value="<?= htmlspecialchars($cur['discord_username']) ?>"
+                                value="<?= htmlspecialchars($cur['staff_name']) ?>"
                                 data-confirm="Discord username"
                                 data-profanity-check="true"/>
                         </div>
@@ -338,7 +338,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="roblox_name" id="staff-roblox-name"
                                 class="form-input" maxlength="100"
                                 placeholder="Your Roblox username"
-                                value="<?= htmlspecialchars($cur['roblox_name']) ?>"
+                                value="<?= htmlspecialchars($cur['staff_roblox_name']) ?>"
                                 data-confirm="Roblox username"
                                 data-profanity-check="true"/>
                         </div>
@@ -403,7 +403,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="display_name" id="user-display-name"
                                 class="form-input" maxlength="50"
                                 placeholder="How you appear on the platform"
-                                value="<?= htmlspecialchars($cur['display_name']) ?>"
+                                value="<?= htmlspecialchars($cur['user_display_name']) ?>"
                                 data-confirm="display name"
                                 data-profanity-check="true"/>
                         </div>
@@ -416,7 +416,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="discord_username" id="user-discord-username"
                                 class="form-input" maxlength="100"
                                 placeholder="your_discord_username"
-                                value="<?= htmlspecialchars($cur['discord_username']) ?>"
+                                value="<?= htmlspecialchars($cur['user_name']) ?>"
                                 data-confirm="Discord username"
                                 data-profanity-check="true"/>
                         </div>
@@ -438,7 +438,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="roblox_name" id="user-roblox-name"
                                 class="form-input" maxlength="100"
                                 placeholder="Your Roblox username"
-                                value="<?= htmlspecialchars($cur['roblox_name']) ?>"
+                                value="<?= htmlspecialchars($cur['user_roblox_name']) ?>"
                                 data-confirm="Roblox username"
                                 data-profanity-check="true"/>
                         </div>
