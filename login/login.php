@@ -36,7 +36,7 @@ if (isset($_COOKIE['remember_token'])) {
             'role'        => $row['staff_rank'],
             'perm_level'  => $row['staff_perm_level'],
             'roblox_name' => $row['staff_roblox_name'],
-            'avatar'      => $row['staff_avatar'],
+            'avatar'      => $row['user_id'],
         ];
         header('Location: ../dashboard/dashboard.php');
         exit;
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'role'        => $row['staff_rank'],
         'perm_level'  => $row['staff_perm_level'],
         'roblox_name' => $row['staff_roblox_name'],
-        'avatar'      => $row['staff_avatar'],
+        'avatar'      => $row['user_id'],
     ];
 
     // ── Set remember me cookie ──

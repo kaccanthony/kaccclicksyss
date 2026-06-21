@@ -85,7 +85,7 @@ foreach (($roleCards[$role] ?? []) as $key) {
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
                 <?php if ($avatar): ?>
-                    <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                    <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                 <?php else: ?>
                     <i class="fas fa-user"></i> 
                 <?php endif; ?>

@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    header('Location: notifications.php?saved=1');
+    header('Location: settings.php?saved=1');
     exit;
 }
 
@@ -117,7 +117,7 @@ unset($_SESSION['db_error']);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/6c33013ae6.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="notifications.css?v=<?= time() ?>"/>
+    <link rel="stylesheet" href="settings.css?v=<?= time() ?>"/>
 </head>
 <body>
 <div id="bg"></div>
@@ -135,7 +135,7 @@ unset($_SESSION['db_error']);
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
                 <?php if ($avatar): ?>
-                    <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                    <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                 <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
             </div>
             <div class="profile-meta">
@@ -148,7 +148,7 @@ unset($_SESSION['db_error']);
             <div class="popup-header">
                 <div class="popup-avatar">
                     <?php if ($avatar): ?>
-                        <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                        <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                     <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
                 </div>
                 <div>
@@ -307,7 +307,7 @@ unset($_SESSION['db_error']);
             </div>
             <?php endif; ?>
 
-        </div><!-- /panel-staff -->
+        </div>
 
         <!-- ════ USER PANEL ════ -->
         <div class="notif-panel <?= $isStaff ? 'hidden' : '' ?>" id="panel-user">
@@ -418,7 +418,7 @@ unset($_SESSION['db_error']);
                 </div>
             </div>
 
-        </div><!-- /panel-user -->
+        </div>
 
         <!-- Save -->
         <div class="form-actions">
@@ -430,6 +430,6 @@ unset($_SESSION['db_error']);
     </form>
 </main>
 
-<script src="notifications.js"></script>
+<script src="settings.js"></script>
 </body>
 </html>
