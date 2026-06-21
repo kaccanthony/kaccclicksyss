@@ -706,22 +706,6 @@ if ($isStaff && $staffRow) {
     </div>
 </div>
 
-<!-- ════ PROFANITY WARNING TOAST ════ -->
-<div class="profanity-toast" id="profanity-toast">
-    <div class="profanity-toast-inner">
-        <i class="fas fa-triangle-exclamation"></i>
-        <div>
-            <strong>Profanity Detected</strong>
-            <p>Your input contains inappropriate language and cannot be saved.</p>
-        </div>
-        <button onclick="closeProfanityToast()" class="profanity-toast-close"><i class="fas fa-xmark"></i></button>
-    </div>
-</div>
-
-<script>
-    // Pass PHP values to JS
-    const PROFANITY_API_KEY = 'jygyD4NPAm50LpD7kRy0Dkkrm5yOE3k04n9pNPdI'; // ← replace with your key
-</script>
 <script src="settings.js"></script>
 </body>
 </html>
