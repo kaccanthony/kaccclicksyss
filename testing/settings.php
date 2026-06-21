@@ -472,7 +472,7 @@ if ($isStaff && $staffRow) {
     </div><!-- /panel-profile -->
 
     <!-- ════════════════════════════════════════
-         STAFF NOTIFICATIONS TAB
+        STAFF NOTIFICATIONS TAB
     ════════════════════════════════════════ -->
     <?php if ($isStaff): ?>
     <div class="settings-panel hidden" id="panel-staff-notifs">
