@@ -1,6 +1,6 @@
 <?php
 session_start();
-include 'cnn.php';
+include '/conf/cnn.php';
 
 $error   = $_SESSION['error']   ?? '';
 $success = $_SESSION['success'] ?? '';
@@ -9,7 +9,7 @@ unset($_SESSION['error'], $_SESSION['success']);
 
 // ── If already logged in via session or cookie, skip login ──
 if (isset($_SESSION['user'])) {
-    header('Location: ../dashboard/dashboard.php');
+    header('Location: /modules/portal/pages/dashboard.php');
     exit;
 }
 
@@ -39,7 +39,7 @@ if (isset($_COOKIE['remember_token'])) {
             'roblox_name' => $row['staff_roblox_name'],
             'avatar'      => $row['user_id'],
         ];
-        header('Location: ../dashboard/dashboard.php');
+        header('Location: /modules/portal/dashboard/dashboard.php');
         exit;
     }
 
@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $_SESSION['success'] = 'Login successful! Redirecting…';
-    header('Location: ../dashboard/dashboard.php');
+    header('Location: /modules/portal/pages/dashboard.php');
     exit;
 }
 ?>
@@ -120,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="login.css?v=<?= filemtime(__DIR__ . '/login.css') ?>" />
+    <link rel="stylesheet" href="/public/assets/css/login.css?v=<?= filemtime(__DIR__ . '/login.css') ?>" />
 </head>
 <body>
 <div id="bg"></div>
@@ -177,6 +177,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 <script src="https://kit.fontawesome.com/6c33013ae6.js" crossorigin="anonymous"></script>
-<script src="script.js"></script>
+<script src="login.js"></script>
 </body>
 </html>

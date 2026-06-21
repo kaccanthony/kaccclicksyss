@@ -5,12 +5,12 @@ session_start();
 if (isset($_GET['logout'])) {
     session_destroy();
     setcookie('remember_token', '', time() - 3600, '/', '', true, true);
-    header('Location: ../login/login.php');
+    header('Location: /modules/auth/login.php');
     exit;
 }
 
 if (!isset($_SESSION['user'])) {
-    header('Location: ../login/login.php');
+    header('Location: /modules/auth/login/login.php');
     exit;
 }
 
@@ -23,17 +23,17 @@ $avatar = htmlspecialchars($user['avatar'] ?? '');
 
 if (empty($user['role'])) {
     $_SESSION['error'] = 'Your account has no role assigned. Contact an admin.';
-    header('Location: ../login/login.php');
+    header('Location: /modules/auth/login/login.php');
     exit;
 }
 
 $allCards = [
-    'booking'       => ['label' => 'Manage Session(s)', 'sub' => 'Manager', 'icon' => '../icons/OM.png',   'href' => 'booking.php'], // session booking
-    'setup'         => ['label' => 'Session Setup'  ,  'sub' => 'Head-Staff' , 'icon' => '../icons/HS.png',          'href' => 'setup.php'], // session setup
-    'panel_host'    => ['label' => 'Session Panel',   'sub' => 'Host Authorized',   'icon' => '../icons/HS.png',            'href' => 'panel_host.php'], // session panel host quick access
-    'panel_cohost'  => ['label' => 'Session Panel',   'sub' => 'Co-Host Authorized','icon' => '../icons/ST.png',      'href' => 'panel_cohost.php'], // session panel co-host quick access
-    'panel_asst'    => ['label' => 'Session Panel',   'sub' => 'Assistant Authorized','icon' => '../icons/ST.png',        'href' => 'panel_asst.php'], // session panel assistant quick access
-    'active'        => ['label' => 'Active Session',                      'icon' => '../icons/Inprogress.png',      'href' => 'active.php'], // active session
+    'booking'       => ['label' => 'Manage Session(s)', 'sub' => 'Manager', 'icon' => '/public/aseets/images/icons/OM.png',   'href' => 'booking.php'], // session booking
+    'setup'         => ['label' => 'Session Setup'  ,  'sub' => 'Head-Staff' , 'icon' => '/public/aseets/images/icons/HS.png',          'href' => 'setup.php'], // session setup
+    'panel_host'    => ['label' => 'Session Panel',   'sub' => 'Host Authorized',   'icon' => '/public/aseets/images/icons/HS.png',            'href' => 'panel_host.php'], // session panel host quick access
+    'panel_cohost'  => ['label' => 'Session Panel',   'sub' => 'Co-Host Authorized','icon' => '/public/aseets/images/icons/ST.png',      'href' => 'panel_cohost.php'], // session panel co-host quick access
+    'panel_asst'    => ['label' => 'Session Panel',   'sub' => 'Assistant Authorized','icon' => '/public/aseets/images/icons/ST.png',        'href' => 'panel_asst.php'], // session panel assistant quick access
+    'active'        => ['label' => 'Active Session',                      'icon' => '/public/aseets/images/icons/Inprogress.png',      'href' => 'active.php'], // active session
     'upcoming'      => ['label' => 'Upcoming Sessions',                   'icon' => 'fa-clock',           'href' => 'upcoming.php'], // upcoming sessions
     'past'          => ['label' => 'Past Sessions',                       'icon' => 'fa-rectangle-list',  'href' => 'past.php'], // past sessions
     'staff'         => ['label' => 'Staff Overview',                      'icon' => 'fa-users',           'href' => 'staff.php'], // staff overview 
@@ -158,6 +158,6 @@ foreach (($roleCards[$role] ?? []) as $key) {
     </div>
 </main>
 
-<script src="dashboard.js"></script>
+<script src="/public/assets/js/dashboard.js"></script>
 </body>
 </html>
