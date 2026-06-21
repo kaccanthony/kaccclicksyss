@@ -111,7 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $hide_stats       = isset($_POST['hide_stats']) ? 1 : 0;
 
         $s4 = mysqli_prepare($conn,
-            "UPDATE staff_list SET staff_display_name=?, staff_username=?, staff_roblox_name=?, hide_stats=? WHERE staff_id=?");
+            "UPDATE staff_list
+            SET staff_display_name=?, staff_username=?, staff_roblox_name=?, hide_stats=? 
+            WHERE staff_id=?");
         mysqli_stmt_bind_param($s4, "sssii", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
         mysqli_stmt_execute($s4);
 
@@ -130,7 +132,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $hide_trainee_stats  = isset($_POST['hide_trainee_stats']) ? 1 : 0;
 
         $s5 = mysqli_prepare($conn,
-            "UPDATE user_list SET user_display_name=?, user_name=?, user_roblox_name=?, hide_trainee_stats=? WHERE user_id=?");
+            "UPDATE user_list 
+            SET user_display_name=?, user_name=?, user_roblox_name=?, hide_trainee_stats=? 
+            WHERE user_id=?");
         mysqli_stmt_bind_param($s5, "sssii", $display_name, $discord_username, $roblox_name, $hide_trainee_stats, $staffId);
         mysqli_stmt_execute($s5);
 
@@ -143,26 +147,26 @@ $saved   = $_GET['saved'] ?? '';
 $dbError = $_SESSION['db_error'] ?? '';
 unset($_SESSION['db_error']);
 
-// ── Current profile values ──
+// // ── Current profile values ──
 $cur = [];
 if ($isStaff && $staffRow) {
-    $cur['display_name']     = $staffRow['display_name']     ?? '';
-    $cur['discord_username'] = $staffRow['discord_username'] ?? '';
+//     $cur['display_name']     = $staffRow['display_name']     ?? '';
+//     $cur['discord_username'] = $staffRow['discord_username'] ?? '';
     $cur['discord_id']       = $staffRow['staff_id']         ?? '';
-    $cur['roblox_name']      = $staffRow['staff_roblox_name']?? '';
+//     $cur['roblox_name']      = $staffRow['staff_roblox_name']?? '';
     $cur['hide_stats']       = $staffRow['hide_stats']       ?? 0;
 } elseif ($isUser && $userRow) {
-    $cur['display_name']        = $userRow['display_name']        ?? '';
-    $cur['discord_username']    = $userRow['discord_username']    ?? '';
+//     $cur['display_name']        = $userRow['display_name']        ?? '';
+//     $cur['discord_username']    = $userRow['discord_username']    ?? '';
     $cur['discord_id']          = $userRow['user_id']             ?? '';
-    $cur['roblox_name']         = $userRow['roblox_name']         ?? '';
+//     $cur['roblox_name']         = $userRow['roblox_name']         ?? '';
     $cur['hide_trainee_stats']  = $userRow['hide_trainee_stats']  ?? 0;
 } else {
-    // Fallback to session
-    $cur['display_name']     = '';
-    $cur['discord_username'] = $user['username'] ?? '';
+//     // Fallback to session
+//     $cur['display_name']     = '';
+//     $cur['discord_username'] = $user['username'] ?? '';
     $cur['discord_id']       = $staffId;
-    $cur['roblox_name']      = $user['roblox_name'] ?? '';
+//     $cur['roblox_name']      = $user['roblox_name'] ?? '';
     $cur['hide_stats']       = 0;
 }
 ?>
@@ -263,7 +267,7 @@ if ($isStaff && $staffRow) {
     ════════════════════════════════════════ -->
     <div class="settings-panel" id="panel-profile">
 
-        <?php if ($isStaff): ?>
+        <?php if ($isStaff && $staffRow): ?>
         <!-- ── STAFF PROFILE FORM ── -->
         <form method="POST" action="" id="form-profile-staff">
             <input type="hidden" name="action" value="save_profile_staff"/>
@@ -286,8 +290,8 @@ if ($isStaff && $staffRow) {
                         <?php endif; ?>
                     </div>
                     <div class="profile-avatar-info">
-                        <div class="profile-avatar-name"><?= htmlspecialchars($cur['staff_display_name'] ?: $cur['staff_name']) ?></div>
-                        <div class="profile-avatar-role"><?= htmlspecialchars($cur['staff_rank']) ?></div>
+                        <div class="profile-avatar-name"><?= htmlspecialchars($staffRow['staff_display_name'] ?: $staffRow['staff_name']) ?></div>
+                        <div class="profile-avatar-role"><?= htmlspecialchars($staffRow['staff_rank']) ?></div>
                     </div>
                 </div>
 
@@ -300,7 +304,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="display_name" id="staff-display-name"
                                 class="form-input" maxlength="200"
                                 placeholder="How you appear on the platform"
-                                value="<?= htmlspecialchars($cur['staff_display_name']) ?>"
+                                value="<?= htmlspecialchars($staffRow['staff_display_name']) ?>"
                                 data-confirm="display name"
                                 data-profanity-check="true"/>
                         </div>
@@ -314,7 +318,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="discord_username" id="staff-discord-username"
                                 class="form-input" maxlength="200"
                                 placeholder="your_discord_username"
-                                value="<?= htmlspecialchars($cur['staff_name']) ?>"
+                                value="<?= htmlspecialchars($staffRow['staff_name']) ?>"
                                 data-confirm="Discord username"
                                 data-profanity-check="true"/>
                         </div>
@@ -338,7 +342,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="roblox_name" id="staff-roblox-name"
                                 class="form-input" maxlength="100"
                                 placeholder="Your Roblox username"
-                                value="<?= htmlspecialchars($cur['staff_roblox_name']) ?>"
+                                value="<?= htmlspecialchars($staffRow['staff_roblox_name']) ?>"
                                 data-confirm="Roblox username"
                                 data-profanity-check="true"/>
                         </div>
@@ -371,7 +375,7 @@ if ($isStaff && $staffRow) {
             </div>
         </form>
 
-        <?php elseif ($isUser): ?>
+        <?php elseif ($isUser && $userRow): ?>
         <!-- ── USER PROFILE FORM ── -->
         <form method="POST" action="" id="form-profile-user">
             <input type="hidden" name="action" value="save_profile_user"/>
@@ -390,7 +394,7 @@ if ($isStaff && $staffRow) {
                         <?php endif; ?>
                     </div>
                     <div class="profile-avatar-info">
-                        <div class="profile-avatar-name"><?= htmlspecialchars($cur['display_name'] ?: $username) ?></div>
+                        <div class="profile-avatar-name"><?= htmlspecialchars($userRow['display_name'] ?: $username) ?></div>
                         <div class="profile-avatar-hint">Avatar is pulled from your Roblox account automatically.</div>
                     </div>
                 </div>
@@ -403,7 +407,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="display_name" id="user-display-name"
                                 class="form-input" maxlength="50"
                                 placeholder="How you appear on the platform"
-                                value="<?= htmlspecialchars($cur['user_display_name']) ?>"
+                                value="<?= htmlspecialchars($userRow['user_display_name']) ?>"
                                 data-confirm="display name"
                                 data-profanity-check="true"/>
                         </div>
@@ -416,7 +420,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="discord_username" id="user-discord-username"
                                 class="form-input" maxlength="100"
                                 placeholder="your_discord_username"
-                                value="<?= htmlspecialchars($cur['user_name']) ?>"
+                                value="<?= htmlspecialchars($userRow['user_name']) ?>"
                                 data-confirm="Discord username"
                                 data-profanity-check="true"/>
                         </div>
@@ -438,7 +442,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="roblox_name" id="user-roblox-name"
                                 class="form-input" maxlength="100"
                                 placeholder="Your Roblox username"
-                                value="<?= htmlspecialchars($cur['user_roblox_name']) ?>"
+                                value="<?= htmlspecialchars($userRow['user_roblox_name']) ?>"
                                 data-confirm="Roblox username"
                                 data-profanity-check="true"/>
                         </div>
