@@ -171,403 +171,6 @@ if ($isStaff && $staffRow) {
     <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/6c33013ae6.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="settings.css?v=<?= filemtime(__DIR__ . '/settings.css') ?>"/>
-    <style>
-        /* ─── Avatar upload button ─── */
-        .profile-avatar-wrap {
-            position: relative;
-            display: inline-block;
-            flex-shrink: 0;
-        }
-        .avatar-upload-btn {
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: var(--accent, #6c63ff);
-            border: 2px solid var(--bg-card, #1e1e2e);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 12px;
-            transition: transform .15s, background .15s;
-            z-index: 2;
-        }
-        .avatar-upload-btn:hover { transform: scale(1.12); background: var(--accent-hover, #5a54e0); }
-        #avatar-file-input { display: none; }
-
-        /* ─── Avatar upload progress overlay ─── */
-        .avatar-uploading-ring {
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: rgba(0,0,0,.45);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .2s;
-            z-index: 3;
-        }
-        .avatar-uploading-ring.active { opacity: 1; }
-        .avatar-uploading-ring .spinner {
-            width: 28px; height: 28px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin .7s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ─── Change password button ─── */
-        .profile-header-row {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        .profile-header-right {
-            margin-left: auto;
-        }
-        .btn-change-pw {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: 1.5px solid var(--border, rgba(255,255,255,.12));
-            background: transparent;
-            color: var(--text-muted, #a0a0b0);
-            font-size: 13px;
-            font-family: inherit;
-            cursor: pointer;
-            transition: border-color .15s, color .15s, background .15s;
-        }
-        .btn-change-pw:hover {
-            border-color: var(--accent, #6c63ff);
-            color: var(--accent, #6c63ff);
-            background: rgba(108,99,255,.08);
-        }
-
-        /* ─── Password modal ─── */
-        .pw-modal-backdrop {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.55);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        .pw-modal-backdrop.open { display: flex; }
-        .pw-modal {
-            background: var(--bg-card, #1e1e2e);
-            border: 1px solid var(--border, rgba(255,255,255,.12));
-            border-radius: 14px;
-            width: 100%;
-            max-width: 420px;
-            padding: 28px 28px 24px;
-            box-shadow: 0 24px 60px rgba(0,0,0,.45);
-            position: relative;
-            animation: modalIn .2s ease;
-        }
-        @keyframes modalIn {
-            from { opacity: 0; transform: translateY(14px) scale(.97); }
-            to   { opacity: 1; transform: none; }
-        }
-        .pw-modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .pw-modal-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text, #e0e0f0);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .pw-modal-title i { color: var(--accent, #6c63ff); }
-        .pw-modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted, #a0a0b0);
-            font-size: 16px;
-            cursor: pointer;
-            padding: 4px 6px;
-            border-radius: 6px;
-            transition: color .15s, background .15s;
-        }
-        .pw-modal-close:hover { color: var(--text, #e0e0f0); background: rgba(255,255,255,.06); }
-        .pw-field {
-            margin-bottom: 14px;
-        }
-        .pw-field label {
-            display: block;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-muted, #a0a0b0);
-            margin-bottom: 6px;
-            letter-spacing: .4px;
-            text-transform: uppercase;
-        }
-        .pw-input-wrap {
-            position: relative;
-        }
-        .pw-input-wrap i.icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted, #a0a0b0);
-            font-size: 13px;
-            pointer-events: none;
-        }
-        .pw-input {
-            width: 100%;
-            padding: 10px 38px 10px 36px;
-            background: var(--bg-input, rgba(255,255,255,.05));
-            border: 1.5px solid var(--border, rgba(255,255,255,.1));
-            border-radius: 8px;
-            color: var(--text, #e0e0f0);
-            font-size: 14px;
-            font-family: inherit;
-            outline: none;
-            transition: border-color .15s, box-shadow .15s;
-            box-sizing: border-box;
-        }
-        .pw-input:focus {
-            border-color: var(--accent, #6c63ff);
-            box-shadow: 0 0 0 3px rgba(108,99,255,.18);
-        }
-        .pw-toggle-vis {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--text-muted, #a0a0b0);
-            cursor: pointer;
-            padding: 4px;
-            font-size: 13px;
-        }
-        .pw-toggle-vis:hover { color: var(--text, #e0e0f0); }
-        .pw-error {
-            display: none;
-            margin: 12px 0 4px;
-            padding: 9px 12px;
-            background: rgba(220,60,60,.12);
-            border: 1px solid rgba(220,60,60,.3);
-            border-radius: 7px;
-            color: #f87171;
-            font-size: 13px;
-        }
-        .pw-error.show { display: flex; align-items: center; gap: 8px; }
-        .pw-forgot {
-            background: none;
-            border: none;
-            color: var(--text-muted, #a0a0b0);
-            font-size: 12px;
-            cursor: pointer;
-            padding: 0;
-            margin-top: 6px;
-            text-decoration: underline;
-            text-underline-offset: 3px;
-        }
-        .pw-forgot:hover { color: var(--accent, #6c63ff); }
-        .pw-modal-footer {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border, rgba(255,255,255,.08));
-        }
-        .pw-modal-footer .btn-ghost {
-            padding: 9px 18px;
-            border-radius: 8px;
-            border: 1.5px solid var(--border, rgba(255,255,255,.12));
-            background: transparent;
-            color: var(--text-muted, #a0a0b0);
-            font-size: 13px;
-            font-family: inherit;
-            cursor: pointer;
-            transition: border-color .15s, color .15s;
-        }
-        .pw-modal-footer .btn-ghost:hover { border-color: var(--accent, #6c63ff); color: var(--text, #e0e0f0); }
-        .pw-modal-footer .btn-save {
-            padding: 9px 20px;
-            border-radius: 8px;
-            border: none;
-            background: var(--accent, #6c63ff);
-            color: #fff;
-            font-size: 13px;
-            font-family: inherit;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            transition: background .15s, opacity .15s;
-        }
-        .pw-modal-footer .btn-save:hover { background: var(--accent-hover, #5a54e0); }
-        .pw-modal-footer .btn-save:disabled { opacity: .55; cursor: not-allowed; }
-        .pw-modal-footer .btn-save .pw-spinner {
-            width: 14px; height: 14px;
-            border: 2px solid rgba(255,255,255,.4);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin .7s linear infinite;
-            display: none;
-        }
-        .pw-modal-footer .btn-save.loading .pw-spinner { display: block; }
-        .pw-modal-footer .btn-save.loading .pw-btn-label { display: none; }
-
-        /* ─── Confirm modal (profile save) ─── */
-        .confirm-backdrop {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.55);
-            backdrop-filter: blur(4px);
-            z-index: 1001;
-            align-items: center;
-            justify-content: center;
-        }
-        .confirm-backdrop.open { display: flex; }
-        .confirm-box {
-            background: var(--bg-card, #1e1e2e);
-            border: 1px solid var(--border, rgba(255,255,255,.12));
-            border-radius: 14px;
-            width: 100%;
-            max-width: 360px;
-            padding: 26px 24px 20px;
-            box-shadow: 0 24px 60px rgba(0,0,0,.45);
-            animation: modalIn .2s ease;
-        }
-        .confirm-box h3 {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text, #e0e0f0);
-            margin: 0 0 8px;
-        }
-        .confirm-box p {
-            font-size: 13px;
-            color: var(--text-muted, #a0a0b0);
-            margin: 0 0 20px;
-            line-height: 1.5;
-        }
-        .confirm-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        /* ─── Profanity warning toast (bottom-right) ─── */
-        .profanity-toast {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: #1e1e2e;
-            border: 1px solid rgba(220,60,60,.45);
-            border-radius: 12px;
-            padding: 14px 18px 14px 14px;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            max-width: 340px;
-            box-shadow: 0 12px 36px rgba(0,0,0,.45);
-            z-index: 2000;
-            animation: toastIn .25s ease;
-            color: var(--text, #e0e0f0);
-        }
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateY(14px); }
-            to   { opacity: 1; transform: none; }
-        }
-        .profanity-toast.hiding {
-            animation: toastOut .25s ease forwards;
-        }
-        @keyframes toastOut {
-            to { opacity: 0; transform: translateY(14px); }
-        }
-        .profanity-toast-icon {
-            width: 32px; height: 32px; flex-shrink: 0;
-            border-radius: 8px;
-            background: rgba(220,60,60,.15);
-            display: flex; align-items: center; justify-content: center;
-            color: #f87171;
-            font-size: 15px;
-        }
-        .profanity-toast-body { flex: 1; }
-        .profanity-toast-title {
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 3px;
-        }
-        .profanity-toast-msg {
-            font-size: 12px;
-            color: var(--text-muted, #a0a0b0);
-            line-height: 1.4;
-        }
-        .profanity-toast-close {
-            background: none; border: none;
-            color: var(--text-muted, #a0a0b0);
-            cursor: pointer; font-size: 13px; padding: 2px;
-            flex-shrink: 0; align-self: flex-start;
-        }
-        .profanity-toast-close:hover { color: var(--text, #e0e0f0); }
-
-        /* ─── Forgot password mini-popup ─── */
-        .forgot-popup {
-            position: absolute;
-            bottom: calc(100% + 8px);
-            left: 0;
-            background: var(--bg-card, #1e1e2e);
-            border: 1px solid var(--border, rgba(255,255,255,.12));
-            border-radius: 10px;
-            padding: 12px 14px;
-            font-size: 12.5px;
-            color: var(--text-muted, #a0a0b0);
-            line-height: 1.5;
-            max-width: 260px;
-            box-shadow: 0 8px 24px rgba(0,0,0,.35);
-            z-index: 10;
-            display: none;
-            animation: modalIn .15s ease;
-        }
-        .forgot-popup b { color: #7289da; }
-        .pw-forgot-wrap { position: relative; display: inline-block; }
-
-        /* ─── Profile picture section styling ─── */
-        .profile-avatar-row {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            flex-wrap: wrap;
-        }
-        .profile-avatar-big {
-            width: 72px; height: 72px;
-            border-radius: 50%;
-            background: var(--bg-input, rgba(255,255,255,.06));
-            border: 2px solid var(--border, rgba(255,255,255,.12));
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px;
-            color: var(--text-muted, #a0a0b0);
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-    </style>
 </head>
 <body>
 <div id="bg"></div>
@@ -669,8 +272,8 @@ if ($isStaff && $staffRow) {
                         <div class="profile-avatar-big" id="avatar-preview-wrap">
                             <?php if ($avatar): ?>
                                 <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar"
-                                     id="avatar-preview"
-                                     style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                                    id="avatar-preview"
+                                    style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                             <?php else: ?>
                                 <i class="fas fa-user" id="avatar-placeholder"></i>
                             <?php endif; ?>
@@ -684,7 +287,7 @@ if ($isStaff && $staffRow) {
                             <i class="fas fa-camera"></i>
                         </label>
                         <input type="file" id="avatar-file-input" name="avatar"
-                               accept="image/jpeg,image/png,image/gif,image/webp"/>
+                            accept="image/jpeg,image/png,image/gif,image/webp"/>
                     </div>
 
                     <div class="profile-avatar-info">
@@ -708,9 +311,9 @@ if ($isStaff && $staffRow) {
                         <div class="form-input-wrap">
                             <i class="fas fa-signature form-input-icon"></i>
                             <input type="text" name="display_name" id="staff-display-name"
-                                   class="form-input" maxlength="200"
-                                   placeholder="How you appear on the platform"
-                                   value="<?= htmlspecialchars($staffRow['staff_display_name']) ?>"/>
+                                class="form-input" maxlength="200"
+                                placeholder="How you appear on the platform"
+                                value="<?= htmlspecialchars($staffRow['staff_display_name']) ?>"/>
                         </div>
                     </div>
 
@@ -719,9 +322,9 @@ if ($isStaff && $staffRow) {
                         <div class="form-input-wrap">
                             <i class="fab fa-discord form-input-icon"></i>
                             <input type="text" name="discord_username" id="staff-discord-username"
-                                   class="form-input" maxlength="200"
-                                   placeholder="your_discord_username"
-                                   value="<?= htmlspecialchars($staffRow['staff_name']) ?>"/>
+                                class="form-input" maxlength="200"
+                                placeholder="your_discord_username"
+                                value="<?= htmlspecialchars($staffRow['staff_name']) ?>"/>
                         </div>
                     </div>
 
@@ -1213,11 +816,6 @@ if ($isStaff && $staffRow) {
         </div>
     </div>
 </div>
-
-
-<!-- ═══════════════════════════════════════
-     PROFANITY WARNING TOAST (injected by JS)
-═══════════════════════════════════════ -->
 
 <script src="settings.js"></script>
 </body>

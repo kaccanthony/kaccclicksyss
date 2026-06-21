@@ -8,6 +8,7 @@ profileBtn.addEventListener('click', e => {
     const open = profilePopup.classList.toggle('open');
     chev.classList.toggle('open', open);
 });
+
 document.addEventListener('click', e => {
     if (!profilePopup.contains(e.target) && !profileBtn.contains(e.target)) {
         profilePopup.classList.remove('open');
@@ -55,127 +56,18 @@ document.querySelectorAll('.save-toast').forEach(toast => {
     }, 3000);
 });
 
+// ── Profile Form Submit ─────────────────────────────
 async function submitProfileForm(formId, type) {
     const form = document.getElementById(formId);
-    const changedLabels = "profile settings";
-
-    openConfirm(changedLabels, () => {
-        form.submit();
-    });
-}
-
-// Confirm modal functions (unchanged)
-function openConfirm(label, onConfirm) {
-    document.getElementById('confirm-msg').textContent = 
-        `Are you sure you want to update your ${label}?`;
-    document.getElementById('confirm-backdrop').classList.add('open');
-
-    const btn = document.getElementById('confirm-ok-btn');
-    btn.onclick = () => {
-        closeConfirm();
-        onConfirm();
-    };
-}
-
-function closeConfirm() {
-    document.getElementById('confirm-backdrop').classList.remove('open');
-}
-
-/* ══════════════════════════════════════════════════════
-   PROFANITY FILTER
-   API: https://api.api-ninjas.com/v1/profanityfilter
-   Key is sent through a small proxy to avoid exposing it
-   client-side. If you'd rather embed directly, replace
-   the fetch URL with the API endpoint and add the header:
-     'X-Api-Key': 'YOUR_KEY_HERE'
-══════════════════════════════════════════════════════ */
-const PROFANITY_API = 'https://api.api-ninjas.com/v1/profanityfilter';
-const PROFANITY_KEY = 'jygyD4NPAm50LpD7kRy0Dkkrm5yOE3k04n9pNPdI'; // ← replace with your key
-
-async function checkProfanity(text) {
-    if (!text.trim()) return false;
-    try {
-        const res = await fetch(`${PROFANITY_API}?text=${encodeURIComponent(text)}`, {
-            headers: { 'X-Api-Key': PROFANITY_KEY }
-        });
-        if (!res.ok) return false; // if API fails, allow save
-        const data = await res.json();
-        return data.has_profanity === true;
-    } catch {
-        return false; // network error → allow
-    }
-}
-
-/* ── Show profanity toast ── */
-function showProfanityToast(fieldLabel) {
-    // Remove existing toast if any
-    const old = document.getElementById('profanity-toast');
-    if (old) old.remove();
-
-    const t = document.createElement('div');
-    t.className = 'profanity-toast';
-    t.id = 'profanity-toast';
-    t.innerHTML = `
-        <div class="profanity-toast-icon"><i class="fas fa-ban"></i></div>
-        <div class="profanity-toast-body">
-            <div class="profanity-toast-title">Profanity not allowed</div>
-            <div class="profanity-toast-msg">
-                The <strong>${fieldLabel}</strong> field contains inappropriate language.
-                Please revise it before saving.
-            </div>
-        </div>
-        <button class="profanity-toast-close" onclick="dismissProfanityToast()" aria-label="Dismiss">
-            <i class="fas fa-xmark"></i>
-        </button>`;
-    document.body.appendChild(t);
-}
-
-function dismissProfanityToast() {
-    const t = document.getElementById('profanity-toast');
-    if (!t) return;
-    t.classList.add('hiding');
-    setTimeout(() => t.remove(), 260);
-}
-
-
-/* ══════════════════════════════════════════════════════
-   PROFILE FORM SUBMIT  (with profanity check + confirm)
-══════════════════════════════════════════════════════ */
-let _pendingFormId = null;
-
-async function submitProfileForm(formId, type) {
-    _pendingFormId = formId;
-    const form = document.getElementById(formId);
-
-    // Collect text fields to check
-    const fieldsToCheck = [
-        { id: type === 'staff' ? 'staff-display-name'    : 'user-display-name',    label: 'Display Name' },
-        { id: type === 'staff' ? 'staff-discord-username': 'user-discord-username', label: 'Discord Username' },
-        { id: type === 'staff' ? 'staff-roblox-name'     : 'user-roblox-name',      label: 'Roblox Username' },
-    ];
-
-    for (const f of fieldsToCheck) {
-        const el = document.getElementById(f.id);
-        if (!el) continue;
-        const val = el.value.trim();
-        if (!val) continue;
-
-        const hasProfanity = await checkProfanity(val);
-        if (hasProfanity) {
-            showProfanityToast(f.label);
-            el.focus();
-            return; // block save
-        }
-    }
 
     // Build confirm description
     const displayName = document.getElementById(
         type === 'staff' ? 'staff-display-name' : 'user-display-name'
     )?.value.trim() || '—';
+
     document.getElementById('confirm-desc').textContent =
         `You're about to save changes to your profile. Display name will be set to "${displayName}".`;
 
-    // Open confirm modal
     openConfirm(() => {
         form.submit();
     });
@@ -213,28 +105,14 @@ document.getElementById('avatar-file-input')?.addEventListener('change', async f
 
     const maxBytes = 5 * 1024 * 1024;
     if (file.size > maxBytes) {
-        showProfanityToast(''); // reuse toast style
-        // Custom error instead
-        const old = document.getElementById('profanity-toast');
-        if (old) {
-            old.querySelector('.profanity-toast-title').textContent = 'File too large';
-            old.querySelector('.profanity-toast-msg').textContent =
-                `Your photo is ${(file.size/1024/1024).toFixed(1)} MiB. Maximum allowed is 5 MiB.`;
-            old.querySelector('.profanity-toast-icon').innerHTML = '<i class="fas fa-file-circle-xmark"></i>';
-        }
+        showUploadErrorToast(`Your photo is ${(file.size/1024/1024).toFixed(1)} MiB. Maximum allowed is 5 MiB.`);
         this.value = '';
         return;
     }
 
     const allowed = ['image/jpeg','image/png','image/gif','image/webp'];
     if (!allowed.includes(file.type)) {
-        const t = document.getElementById('profanity-toast') || (() => {
-            showProfanityToast('');
-            return document.getElementById('profanity-toast');
-        })();
-        t.querySelector('.profanity-toast-title').textContent = 'Unsupported format';
-        t.querySelector('.profanity-toast-msg').textContent = 'Only JPEG, PNG, GIF, or WebP images are allowed.';
-        t.querySelector('.profanity-toast-icon').innerHTML = '<i class="fas fa-file-circle-question"></i>';
+        showUploadErrorToast('Only JPEG, PNG, GIF, or WebP images are allowed.');
         this.value = '';
         return;
     }
@@ -259,7 +137,6 @@ document.getElementById('avatar-file-input')?.addEventListener('change', async f
                 if (preview) {
                     preview.src = e.target.result;
                 } else {
-                    // Create img
                     const img = document.createElement('img');
                     img.id = 'avatar-preview';
                     img.src = e.target.result;
@@ -272,7 +149,6 @@ document.getElementById('avatar-file-input')?.addEventListener('change', async f
             };
             reader.readAsDataURL(file);
 
-            // Show success toast briefly
             showAvatarSuccessToast();
         } else {
             showUploadErrorToast(data.error || 'Upload failed');
@@ -304,28 +180,23 @@ function showAvatarSuccessToast() {
 }
 
 function showUploadErrorToast(msg) {
-    const old = document.getElementById('profanity-toast');
-    if (old) old.remove();
     const t = document.createElement('div');
-    t.className = 'profanity-toast';
-    t.id = 'profanity-toast';
+    t.className = 'error-toast';
     t.innerHTML = `
-        <div class="profanity-toast-icon"><i class="fas fa-triangle-exclamation"></i></div>
-        <div class="profanity-toast-body">
-            <div class="profanity-toast-title">Upload failed</div>
-            <div class="profanity-toast-msg">${msg}</div>
+        <div class="error-toast-icon"><i class="fas fa-triangle-exclamation"></i></div>
+        <div class="error-toast-body">
+            <div class="error-toast-title">Upload failed</div>
+            <div class="error-toast-msg">${msg}</div>
         </div>
-        <button class="profanity-toast-close" onclick="dismissProfanityToast()"><i class="fas fa-xmark"></i></button>`;
+        <button class="error-toast-close" onclick="this.parentElement.remove()"><i class="fas fa-xmark"></i></button>`;
     document.body.appendChild(t);
 }
-
 
 /* ══════════════════════════════════════════════════════
    CHANGE PASSWORD MODAL
 ══════════════════════════════════════════════════════ */
 function openPwModal() {
     document.getElementById('pw-modal-backdrop').classList.add('open');
-    // Reset state
     ['pw-old','pw-new','pw-re'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -359,6 +230,7 @@ function showPwError(msg) {
     document.getElementById('pw-error-msg').textContent = msg;
     el.classList.add('show');
 }
+
 function hidePwError() {
     document.getElementById('pw-error').classList.remove('show');
 }
@@ -408,7 +280,6 @@ async function submitPasswordChange() {
 
         if (data.ok) {
             closePwModal();
-            // Success toast
             const t = document.createElement('div');
             t.style.cssText = `
                 position:fixed;bottom:24px;right:24px;
