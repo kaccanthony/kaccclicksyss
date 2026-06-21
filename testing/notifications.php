@@ -35,7 +35,43 @@ mysqli_stmt_execute($stmt);
 mysqli_stmt_store_result($stmt);
 $isStaff = mysqli_stmt_num_rows($stmt) > 0;
 
-// ── Load existing prefs or defaults ──
+// ── Save on POST (do this BEFORE loading prefs) ──
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $keys = [
+        'staff_session_reminder','staff_reminder_time','staff_trainee_sound',
+        'staff_trainee_warning','staff_announcement_enabled','staff_announcement_display',
+        'user_session_reminder','user_reminder_time','user_trainee_sound',
+        'user_new_session','user_cancellation','user_browser_notifs',
+    ];
+
+    $checkboxes = [
+        'staff_session_reminder','staff_trainee_sound','staff_trainee_warning',
+        'staff_announcement_enabled','user_session_reminder','user_trainee_sound',
+        'user_new_session','user_cancellation','user_browser_notifs',
+    ];
+
+    foreach ($keys as $k) {
+        $val = in_array($k, $checkboxes) ? (isset($_POST[$k]) ? '1' : '0') : ($_POST[$k] ?? '');
+
+        $stmt3 = mysqli_prepare($conn,
+            "INSERT INTO user_staff_notif_prefs (user_id, pref_key, pref_value)
+             VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE pref_value = VALUES(pref_value)"
+        );
+        mysqli_stmt_bind_param($stmt3, "sss", $staffId, $k, $val);
+        mysqli_stmt_execute($stmt3);
+
+        // Catch DB errors silently — remove after confirming it works
+        if (mysqli_stmt_errno($stmt3)) {
+            $_SESSION['db_error'] = "DB error on key '$k': " . mysqli_stmt_error($stmt3);
+        }
+    }
+
+    header('Location: notifications.php?saved=1');
+    exit;
+}
+
+// ── Load saved prefs from DB (after POST redirect) ──
 $prefs = [];
 $stmt2 = mysqli_prepare($conn, "SELECT pref_key, pref_value FROM user_staff_notif_prefs WHERE user_id = ?");
 mysqli_stmt_bind_param($stmt2, "s", $staffId);
@@ -45,67 +81,30 @@ while ($r = mysqli_fetch_assoc($res2)) {
     $prefs[$r['pref_key']] = $r['pref_value'];
 }
 
-// ── Defaults if not yet saved ──
+// ── Defaults only for keys not yet in DB ──
 $defaults = [
-    // Staff prefs
-    'staff_session_reminder'      => '1',
-    'staff_reminder_time'         => '15',
-    'staff_trainee_sound'         => '1',
-    'staff_trainee_warning'       => '1',
-    'staff_announcement_display'  => 'fullscreen',
-    'staff_announcement_enabled'  => '1',
-    // User prefs
-    'user_session_reminder'       => '1',
-    'user_reminder_time'          => '15',
-    'user_trainee_sound'          => '1',
-    'user_new_session'            => '1',
-    'user_cancellation'           => '1',
-    'user_browser_notifs'         => '1',
+    'staff_session_reminder'     => '1',
+    'staff_reminder_time'        => '15',
+    'staff_trainee_sound'        => '1',
+    'staff_trainee_warning'      => '1',
+    'staff_announcement_display' => 'fullscreen',
+    'staff_announcement_enabled' => '1',
+    'user_session_reminder'      => '1',
+    'user_reminder_time'         => '15',
+    'user_trainee_sound'         => '1',
+    'user_new_session'           => '1',
+    'user_cancellation'          => '1',
+    'user_browser_notifs'        => '1',
 ];
 foreach ($defaults as $k => $v) {
-    if (!isset($prefs[$k])) $prefs[$k] = $v;
+    if (!array_key_exists($k, $prefs)) $prefs[$k] = $v;
 }
 
 function p($prefs, $key) { return $prefs[$key] ?? ''; }
 
-// ── Save on POST ──
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $keys = [
-        'staff_session_reminder','staff_reminder_time','staff_trainee_sound',
-        'staff_trainee_warning','staff_announcement_enabled','staff_announcement_display',
-        'user_session_reminder','user_reminder_time','user_trainee_sound',
-        'user_new_session','user_cancellation','user_browser_notifs',
-    ];
-
-    // Checkboxes default to off if not in POST
-    $checkboxes = [
-        'staff_session_reminder','staff_trainee_sound','staff_trainee_warning',
-        'staff_announcement_enabled','user_session_reminder','user_trainee_sound',
-        'user_new_session','user_cancellation','user_browser_notifs',
-    ];
-
-    foreach ($keys as $k) {
-        if (in_array($k, $checkboxes)) {
-            $val = isset($_POST[$k]) ? '1' : '0';
-        } else {
-            $val = $_POST[$k] ?? '';
-        }
-
-        // Upsert
-        $stmt3 = mysqli_prepare($conn,
-            "INSERT INTO user_staff_notif_prefs (user_id, pref_key, pref_value)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE pref_value = VALUES(pref_value)"
-        );
-        mysqli_stmt_bind_param($stmt3, "sss", $staffId, $k, $val);
-        mysqli_stmt_execute($stmt3);
-    }
-
-    header('Location: notifications.php?saved=1');
-    exit;
-}
-
-$saved = isset($_GET['saved']);
+$saved   = isset($_GET['saved']);
+$dbError = $_SESSION['db_error'] ?? '';
+unset($_SESSION['db_error']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -171,16 +170,19 @@ $saved = isset($_GET['saved']);
             <div class="section-label">Notification Center</div>
             <p class="section-sub">Control how and when you get notified.</p>
         </div>
-        <?php if ($saved): ?>
-        <div class="save-toast"><i class="fas fa-circle-check"></i> Preferences saved</div>
-        <?php endif; ?>
+        <div class="toast-wrap">
+            <?php if ($saved): ?>
+            <div class="save-toast"><i class="fas fa-circle-check"></i> Preferences saved</div>
+            <?php endif; ?>
+            <?php if ($dbError): ?>
+            <div class="error-toast"><i class="fas fa-triangle-exclamation"></i> <?= htmlspecialchars($dbError) ?></div>
+            <?php endif; ?>
+        </div>
     </div>
 
     <form method="POST" action="" id="notif-form">
 
-        <!-- ════════════════════════════════
-             TAB SWITCHER (only if staff)
-        ════════════════════════════════ -->
+        <!-- TAB SWITCHER (staff only) -->
         <?php if ($isStaff): ?>
         <div class="tab-bar">
             <button type="button" class="tab-btn active" data-tab="staff">
@@ -192,9 +194,7 @@ $saved = isset($_GET['saved']);
         </div>
         <?php endif; ?>
 
-        <!-- ════════════════════════════════
-             STAFF PANEL
-        ════════════════════════════════ -->
+        <!-- ════ STAFF PANEL ════ -->
         <div class="notif-panel" id="panel-staff">
 
             <?php if ($isStaff): ?>
@@ -204,9 +204,7 @@ $saved = isset($_GET['saved']);
             <!-- Session Reminder -->
             <div class="notif-card">
                 <div class="notif-card-left">
-                    <div class="notif-icon-wrap green">
-                        <i class="far fa-calendar-check"></i>
-                    </div>
+                    <div class="notif-icon-wrap green"><i class="far fa-calendar-check"></i></div>
                     <div class="notif-info">
                         <div class="notif-title">Upcoming Session Reminder</div>
                         <div class="notif-desc">Get alerted before your assigned session starts.</div>
@@ -215,7 +213,9 @@ $saved = isset($_GET['saved']);
                 <div class="notif-card-right">
                     <div class="inline-control">
                         <span class="inline-label">Remind me</span>
-                        <select name="staff_reminder_time" class="inline-select <?= p($prefs,'staff_session_reminder')==='0'?'disabled':'' ?>" id="staff-reminder-time">
+                        <select name="staff_reminder_time"
+                            class="inline-select <?= p($prefs,'staff_session_reminder')==='0'?'disabled':'' ?>"
+                            id="staff-reminder-time">
                             <?php foreach (['5','10','15','30','60'] as $m): ?>
                                 <option value="<?= $m ?>" <?= p($prefs,'staff_reminder_time')===$m?'selected':'' ?>><?= $m ?> min before</option>
                             <?php endforeach; ?>
@@ -234,7 +234,7 @@ $saved = isset($_GET['saved']);
             <div class="notif-card">
                 <div class="notif-card-left">
                     <div class="notif-icon-wrap blue">
-                        <img src="../icons/Nextrainee.png" style="width:22px;height:22px;object-fit:contain;"/></img>
+                        <img src="../icons/Nextrainee.png" alt="Next Trainee" style="width:22px;height:22px;object-fit:contain;"/>
                     </div>
                     <div class="notif-info">
                         <div class="notif-title">Next Trainee Sound Alert</div>
@@ -253,9 +253,7 @@ $saved = isset($_GET['saved']);
             <!-- Trainee Turn Ending Warning -->
             <div class="notif-card">
                 <div class="notif-card-left">
-                    <div class="notif-icon-wrap amber">
-                        <i class="fas fa-hourglass-end"></i>
-                    </div>
+                    <div class="notif-icon-wrap amber"><i class="fas fa-hourglass-end"></i></div>
                     <div class="notif-info">
                         <div class="notif-title">Trainee Turn Ending Warning</div>
                         <div class="notif-desc">Notify 1 minute before the current trainee's time ends.</div>
@@ -273,9 +271,7 @@ $saved = isset($_GET['saved']);
             <!-- Global Staff Announcement -->
             <div class="notif-card">
                 <div class="notif-card-left">
-                    <div class="notif-icon-wrap purple">
-                        <i class="fas fa-bullhorn"></i>
-                    </div>
+                    <div class="notif-icon-wrap purple"><i class="fas fa-bullhorn"></i></div>
                     <div class="notif-info">
                         <div class="notif-title">Global Staff Announcement</div>
                         <div class="notif-desc">Display host announcements pushed during a live session.</div>
@@ -284,7 +280,9 @@ $saved = isset($_GET['saved']);
                 <div class="notif-card-right">
                     <div class="inline-control">
                         <span class="inline-label">Display as</span>
-                        <select name="staff_announcement_display" class="inline-select <?= p($prefs,'staff_announcement_enabled')==='0'?'disabled':'' ?>" id="staff-announce-display">
+                        <select name="staff_announcement_display"
+                            class="inline-select <?= p($prefs,'staff_announcement_enabled')==='0'?'disabled':'' ?>"
+                            id="staff-announce-display">
                             <option value="fullscreen" <?= p($prefs,'staff_announcement_display')==='fullscreen'?'selected':'' ?>>Full Screen</option>
                             <option value="banner"     <?= p($prefs,'staff_announcement_display')==='banner'    ?'selected':'' ?>>Banner</option>
                             <option value="toast"      <?= p($prefs,'staff_announcement_display')==='toast'     ?'selected':'' ?>>Toast</option>
@@ -300,7 +298,6 @@ $saved = isset($_GET['saved']);
             </div>
 
             <?php else: ?>
-            <!-- Not a staff member -->
             <div class="not-staff-msg">
                 <i class="fas fa-lock"></i>
                 <p>Staff notifications are only available to active staff members.</p>
@@ -309,9 +306,7 @@ $saved = isset($_GET['saved']);
 
         </div><!-- /panel-staff -->
 
-        <!-- ════════════════════════════════
-             USER PANEL
-        ════════════════════════════════ -->
+        <!-- ════ USER PANEL ════ -->
         <div class="notif-panel <?= $isStaff ? 'hidden' : '' ?>" id="panel-user">
 
             <div class="panel-eyebrow"><i class="fas fa-user"></i> General Notifications</div>
@@ -320,9 +315,7 @@ $saved = isset($_GET['saved']);
             <!-- Session Reminder -->
             <div class="notif-card">
                 <div class="notif-card-left">
-                    <div class="notif-icon-wrap green">
-                        <i class="far fa-calendar-check"></i>
-                    </div>
+                    <div class="notif-icon-wrap green"><i class="far fa-calendar-check"></i></div>
                     <div class="notif-info">
                         <div class="notif-title">Upcoming Session Reminder</div>
                         <div class="notif-desc">Get reminded before a session you're assigned to begins.</div>
@@ -331,7 +324,9 @@ $saved = isset($_GET['saved']);
                 <div class="notif-card-right">
                     <div class="inline-control">
                         <span class="inline-label">Remind me</span>
-                        <select name="user_reminder_time" class="inline-select <?= p($prefs,'user_session_reminder')==='0'?'disabled':'' ?>" id="user-reminder-time">
+                        <select name="user_reminder_time"
+                            class="inline-select <?= p($prefs,'user_session_reminder')==='0'?'disabled':'' ?>"
+                            id="user-reminder-time">
                             <?php foreach (['5','10','15','30','60'] as $m): ?>
                                 <option value="<?= $m ?>" <?= p($prefs,'user_reminder_time')===$m?'selected':'' ?>><?= $m ?> min before</option>
                             <?php endforeach; ?>
@@ -350,7 +345,7 @@ $saved = isset($_GET['saved']);
             <div class="notif-card">
                 <div class="notif-card-left">
                     <div class="notif-icon-wrap blue">
-                        <img src="../icons/Nextrainee.png" style="width:22px;height:22px;object-fit:contain;"/></img>
+                        <img src="../icons/Nextrainee.png" alt="Next Trainee" style="width:22px;height:22px;object-fit:contain;"/>
                     </div>
                     <div class="notif-info">
                         <div class="notif-title">Next Trainee Sound Alert</div>
@@ -369,9 +364,7 @@ $saved = isset($_GET['saved']);
             <!-- New Session -->
             <div class="notif-card">
                 <div class="notif-card-left">
-                    <div class="notif-icon-wrap purple">
-                        <i class="fas fa-calendar-plus"></i>
-                    </div>
+                    <div class="notif-icon-wrap purple"><i class="fas fa-calendar-plus"></i></div>
                     <div class="notif-info">
                         <div class="notif-title">New Session Notifications</div>
                         <div class="notif-desc">Be notified when a new session is booked and open for sign-up.</div>
@@ -389,9 +382,7 @@ $saved = isset($_GET['saved']);
             <!-- Cancellation -->
             <div class="notif-card">
                 <div class="notif-card-left">
-                    <div class="notif-icon-wrap red">
-                        <i class="far fa-window-close"></i>
-                    </div>
+                    <div class="notif-icon-wrap red"><i class="far fa-window-close"></i></div>
                     <div class="notif-info">
                         <div class="notif-title">Session Cancellation Alerts</div>
                         <div class="notif-desc">Get notified if a session you're part of is cancelled or postponed.</div>
@@ -409,9 +400,7 @@ $saved = isset($_GET['saved']);
             <!-- Browser Notifications -->
             <div class="notif-card">
                 <div class="notif-card-left">
-                    <div class="notif-icon-wrap amber">
-                        <i class="fas fa-bell"></i>
-                    </div>
+                    <div class="notif-icon-wrap amber"><i class="fas fa-bell"></i></div>
                     <div class="notif-info">
                         <div class="notif-title">Browser Notifications</div>
                         <div class="notif-desc">Allow YSS to send native browser push notifications.</div>
