@@ -57,20 +57,16 @@ document.querySelectorAll('.save-toast').forEach(toast => {
 });
 
 // ── Profile Form Submit ─────────────────────────────
-async function submitProfileForm(formId, type) {
+function submitProfileForm(formId) {
     const form = document.getElementById(formId);
+    if (!form) return;
 
-    // Build confirm description
-    const displayName = document.getElementById(
-        type === 'staff' ? 'staff-display-name' : 'user-display-name'
-    )?.value.trim() || '—';
+    document.getElementById('confirm-backdrop').style.display = 'flex';
 
-    document.getElementById('confirm-desc').textContent =
-        `You're about to save changes to your profile. Display name will be set to "${displayName}".`;
-
-    openConfirm(() => {
+    document.getElementById('confirm-ok-btn').onclick = function() {
+        closeConfirm();
         form.submit();
-    });
+    };
 }
 
 /* ── Confirm modal helpers ── */
@@ -86,8 +82,7 @@ function openConfirm(cb) {
 }
 
 function closeConfirm() {
-    document.getElementById('confirm-backdrop').classList.remove('open');
-    _confirmCallback = null;
+    document.getElementById('confirm-backdrop').style.display = 'none';
 }
 
 // Close confirm on backdrop click

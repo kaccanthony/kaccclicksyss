@@ -150,7 +150,7 @@ if ($isStaff && $staffRow) {
     $cur['discord_username']   = $userRow['user_name']            ?? '';
     $cur['discord_id']         = $userRow['user_id']              ?? '';
     $cur['roblox_name']        = $userRow['user_roblox_name']     ?? '';
-    $cur['hide_trainee_stats'] = $userRow['hide_trainee_stats']   ?? 0;
+    $cur['hide_stats'] = $userRow['hide_stats']   ?? 0;
 } else {
     $cur['display_name']     = '';
     $cur['discord_username'] = $user['username'] ?? '';
@@ -342,9 +342,9 @@ if ($isStaff && $staffRow) {
                         <div class="form-input-wrap">
                             <i class="fas fa-gamepad form-input-icon"></i>
                             <input type="text" name="roblox_name" id="staff-roblox-name"
-                                   class="form-input" maxlength="100"
-                                   placeholder="Your Roblox username"
-                                   value="<?= htmlspecialchars($staffRow['staff_roblox_name']) ?>"/>
+                                class="form-input" maxlength="100"
+                                placeholder="Your Roblox username"
+                                value="<?= htmlspecialchars($staffRow['staff_roblox_name']) ?>"/>
                         </div>
                     </div>
                 </div>
@@ -389,8 +389,8 @@ if ($isStaff && $staffRow) {
                         <div class="profile-avatar-big" id="avatar-preview-wrap">
                             <?php if ($avatar): ?>
                                 <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar"
-                                     id="avatar-preview"
-                                     style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                                    id="avatar-preview"
+                                    style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                             <?php else: ?>
                                 <i class="fas fa-user" id="avatar-placeholder"></i>
                             <?php endif; ?>
@@ -402,7 +402,7 @@ if ($isStaff && $staffRow) {
                             <i class="fas fa-camera"></i>
                         </label>
                         <input type="file" id="avatar-file-input" name="avatar"
-                               accept="image/jpeg,image/png,image/gif,image/webp"/>
+                            accept="image/jpeg,image/png,image/gif,image/webp"/>
                     </div>
 
                     <div class="profile-avatar-info">
@@ -473,8 +473,8 @@ if ($isStaff && $staffRow) {
                     </div>
                     <div class="notif-card-right">
                         <label class="toggle-wrap">
-                            <input type="checkbox" name="hide_trainee_stats"
-                                   <?= ($cur['hide_trainee_stats'] ?? 0) ? 'checked' : '' ?>/>
+                            <input type="checkbox" name="hide_stats"
+                                <?= ($cur['hide_stats'] ?? 0) ? 'checked' : '' ?>/>
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                         </label>
                     </div>
