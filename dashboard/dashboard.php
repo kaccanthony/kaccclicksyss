@@ -117,8 +117,9 @@ foreach (($roleCards[$role] ?? []) as $key) {
                 <span class="session-pill"><i class="fas fa-circle-dot"></i> No active sessions</span>
             </div>
             <div class="popup-divider"></div>
-            <a href="settings.php" class="popup-item"><i class="fas fa-gear"></i> Settings</a>
-            <a href="dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-right-from-bracket"></i> Log out</a>
+                <a href="notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>
+                <a href="settings.php" class="popup-item"><i class="fas fa-gear"></i> Settings</a>
+                <a href="dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-right-from-bracket"></i> Log out</a>
         </div>
     </div>
 </header>
