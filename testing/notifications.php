@@ -205,7 +205,7 @@ $saved = isset($_GET['saved']);
             <div class="notif-card">
                 <div class="notif-card-left">
                     <div class="notif-icon-wrap green">
-                        <i class="fas fa-calendar-clock"></i>
+                        <i class="far fa-calendar-clock"></i>
                     </div>
                     <div class="notif-info">
                         <div class="notif-title">Upcoming Session Reminder</div>
@@ -234,7 +234,7 @@ $saved = isset($_GET['saved']);
             <div class="notif-card">
                 <div class="notif-card-left">
                     <div class="notif-icon-wrap blue">
-                        <i class="fas fa-volume-high"></i>
+                        <img src="../icons/Nextrainee.png" style="width:22px;height:22px;object-fit:contain;"/></img>
                     </div>
                     <div class="notif-info">
                         <div class="notif-title">Next Trainee Sound Alert</div>
@@ -321,7 +321,7 @@ $saved = isset($_GET['saved']);
             <div class="notif-card">
                 <div class="notif-card-left">
                     <div class="notif-icon-wrap green">
-                        <i class="fas fa-calendar-check"></i>
+                        <i class="far fa-calendar-check"></i>
                     </div>
                     <div class="notif-info">
                         <div class="notif-title">Upcoming Session Reminder</div>
