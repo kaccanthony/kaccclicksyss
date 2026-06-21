@@ -1,58 +1,112 @@
-Session Management System
+src/
+├── modules/
+│   ├── auth/                          # Authentication & Role-Based Access
+│   │   ├── components/
+│   │   │   ├── LoginForm.tsx
+│   │   │   ├── RegisterForm.tsx
+│   │   │   └── ProtectedRoute.tsx
+│   │   ├── hooks/
+│   │   │   └── useAuth.ts
+│   │   ├── services/
+│   │   │   └── authService.ts
+│   │   ├── middleware/                # Route guards
+│   │   │   └── roleGuard.ts
+│   │   ├── types.ts                   # Role enums, User type
+│   │   ├── constants.ts
+│   │   └── index.ts
+│   │
+│   ├── public/                        # Public pages & features
+│   │   ├── pages/
+│   │   │   ├── Home.tsx
+│   │   │   ├── About.tsx
+│   │   │   └── Contact.tsx
+│   │   ├── components/
+│   │   └── api/                       # Public API routes
+│   │
+│   ├── portal/                        # Main authenticated dashboard
+│   │   ├── pages/
+│   │   │   └── Dashboard.tsx
+│   │   ├── components/
+│   │   │   ├── Sidebar.tsx
+│   │   │   ├── TopNav.tsx
+│   │   │   └── RoleBasedMenu.tsx
+│   │   ├── layout/
+│   │   │   └── PortalLayout.tsx
+│   │   └── hooks/
+│   │
+│   ├── user/                          # Regular User features
+│   │   ├── pages/
+│   │   │   ├── Profile.tsx
+│   │   │   ├── MyDocuments.tsx
+│   │   │   └── Tickets.tsx
+│   │   ├── components/
+│   │   ├── services/
+│   │   └── api/
+│   │
+│   ├── staff/                         # Staff-level features
+│   │   ├── pages/
+│   │   │   ├── Tasks.tsx
+│   │   │   ├── DepartmentDocuments.tsx
+│   │   │   └── Reports.tsx
+│   │   ├── components/
+│   │   └── services/
+│   │
+│   ├── head-staff/                    # Head Staff features
+│   │   ├── pages/
+│   │   │   ├── TeamManagement.tsx
+│   │   │   ├── Approvals.tsx
+│   │   │   └── Performance.tsx
+│   │   ├── components/
+│   │   └── services/
+│   │
+│   ├── manager/                       # Manager features
+│   │   ├── pages/
+│   │   │   ├── ExecutiveDashboard.tsx
+│   │   │   ├── Financials.tsx
+│   │   │   └── Budget.tsx
+│   │   ├── components/
+│   │   └── services/
+│   │
+│   └── admin/                         # Admin-only features
+│       ├── pages/
+│       │   ├── UserManagement.tsx
+│       │   ├── RolePermissions.tsx
+│       │   ├── SystemSettings.tsx
+│       │   └── AuditLogs.tsx
+│       ├── components/
+│       ├── services/
+│       └── api/
 │
-├── Owner
-│   ├── Full system access
-│   ├── Manage all roles
-│   ├── Change permissions
-│   └── View all logs
+├── components/                        # Global reusable UI components
+│   ├── ui/                            # Basic design system
+│   │   ├── Button.tsx
+│   │   ├── Table.tsx
+│   │   ├── Modal.tsx
+│   │   ├── Card.tsx
+│   │   └── FormInput.tsx
+│   ├── layout/
+│   │   ├── Header.tsx
+│   │   ├── Footer.tsx
+│   │   └── Sidebar.tsx
+│   ├── common/
+│   │   ├── DataTable.tsx
+│   │   ├── FileUploader.tsx
+│   │   └── StatusBadge.tsx
+│   └── feedback/
+│       ├── Toast.tsx
+│       └── LoadingSpinner.tsx
 │
-├── Management Team
-│   │
-│   ├── General Manager
-│   │   ├── Oversees the whole operation
-│   │   ├── Manages Head Staff
-│   │   ├── Approves major sessions
-│   │   └── Reviews reports
-│   │
-│   └── Manager
-│       ├── Creates and manages sessions
-│       ├── Assigns staff
-│       ├── Handles session problems
-│       └── Monitors activity
-│
-├── Head Staff Team
-│   │
-│   ├── Head Staff
-│   │   ├── Supervises Staff
-│   │   ├── Hosts large sessions
-│   │   ├── Trains new staff
-│   │   └── Reports to Managers
-│   │
-│   └── Senior Staff
-│       ├── Experienced session staff
-│       ├── Helps Head Staff
-│       └── Mentors Staff
-│
-├── Staff Team
-│   │
-│   ├── Staff
-│   │   ├── Runs assigned sessions
-│   │   ├── Handles users
-│   │   ├── Takes attendance
-│   │   └── Reports issues
-│   │
-│   └── Trainee Staff
-│       ├── Learning procedures
-│       ├── Can assist sessions
-│       └── Needs supervision
-│
-└── Users
-    │
-    ├── Verified User
-    │   ├── Join sessions
-    │   ├── View schedules
-    │   └── Update profile
-    │
-    └── Guest
-        ├── View public sessions
-        └── Request access
+└── services/                          # Shared business logic & API calls
+    ├── api/
+    │   ├── client.ts                  # Axios/Fetch instance
+    │   ├── publicApi.ts
+    │   └── protectedApi.ts
+    ├── userService.ts
+    ├── documentService.ts
+    ├── reportService.ts
+    ├── authService.ts
+    ├── notificationService.ts
+    └── utils/
+        ├── formatters.ts
+        ├── validators.ts
+        └── helpers.ts

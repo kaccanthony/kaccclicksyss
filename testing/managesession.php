@@ -153,7 +153,7 @@ function statusBadge($status) {
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <link rel="icon" type="image/png" href="../icons/YSS Logo.png">
+    <link rel="icon" type="image/png" href="../public/assets/images/icons/YSS Logo.png">
     <title>YSS – Manage Sessions</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -169,7 +169,7 @@ function statusBadge($status) {
     <div class="logo-wrap">
         <div class="pulse-ring"></div>
         <div class="pulse-ring ring2"></div>
-        <img src="../icons/YSS Logo.png" alt="YSS Logo" class="logo-img"/>
+        <img src="../public/assets/images/icons/YSS Logo.png" alt="YSS Logo" class="logo-img"/>
     </div>
     <span class="app-name">YSS Session Manager</span>
     <div class="topbar-right">
