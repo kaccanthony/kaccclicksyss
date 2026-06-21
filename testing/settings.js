@@ -61,10 +61,11 @@ function submitProfileForm(formId) {
     const form = document.getElementById(formId);
     if (!form) return;
 
-    document.getElementById('confirm-backdrop').style.display = 'flex';
+    _confirmCallback = () => form.submit();
 
-    document.getElementById('confirm-ok-btn').onclick = function() {
-        closeConfirm();
+    document.getElementById('confirm-backdrop').classList.add('open');
+    document.getElementById('confirm-ok-btn').onclick = () => {
+        document.getElementById('confirm-backdrop').classList.remove('open');
         form.submit();
     };
 }
@@ -82,7 +83,7 @@ function openConfirm(cb) {
 }
 
 function closeConfirm() {
-    document.getElementById('confirm-backdrop').style.display = 'none';
+    document.getElementById('confirm-backdrop').classList.remove('open');
 }
 
 // Close confirm on backdrop click
