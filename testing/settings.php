@@ -732,7 +732,7 @@ if ($isStaff && $staffRow) {
 
 <script>
     // Pass PHP values to JS
-    const PROFANITY_API_KEY = 'YOUR_API_NINJAS_KEY_HERE'; // ← replace with your key
+    const PROFANITY_API_KEY = 'jygyD4NPAm50LpD7kRy0Dkkrm5yOE3k04n9pNPdI'; // ← replace with your key
 </script>
 <script src="settings.js"></script>
 </body>
