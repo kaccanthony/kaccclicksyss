@@ -118,8 +118,8 @@ foreach (($roleCards[$role] ?? []) as $key) {
             </div>
             <div class="popup-divider"></div>
                 <a href="notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>
-                <a href="settings.php" class="popup-item"><i class="fas fa-gear"></i> Settings</a>
-                <a href="dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-right-from-bracket"></i> Log out</a>
+                <a href="settings.php" class="popup-item"><i class="fas fa-cog"></i> Settings</a>
+                <a href="dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-sign-out-alt"></i> Log out</a>
         </div>
     </div>
 </header>
