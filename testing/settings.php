@@ -304,9 +304,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="display_name" id="staff-display-name"
                                 class="form-input" maxlength="200"
                                 placeholder="How you appear on the platform"
-                                value="<?= htmlspecialchars($staffRow['staff_display_name']) ?>"
-                                data-confirm="display name"
-                                data-profanity-check="true"/>
+                                value="<?= htmlspecialchars($staffRow['staff_display_name']) ?>"/>
                         </div>
                     </div>
 
@@ -318,9 +316,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="discord_username" id="staff-discord-username"
                                 class="form-input" maxlength="200"
                                 placeholder="your_discord_username"
-                                value="<?= htmlspecialchars($staffRow['staff_name']) ?>"
-                                data-confirm="Discord username"
-                                data-profanity-check="true"/>
+                                value="<?= htmlspecialchars($staffRow['staff_name']) ?>"/>
                         </div>
                     </div>
 
@@ -342,9 +338,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="roblox_name" id="staff-roblox-name"
                                 class="form-input" maxlength="100"
                                 placeholder="Your Roblox username"
-                                value="<?= htmlspecialchars($staffRow['staff_roblox_name']) ?>"
-                                data-confirm="Roblox username"
-                                data-profanity-check="true"/>
+                                value="<?= htmlspecialchars($staffRow['staff_roblox_name']) ?>"/>
                         </div>
                     </div>
                 </div>
@@ -407,9 +401,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="display_name" id="user-display-name"
                                 class="form-input" maxlength="50"
                                 placeholder="How you appear on the platform"
-                                value="<?= htmlspecialchars($userRow['user_display_name']) ?>"
-                                data-confirm="display name"
-                                data-profanity-check="true"/>
+                                value="<?= htmlspecialchars($userRow['user_display_name']) ?>"/>
                         </div>
                     </div>
 
@@ -420,9 +412,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="discord_username" id="user-discord-username"
                                 class="form-input" maxlength="100"
                                 placeholder="your_discord_username"
-                                value="<?= htmlspecialchars($userRow['user_name']) ?>"
-                                data-confirm="Discord username"
-                                data-profanity-check="true"/>
+                                value="<?= htmlspecialchars($userRow['user_name']) ?>"/>
                         </div>
                     </div>
 
@@ -442,9 +432,7 @@ if ($isStaff && $staffRow) {
                             <input type="text" name="roblox_name" id="user-roblox-name"
                                 class="form-input" maxlength="100"
                                 placeholder="Your Roblox username"
-                                value="<?= htmlspecialchars($userRow['user_roblox_name']) ?>"
-                                data-confirm="Roblox username"
-                                data-profanity-check="true"/>
+                                value="<?= htmlspecialchars($userRow['user_roblox_name']) ?>"/>
                         </div>
                     </div>
                 </div>

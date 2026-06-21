@@ -55,42 +55,19 @@ document.querySelectorAll('.save-toast').forEach(toast => {
     }, 3000);
 });
 
-// ════════════════════════════════════════════════════
-// PROFANITY CHECK + CONFIRM MODAL
-// ════════════════════════════════════════════════════
+async function submitProfileForm(formId, type) {
+    const form = document.getElementById(formId);
+    const changedLabels = "profile settings";
 
-let pendingFormId   = null;
-let pendingFormType = null;
-
-// ── Check profanity via API Ninjas ─────────────────
-async function checkProfanity(text) {
-    if (!text.trim()) return false;
-    try {
-        const res = await fetch(
-            `https://api.api-ninjas.com/v1/profanityfilter?text=${encodeURIComponent(text)}`,
-            { headers: { 'X-Api-Key': PROFANITY_API_KEY } }
-        );
-        const data = await res.json();
-        return data.has_profanity === true;
-    } catch (e) {
-        console.warn('Profanity API error:', e);
-        return false; // fail open — don't block on API error
-    }
+    openConfirm(changedLabels, () => {
+        form.submit();
+    });
 }
 
-// ── Show profanity toast ───────────────────────────
-function showProfanityToast() {
-    const t = document.getElementById('profanity-toast');
-    t.classList.add('show');
-}
-function closeProfanityToast() {
-    document.getElementById('profanity-toast').classList.remove('show');
-}
-
-// ── Confirm modal ──────────────────────────────────
-function openConfirm(fieldLabel, onConfirm) {
-    document.getElementById('confirm-msg').textContent =
-        `Are you sure you want to update your ${fieldLabel}? This will be saved to your profile.`;
+// Confirm modal functions (unchanged)
+function openConfirm(label, onConfirm) {
+    document.getElementById('confirm-msg').textContent = 
+        `Are you sure you want to update your ${label}?`;
     document.getElementById('confirm-backdrop').classList.add('open');
 
     const btn = document.getElementById('confirm-ok-btn');
@@ -99,40 +76,7 @@ function openConfirm(fieldLabel, onConfirm) {
         onConfirm();
     };
 }
+
 function closeConfirm() {
     document.getElementById('confirm-backdrop').classList.remove('open');
-}
-
-// ── Submit profile form with checks ───────────────
-async function submitProfileForm(formId, type) {
-    const form   = document.getElementById(formId);
-    const inputs = form.querySelectorAll('input[data-profanity-check="true"]');
-
-    // Collect all values that changed and need profanity check
-    const toCheck = [];
-    inputs.forEach(input => {
-        if (input.value.trim()) {
-            toCheck.push({ input, label: input.dataset.confirm || 'field' });
-        }
-    });
-
-    // Check all fields for profanity first
-    for (const item of toCheck) {
-        const hasProfanity = await checkProfanity(item.input.value);
-        if (hasProfanity) {
-            showProfanityToast();
-            item.input.focus();
-            item.input.style.borderColor = 'rgba(255,80,80,.6)';
-            setTimeout(() => item.input.style.borderColor = '', 3000);
-            return; // stop — don't submit
-        }
-    }
-
-    // Build a label for what's being changed
-    const changedLabels = toCheck.map(i => i.label).join(', ');
-    const label = changedLabels || 'profile settings';
-
-    openConfirm(label, () => {
-        form.submit();
-    });
 }
