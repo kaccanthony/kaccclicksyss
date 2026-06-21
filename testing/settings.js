@@ -90,7 +90,7 @@ function closeConfirm() {
      'X-Api-Key': 'YOUR_KEY_HERE'
 ══════════════════════════════════════════════════════ */
 const PROFANITY_API = 'https://api.api-ninjas.com/v1/profanityfilter';
-const PROFANITY_KEY = 'YOUR_API_NINJAS_KEY'; // ← replace with your key
+const PROFANITY_KEY = 'jygyD4NPAm50LpD7kRy0Dkkrm5yOE3k04n9pNPdI'; // ← replace with your key
 
 async function checkProfanity(text) {
     if (!text.trim()) return false;
