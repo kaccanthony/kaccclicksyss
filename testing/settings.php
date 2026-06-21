@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $val = in_array($k, $checkboxes) ? (isset($_POST[$k]) ? '1' : '0') : ($_POST[$k] ?? '');
             $s3 = mysqli_prepare($conn,
                 "INSERT INTO user_staff_notif_prefs (user_id, pref_key, pref_value)
-                 VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE pref_value = VALUES(pref_value)");
+                VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE pref_value = VALUES(pref_value)");
             mysqli_stmt_bind_param($s3, "sss", $staffId, $k, $val);
             mysqli_stmt_execute($s3);
         }
@@ -195,7 +195,7 @@ if ($isStaff && $staffRow) {
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
                 <?php if ($avatar): ?>
-                    <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                    <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                 <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
             </div>
             <div class="profile-meta">
@@ -208,7 +208,7 @@ if ($isStaff && $staffRow) {
             <div class="popup-header">
                 <div class="popup-avatar">
                     <?php if ($avatar): ?>
-                        <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                    <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                     <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
                 </div>
                 <div>
@@ -288,7 +288,6 @@ if ($isStaff && $staffRow) {
                     <div class="profile-avatar-info">
                         <div class="profile-avatar-name"><?= htmlspecialchars($cur['display_name'] ?: $username) ?></div>
                         <div class="profile-avatar-role"><?= $role ?></div>
-                        <div class="profile-avatar-hint">Avatar is pulled from your Roblox account automatically.</div>
                     </div>
                 </div>
 
