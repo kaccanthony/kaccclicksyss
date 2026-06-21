@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '/conf/cnn.php';
+require_once '/conf/cnn.php';
 
 $error   = $_SESSION['error']   ?? '';
 $success = $_SESSION['success'] ?? '';

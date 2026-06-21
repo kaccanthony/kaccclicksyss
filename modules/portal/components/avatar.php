@@ -1,5 +1,5 @@
 <?php
-include '../login/cnn.php';
+require_once '/conf/cnn.php';
 
 $id = $_GET['id'] ?? '';
 if (!$id) { http_response_code(404); exit; }
