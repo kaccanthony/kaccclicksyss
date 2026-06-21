@@ -159,7 +159,7 @@ unset($_SESSION['db_error']);
             <div class="popup-divider"></div>
                 <a href="notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>
                 <a href="settings.php" class="popup-item"><i class="fas fa-cog"></i> Settings</a>
-                <a href="dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-sign-out-alt"></i> Log out</a>
+                <a href="../dashboard/dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-sign-out-alt"></i> Log out</a>
         </div>
     </div>
 </header>
@@ -168,7 +168,7 @@ unset($_SESSION['db_error']);
 
     <div class="page-header">
         <div>
-            <div class="section-label">Notification Center</div>
+            <div class="section-label">Account Settings</div>
             <p class="section-sub">Control how and when you get notified.</p>
         </div>
         <div class="toast-wrap">
@@ -186,11 +186,14 @@ unset($_SESSION['db_error']);
         <!-- TAB SWITCHER (staff only) -->
         <?php if ($isStaff): ?>
         <div class="tab-bar">
+            <button type="button" class="tab-btn" data-tab="general">
+                <i class="fas fa-user"></i> Profile Settings
+            </button>
             <button type="button" class="tab-btn active" data-tab="staff">
-                <i class="fas fa-shield-halved"></i> Staff View
+                <i class="fas fa-shield-halved"></i> Staff Settings
             </button>
             <button type="button" class="tab-btn" data-tab="user">
-                <i class="fas fa-user"></i> User View
+                <i class="fas fa-user"></i> User Settings
             </button>
         </div>
         <?php endif; ?>
