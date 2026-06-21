@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             "UPDATE staff_list
             SET staff_display_name=?, staff_username=?, staff_roblox_name=?, hide_stats=? 
             WHERE staff_id=?");
-        mysqli_stmt_bind_param($s4, "ssssi", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
+        mysqli_stmt_bind_param($s4, "sssss", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
         mysqli_stmt_execute($s4);
 
         // Update session display name
@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             "UPDATE user_list 
             SET user_display_name=?, user_name=?, user_roblox_name=?, hide_stats=? 
             WHERE user_id=?");
-        mysqli_stmt_bind_param($s5, "ssssi", $display_name, $discord_username, $roblox_name, $hide_trainee_stats, $staffId);
+        mysqli_stmt_bind_param($s5, "sssss", $display_name, $discord_username, $roblox_name, $hide_trainee_stats, $staffId);
         mysqli_stmt_execute($s5);
 
         header('Location: settings.php?saved=profile');
