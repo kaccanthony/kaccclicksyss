@@ -27,6 +27,12 @@ if (empty($user['role'])) {
     exit;
 }
 
+if ($permLevel < 10) {
+    $_SESSION['error'] = 'You do not have permission to view this page.';
+    header('Location: ../dashboard/dashboard.php');
+    exit;
+}
+
 // ── Handle POST: Add / Edit / Delete ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
 
@@ -193,9 +199,9 @@ function statusBadge($status) {
                 </div>
             </div>
             <div class="popup-divider"></div>
-                <a href="notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>
-                <a href="settings.php" class="popup-item"><i class="fas fa-cog"></i> Settings</a>
-                <a href="dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-sign-out-alt"></i> Log out</a>
+            <a href="notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>
+            <a href="settings.php" class="popup-item"><i class="fas fa-cog"></i> Settings</a>
+            <a href="../dashboard/dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-sign-out-alt"></i> Log out</a>
         </div>
     </div>
 </header>
@@ -243,7 +249,7 @@ function statusBadge($status) {
             <?php endforeach; ?>
         </select>
         <input type="text" name="host" class="filter-input" placeholder="Filter by host…"
-               value="<?= htmlspecialchars($filter_host) ?>"/>
+            value="<?= htmlspecialchars($filter_host) ?>"/>
         <button type="submit" class="btn-filter"><i class="fas fa-filter"></i> Filter</button>
         <?php if ($search||$filter_status||$filter_host): ?>
             <a href="managesession.php" class="btn-clear-link">Clear</a>
