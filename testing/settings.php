@@ -27,51 +27,31 @@ if (empty($user['role'])) {
     exit;
 }
 
-// ── Is this user a staff member? ──
+// ── Is staff member? ──
 $isStaff = false;
-$stmt = mysqli_prepare($conn, "SELECT staff_id FROM staff_list WHERE staff_id = ?");
+$staffRow = null;
+$stmt = mysqli_prepare($conn, "SELECT * FROM staff_list WHERE staff_id = ?");
 mysqli_stmt_bind_param($stmt, "s", $staffId);
 mysqli_stmt_execute($stmt);
-mysqli_stmt_store_result($stmt);
-$isStaff = mysqli_stmt_num_rows($stmt) > 0;
-
-// ── Save on POST (do this BEFORE loading prefs) ──
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $keys = [
-        'staff_session_reminder','staff_reminder_time','staff_trainee_sound',
-        'staff_trainee_warning','staff_announcement_enabled','staff_announcement_display',
-        'user_session_reminder','user_reminder_time','user_trainee_sound',
-        'user_new_session','user_cancellation','user_browser_notifs',
-    ];
-
-    $checkboxes = [
-        'staff_session_reminder','staff_trainee_sound','staff_trainee_warning',
-        'staff_announcement_enabled','user_session_reminder','user_trainee_sound',
-        'user_new_session','user_cancellation','user_browser_notifs',
-    ];
-
-    foreach ($keys as $k) {
-        $val = in_array($k, $checkboxes) ? (isset($_POST[$k]) ? '1' : '0') : ($_POST[$k] ?? '');
-
-        $stmt3 = mysqli_prepare($conn,
-            "INSERT INTO user_staff_notif_prefs (user_id, pref_key, pref_value)
-             VALUES (?, ?, ?)
-             ON DUPLICATE KEY UPDATE pref_value = VALUES(pref_value)"
-        );
-        mysqli_stmt_bind_param($stmt3, "sss", $staffId, $k, $val);
-        mysqli_stmt_execute($stmt3);
-
-        // Catch DB errors silently — remove after confirming it works
-        if (mysqli_stmt_errno($stmt3)) {
-            $_SESSION['db_error'] = "DB error on key '$k': " . mysqli_stmt_error($stmt3);
-        }
-    }
-
-    header('Location: settings.php?saved=1');
-    exit;
+$staffResult = mysqli_stmt_get_result($stmt);
+if ($staffRow = mysqli_fetch_assoc($staffResult)) {
+    $isStaff = true;
 }
 
-// ── Load saved prefs from DB (after POST redirect) ──
+// ── Is user_list member? ──
+$isUser = false;
+$userRow = null;
+$stmtU = mysqli_prepare($conn, "SELECT * FROM user_list WHERE user_id = ?");
+if ($stmtU) {
+    mysqli_stmt_bind_param($stmtU, "s", $staffId);
+    mysqli_stmt_execute($stmtU);
+    $userResult = mysqli_stmt_get_result($stmtU);
+    if ($userRow = mysqli_fetch_assoc($userResult)) {
+        $isUser = true;
+    }
+}
+
+// ── Load notification prefs ──
 $prefs = [];
 $stmt2 = mysqli_prepare($conn, "SELECT pref_key, pref_value FROM user_staff_notif_prefs WHERE user_id = ?");
 mysqli_stmt_bind_param($stmt2, "s", $staffId);
@@ -80,31 +60,111 @@ $res2 = mysqli_stmt_get_result($stmt2);
 while ($r = mysqli_fetch_assoc($res2)) {
     $prefs[$r['pref_key']] = $r['pref_value'];
 }
-
-// ── Defaults only for keys not yet in DB ──
-$defaults = [
-    'staff_session_reminder'     => '1',
-    'staff_reminder_time'        => '15',
-    'staff_trainee_sound'        => '1',
-    'staff_trainee_warning'      => '1',
-    'staff_announcement_display' => 'fullscreen',
-    'staff_announcement_enabled' => '1',
-    'user_session_reminder'      => '1',
-    'user_reminder_time'         => '15',
-    'user_trainee_sound'         => '1',
-    'user_new_session'           => '1',
-    'user_cancellation'          => '1',
-    'user_browser_notifs'        => '1',
+$notifDefaults = [
+    'staff_session_reminder'     => '1', 'staff_reminder_time'        => '15',
+    'staff_trainee_sound'        => '1', 'staff_trainee_warning'      => '1',
+    'staff_announcement_display' => 'fullscreen', 'staff_announcement_enabled' => '1',
+    'user_session_reminder'      => '1', 'user_reminder_time'         => '15',
+    'user_trainee_sound'         => '1', 'user_new_session'           => '1',
+    'user_cancellation'          => '1', 'user_browser_notifs'        => '1',
 ];
-foreach ($defaults as $k => $v) {
+foreach ($notifDefaults as $k => $v) {
     if (!array_key_exists($k, $prefs)) $prefs[$k] = $v;
 }
-
 function p($prefs, $key) { return $prefs[$key] ?? ''; }
 
-$saved   = isset($_GET['saved']);
+// ── Handle POST ──
+$profileError = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+
+    // ── Save notification prefs ──
+    if ($action === 'save_notifs') {
+        $keys = [
+            'staff_session_reminder','staff_reminder_time','staff_trainee_sound',
+            'staff_trainee_warning','staff_announcement_enabled','staff_announcement_display',
+            'user_session_reminder','user_reminder_time','user_trainee_sound',
+            'user_new_session','user_cancellation','user_browser_notifs',
+        ];
+        $checkboxes = [
+            'staff_session_reminder','staff_trainee_sound','staff_trainee_warning',
+            'staff_announcement_enabled','user_session_reminder','user_trainee_sound',
+            'user_new_session','user_cancellation','user_browser_notifs',
+        ];
+        foreach ($keys as $k) {
+            $val = in_array($k, $checkboxes) ? (isset($_POST[$k]) ? '1' : '0') : ($_POST[$k] ?? '');
+            $s3 = mysqli_prepare($conn,
+                "INSERT INTO user_staff_notif_prefs (user_id, pref_key, pref_value)
+                 VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE pref_value = VALUES(pref_value)");
+            mysqli_stmt_bind_param($s3, "sss", $staffId, $k, $val);
+            mysqli_stmt_execute($s3);
+        }
+        header('Location: settings.php?saved=notifs');
+        exit;
+    }
+
+    // ── Save profile (staff) ──
+    if ($action === 'save_profile_staff' && $isStaff) {
+        $display_name     = trim($_POST['display_name']     ?? '');
+        $discord_username = trim($_POST['discord_username'] ?? '');
+        $roblox_name      = trim($_POST['roblox_name']      ?? '');
+        $hide_stats       = isset($_POST['hide_stats']) ? 1 : 0;
+
+        $s4 = mysqli_prepare($conn,
+            "UPDATE staff_list SET display_name=?, discord_username=?, staff_roblox_name=?, hide_stats=? WHERE staff_id=?");
+        mysqli_stmt_bind_param($s4, "sssii", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
+        mysqli_stmt_execute($s4);
+
+        // Update session display name
+        if ($display_name) $_SESSION['user']['display_name'] = $display_name;
+
+        header('Location: settings.php?saved=profile');
+        exit;
+    }
+
+    // ── Save profile (user) ──
+    if ($action === 'save_profile_user' && $isUser) {
+        $display_name        = trim($_POST['display_name']        ?? '');
+        $discord_username    = trim($_POST['discord_username']    ?? '');
+        $roblox_name         = trim($_POST['roblox_name']         ?? '');
+        $hide_trainee_stats  = isset($_POST['hide_trainee_stats']) ? 1 : 0;
+
+        $s5 = mysqli_prepare($conn,
+            "UPDATE user_list SET display_name=?, discord_username=?, roblox_name=?, hide_trainee_stats=? WHERE user_id=?");
+        mysqli_stmt_bind_param($s5, "sssii", $display_name, $discord_username, $roblox_name, $hide_trainee_stats, $staffId);
+        mysqli_stmt_execute($s5);
+
+        header('Location: settings.php?saved=profile');
+        exit;
+    }
+}
+
+$saved   = $_GET['saved'] ?? '';
 $dbError = $_SESSION['db_error'] ?? '';
 unset($_SESSION['db_error']);
+
+// ── Current profile values ──
+$cur = [];
+if ($isStaff && $staffRow) {
+    $cur['display_name']     = $staffRow['display_name']     ?? '';
+    $cur['discord_username'] = $staffRow['discord_username'] ?? '';
+    $cur['discord_id']       = $staffRow['staff_id']         ?? '';
+    $cur['roblox_name']      = $staffRow['staff_roblox_name']?? '';
+    $cur['hide_stats']       = $staffRow['hide_stats']       ?? 0;
+} elseif ($isUser && $userRow) {
+    $cur['display_name']        = $userRow['display_name']        ?? '';
+    $cur['discord_username']    = $userRow['discord_username']    ?? '';
+    $cur['discord_id']          = $userRow['user_id']             ?? '';
+    $cur['roblox_name']         = $userRow['roblox_name']         ?? '';
+    $cur['hide_trainee_stats']  = $userRow['hide_trainee_stats']  ?? 0;
+} else {
+    // Fallback to session
+    $cur['display_name']     = '';
+    $cur['discord_username'] = $user['username'] ?? '';
+    $cur['discord_id']       = $staffId;
+    $cur['roblox_name']      = $user['roblox_name'] ?? '';
+    $cur['hide_stats']       = 0;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -112,12 +172,12 @@ unset($_SESSION['db_error']);
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="icon" type="image/png" href="../icons/YSS Logo.png">
-    <title>YSS – Notifications</title>
+    <title>YSS – Settings</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/6c33013ae6.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="settings.css?v=<?= time() ?>"/>
+    <link rel="stylesheet" href="settings.css?v=<?= filemtime(__DIR__ . '/settings.css') ?>"/>
 </head>
 <body>
 <div id="bg"></div>
@@ -135,7 +195,7 @@ unset($_SESSION['db_error']);
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
                 <?php if ($avatar): ?>
-                    <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                    <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                 <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
             </div>
             <div class="profile-meta">
@@ -148,7 +208,7 @@ unset($_SESSION['db_error']);
             <div class="popup-header">
                 <div class="popup-avatar">
                     <?php if ($avatar): ?>
-                        <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                        <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                     <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
                 </div>
                 <div>
@@ -157,9 +217,9 @@ unset($_SESSION['db_error']);
                 </div>
             </div>
             <div class="popup-divider"></div>
-                <a href="notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>
-                <a href="settings.php" class="popup-item"><i class="fas fa-cog"></i> Settings</a>
-                <a href="../dashboard/dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-sign-out-alt"></i> Log out</a>
+            <a href="notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>
+            <a href="settings.php" class="popup-item"><i class="fas fa-gear"></i> Settings</a>
+            <a href="dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-right-from-bracket"></i> Log out</a>
         </div>
     </div>
 </header>
@@ -169,11 +229,13 @@ unset($_SESSION['db_error']);
     <div class="page-header">
         <div>
             <div class="section-label">Account Settings</div>
-            <p class="section-sub">Control how and when you get notified.</p>
+            <p class="section-sub">Manage your profile and notification preferences.</p>
         </div>
-        <div class="toast-wrap">
-            <?php if ($saved): ?>
-            <div class="save-toast"><i class="fas fa-circle-check"></i> Preferences saved</div>
+        <div class="toast-wrap" id="toast-wrap">
+            <?php if ($saved === 'profile'): ?>
+            <div class="save-toast"><i class="fas fa-circle-check"></i> Profile saved</div>
+            <?php elseif ($saved === 'notifs'): ?>
+            <div class="save-toast"><i class="fas fa-circle-check"></i> Notifications saved</div>
             <?php endif; ?>
             <?php if ($dbError): ?>
             <div class="error-toast"><i class="fas fa-triangle-exclamation"></i> <?= htmlspecialchars($dbError) ?></div>
@@ -181,255 +243,494 @@ unset($_SESSION['db_error']);
         </div>
     </div>
 
-    <form method="POST" action="" id="notif-form">
-
-        <!-- TAB SWITCHER (staff only) -->
+    <!-- ════ TAB BAR ════ -->
+    <div class="tab-bar">
+        <button type="button" class="tab-btn active" data-tab="profile">
+            <i class="fas fa-id-card"></i> Profile
+        </button>
         <?php if ($isStaff): ?>
-        <div class="tab-bar">
-            <button type="button" class="tab-btn" data-tab="general">
-                <i class="fas fa-user"></i> Profile Settings
-            </button>
-            <button type="button" class="tab-btn active" data-tab="staff">
-                <i class="fas fa-user-shield"></i> Staff Settings
-            </button>
-            <button type="button" class="tab-btn" data-tab="user">
-                <i class="fas fa-user"></i> User Settings
-            </button>
+        <button type="button" class="tab-btn" data-tab="staff-notifs">
+            <i class="fas fa-user-shield"></i> Staff Notifications
+        </button>
+        <?php endif; ?>
+        <button type="button" class="tab-btn" data-tab="user-notifs">
+            <i class="fas fa-bell"></i> Notifications
+        </button>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         PROFILE TAB
+    ════════════════════════════════════════ -->
+    <div class="settings-panel" id="panel-profile">
+
+        <?php if ($isStaff): ?>
+        <!-- ── STAFF PROFILE FORM ── -->
+        <form method="POST" action="" id="form-profile-staff">
+            <input type="hidden" name="action" value="save_profile_staff"/>
+
+            <div class="settings-section">
+                <div class="settings-section-title">
+                    <i class="fas fa-id-card"></i> Staff Profile
+                </div>
+                <p class="settings-section-desc">
+                    Changes to your display name and Roblox username will be reflected across the platform.
+                </p>
+
+                <!-- Avatar row -->
+                <div class="profile-avatar-row">
+                    <div class="profile-avatar-big">
+                        <?php if ($avatar): ?>
+                            <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                        <?php else: ?>
+                            <i class="fas fa-user"></i>
+                        <?php endif; ?>
+                    </div>
+                    <div class="profile-avatar-info">
+                        <div class="profile-avatar-name"><?= htmlspecialchars($cur['display_name'] ?: $username) ?></div>
+                        <div class="profile-avatar-role"><?= $role ?></div>
+                        <div class="profile-avatar-hint">Avatar is pulled from your Roblox account automatically.</div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <!-- Display Name -->
+                    <div class="form-group">
+                        <label class="form-label">Display Name</label>
+                        <div class="form-input-wrap">
+                            <i class="fas fa-signature form-input-icon"></i>
+                            <input type="text" name="display_name" id="staff-display-name"
+                                class="form-input" maxlength="50"
+                                placeholder="How you appear on the platform"
+                                value="<?= htmlspecialchars($cur['display_name']) ?>"
+                                data-confirm="display name"
+                                data-profanity-check="true"/>
+                        </div>
+                    </div>
+
+                    <!-- Discord Username -->
+                    <div class="form-group">
+                        <label class="form-label">Discord Username</label>
+                        <div class="form-input-wrap">
+                            <i class="fab fa-discord form-input-icon"></i>
+                            <input type="text" name="discord_username" id="staff-discord-username"
+                                class="form-input" maxlength="100"
+                                placeholder="your_discord_username"
+                                value="<?= htmlspecialchars($cur['discord_username']) ?>"
+                                data-confirm="Discord username"
+                                data-profanity-check="true"/>
+                        </div>
+                    </div>
+
+                    <!-- Discord ID (read-only) -->
+                    <div class="form-group">
+                        <label class="form-label">Discord ID <span class="form-label-hint">read-only</span></label>
+                        <div class="form-input-wrap">
+                            <i class="fas fa-fingerprint form-input-icon"></i>
+                            <input type="text" class="form-input readonly"
+                                value="<?= htmlspecialchars($cur['discord_id']) ?>" readonly/>
+                        </div>
+                    </div>
+
+                    <!-- Roblox Username -->
+                    <div class="form-group">
+                        <label class="form-label">Roblox Username</label>
+                        <div class="form-input-wrap">
+                            <i class="fas fa-gamepad form-input-icon"></i>
+                            <input type="text" name="roblox_name" id="staff-roblox-name"
+                                class="form-input" maxlength="100"
+                                placeholder="Your Roblox username"
+                                value="<?= htmlspecialchars($cur['roblox_name']) ?>"
+                                data-confirm="Roblox username"
+                                data-profanity-check="true"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hide stats toggle -->
+                <div class="notif-card" style="margin-top:16px;">
+                    <div class="notif-card-left">
+                        <div class="notif-icon-wrap purple"><i class="fas fa-eye-slash"></i></div>
+                        <div class="notif-info">
+                            <div class="notif-title">Hide Stats &amp; History</div>
+                            <div class="notif-desc">Other staff members won't see your session attendance and history.</div>
+                        </div>
+                    </div>
+                    <div class="notif-card-right">
+                        <label class="toggle-wrap">
+                            <input type="checkbox" name="hide_stats" <?= $cur['hide_stats'] ? 'checked' : '' ?>/>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-save" id="btn-save-staff-profile"
+                        onclick="submitProfileForm('form-profile-staff', 'staff')">
+                        <i class="fas fa-floppy-disk"></i> Save Profile
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <?php elseif ($isUser): ?>
+        <!-- ── USER PROFILE FORM ── -->
+        <form method="POST" action="" id="form-profile-user">
+            <input type="hidden" name="action" value="save_profile_user"/>
+
+            <div class="settings-section">
+                <div class="settings-section-title">
+                    <i class="fas fa-id-card"></i> User Profile
+                </div>
+
+                <div class="profile-avatar-row">
+                    <div class="profile-avatar-big">
+                        <?php if ($avatar): ?>
+                            <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                        <?php else: ?>
+                            <i class="fas fa-user"></i>
+                        <?php endif; ?>
+                    </div>
+                    <div class="profile-avatar-info">
+                        <div class="profile-avatar-name"><?= htmlspecialchars($cur['display_name'] ?: $username) ?></div>
+                        <div class="profile-avatar-hint">Avatar is pulled from your Roblox account automatically.</div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Display Name</label>
+                        <div class="form-input-wrap">
+                            <i class="fas fa-signature form-input-icon"></i>
+                            <input type="text" name="display_name" id="user-display-name"
+                                class="form-input" maxlength="50"
+                                placeholder="How you appear on the platform"
+                                value="<?= htmlspecialchars($cur['display_name']) ?>"
+                                data-confirm="display name"
+                                data-profanity-check="true"/>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Discord Username</label>
+                        <div class="form-input-wrap">
+                            <i class="fab fa-discord form-input-icon"></i>
+                            <input type="text" name="discord_username" id="user-discord-username"
+                                class="form-input" maxlength="100"
+                                placeholder="your_discord_username"
+                                value="<?= htmlspecialchars($cur['discord_username']) ?>"
+                                data-confirm="Discord username"
+                                data-profanity-check="true"/>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Discord ID <span class="form-label-hint">read-only</span></label>
+                        <div class="form-input-wrap">
+                            <i class="fas fa-fingerprint form-input-icon"></i>
+                            <input type="text" class="form-input readonly"
+                                value="<?= htmlspecialchars($cur['discord_id']) ?>" readonly/>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Roblox Username</label>
+                        <div class="form-input-wrap">
+                            <i class="fas fa-gamepad form-input-icon"></i>
+                            <input type="text" name="roblox_name" id="user-roblox-name"
+                                class="form-input" maxlength="100"
+                                placeholder="Your Roblox username"
+                                value="<?= htmlspecialchars($cur['roblox_name']) ?>"
+                                data-confirm="Roblox username"
+                                data-profanity-check="true"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="notif-card" style="margin-top:16px;">
+                    <div class="notif-card-left">
+                        <div class="notif-icon-wrap purple"><i class="fas fa-eye-slash"></i></div>
+                        <div class="notif-info">
+                            <div class="notif-title">Hide Trainee Stats &amp; History</div>
+                            <div class="notif-desc">Your training session history won't be visible to others.</div>
+                        </div>
+                    </div>
+                    <div class="notif-card-right">
+                        <label class="toggle-wrap">
+                            <input type="checkbox" name="hide_trainee_stats" <?= ($cur['hide_trainee_stats'] ?? 0) ? 'checked' : '' ?>/>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-save"
+                        onclick="submitProfileForm('form-profile-user', 'user')">
+                        <i class="fas fa-floppy-disk"></i> Save Profile
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <?php else: ?>
+        <div class="not-staff-msg">
+            <i class="fas fa-lock"></i>
+            <p>Profile settings are not available for your account type.</p>
         </div>
         <?php endif; ?>
 
-        <!-- ════ STAFF PANEL ════ -->
-        <div class="notif-panel" id="panel-staff">
+    </div><!-- /panel-profile -->
 
-            <?php if ($isStaff): ?>
-            <div class="panel-eyebrow"><i class="fas fa-shield-halved"></i> Staff Notifications</div>
+    <!-- ════════════════════════════════════════
+         STAFF NOTIFICATIONS TAB
+    ════════════════════════════════════════ -->
+    <?php if ($isStaff): ?>
+    <div class="settings-panel hidden" id="panel-staff-notifs">
+        <form method="POST" action="">
+            <input type="hidden" name="action" value="save_notifs"/>
 
-            <!-- Session Reminder -->
-            <div class="notif-card">
-                <div class="notif-card-left">
-                    <div class="notif-icon-wrap green"><i class="far fa-calendar-check"></i></div>
-                    <div class="notif-info">
-                        <div class="notif-title">Upcoming Session Reminder</div>
-                        <div class="notif-desc">Get alerted before your assigned session starts.</div>
+            <div class="settings-section">
+                <div class="settings-section-title"><i class="fas fa-shield-halved"></i> Staff Notifications</div>
+                <p class="settings-section-desc">Active only while you're in a live session as host, co-host, or assistant.</p>
+
+                <div class="notif-card">
+                    <div class="notif-card-left">
+                        <div class="notif-icon-wrap green"><i class="far fa-calendar-check"></i></div>
+                        <div class="notif-info">
+                            <div class="notif-title">Upcoming Session Reminder</div>
+                            <div class="notif-desc">Get alerted before your assigned session starts.</div>
+                        </div>
+                    </div>
+                    <div class="notif-card-right">
+                        <div class="inline-control">
+                            <span class="inline-label">Remind me</span>
+                            <select name="staff_reminder_time" class="inline-select <?= p($prefs,'staff_session_reminder')==='0'?'disabled':'' ?>" id="staff-reminder-time">
+                                <?php foreach (['5','10','15','30','60'] as $m): ?>
+                                    <option value="<?= $m ?>" <?= p($prefs,'staff_reminder_time')===$m?'selected':'' ?>><?= $m ?> min before</option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <label class="toggle-wrap">
+                            <input type="checkbox" name="staff_session_reminder"
+                                <?= p($prefs,'staff_session_reminder')==='1'?'checked':'' ?>
+                                onchange="toggleDependent(this,'staff-reminder-time')"/>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
                     </div>
                 </div>
-                <div class="notif-card-right">
-                    <div class="inline-control">
-                        <span class="inline-label">Remind me</span>
-                        <select name="staff_reminder_time"
-                            class="inline-select <?= p($prefs,'staff_session_reminder')==='0'?'disabled':'' ?>"
-                            id="staff-reminder-time">
-                            <?php foreach (['5','10','15','30','60'] as $m): ?>
-                                <option value="<?= $m ?>" <?= p($prefs,'staff_reminder_time')===$m?'selected':'' ?>><?= $m ?> min before</option>
-                            <?php endforeach; ?>
-                        </select>
+
+                <div class="notif-card">
+                    <div class="notif-card-left">
+                        <div class="notif-icon-wrap blue">
+                            <img src="../icons/Nextrainee.png" alt="Next Trainee" style="width:22px;height:22px;object-fit:contain;"/>
+                        </div>
+                        <div class="notif-info">
+                            <div class="notif-title">Next Trainee Sound Alert</div>
+                            <div class="notif-desc">Play a sound cue when it's time to move to the next trainee.</div>
+                        </div>
                     </div>
-                    <label class="toggle-wrap">
-                        <input type="checkbox" name="staff_session_reminder" id="tog-staff-reminder"
-                            <?= p($prefs,'staff_session_reminder')==='1'?'checked':'' ?>
-                            onchange="toggleDependent(this,'staff-reminder-time')"/>
-                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                    </label>
+                    <div class="notif-card-right">
+                        <label class="toggle-wrap">
+                            <input type="checkbox" name="staff_trainee_sound" <?= p($prefs,'staff_trainee_sound')==='1'?'checked':'' ?>/>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="notif-card">
+                    <div class="notif-card-left">
+                        <div class="notif-icon-wrap amber"><i class="fas fa-hourglass-end"></i></div>
+                        <div class="notif-info">
+                            <div class="notif-title">Trainee Turn Ending Warning</div>
+                            <div class="notif-desc">Notify 1 minute before the current trainee's time ends.</div>
+                        </div>
+                    </div>
+                    <div class="notif-card-right">
+                        <label class="toggle-wrap">
+                            <input type="checkbox" name="staff_trainee_warning" <?= p($prefs,'staff_trainee_warning')==='1'?'checked':'' ?>/>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="notif-card">
+                    <div class="notif-card-left">
+                        <div class="notif-icon-wrap purple"><i class="fas fa-bullhorn"></i></div>
+                        <div class="notif-info">
+                            <div class="notif-title">Global Staff Announcement</div>
+                            <div class="notif-desc">Display host announcements pushed during a live session.</div>
+                        </div>
+                    </div>
+                    <div class="notif-card-right">
+                        <div class="inline-control">
+                            <span class="inline-label">Display as</span>
+                            <select name="staff_announcement_display" class="inline-select <?= p($prefs,'staff_announcement_enabled')==='0'?'disabled':'' ?>" id="staff-announce-display">
+                                <option value="fullscreen" <?= p($prefs,'staff_announcement_display')==='fullscreen'?'selected':'' ?>>Full Screen</option>
+                                <option value="banner"     <?= p($prefs,'staff_announcement_display')==='banner'    ?'selected':'' ?>>Banner</option>
+                                <option value="toast"      <?= p($prefs,'staff_announcement_display')==='toast'     ?'selected':'' ?>>Toast</option>
+                            </select>
+                        </div>
+                        <label class="toggle-wrap">
+                            <input type="checkbox" name="staff_announcement_enabled"
+                                <?= p($prefs,'staff_announcement_enabled')==='1'?'checked':'' ?>
+                                onchange="toggleDependent(this,'staff-announce-display')"/>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-save"><i class="fas fa-floppy-disk"></i> Save</button>
                 </div>
             </div>
+        </form>
+    </div>
+    <?php endif; ?>
 
-            <!-- Trainee Sound Alert -->
-            <div class="notif-card">
-                <div class="notif-card-left">
-                    <div class="notif-icon-wrap blue">
-                        <img src="../icons/Nextrainee.png" alt="Next Trainee" style="width:22px;height:22px;object-fit:contain;"/>
+    <!-- ════════════════════════════════════════
+         USER NOTIFICATIONS TAB
+    ════════════════════════════════════════ -->
+    <div class="settings-panel hidden" id="panel-user-notifs">
+        <form method="POST" action="">
+            <input type="hidden" name="action" value="save_notifs"/>
+
+            <div class="settings-section">
+                <div class="settings-section-title"><i class="fas fa-bell"></i> General Notifications</div>
+                <p class="settings-section-desc">These apply to your account at all times.</p>
+
+                <div class="notif-card">
+                    <div class="notif-card-left">
+                        <div class="notif-icon-wrap green"><i class="far fa-calendar-check"></i></div>
+                        <div class="notif-info">
+                            <div class="notif-title">Upcoming Session Reminder</div>
+                            <div class="notif-desc">Get reminded before a session you're assigned to begins.</div>
+                        </div>
                     </div>
-                    <div class="notif-info">
-                        <div class="notif-title">Next Trainee Sound Alert</div>
-                        <div class="notif-desc">Play a sound cue when it's time to move to the next trainee.</div>
+                    <div class="notif-card-right">
+                        <div class="inline-control">
+                            <span class="inline-label">Remind me</span>
+                            <select name="user_reminder_time" class="inline-select <?= p($prefs,'user_session_reminder')==='0'?'disabled':'' ?>" id="user-reminder-time">
+                                <?php foreach (['5','10','15','30','60'] as $m): ?>
+                                    <option value="<?= $m ?>" <?= p($prefs,'user_reminder_time')===$m?'selected':'' ?>><?= $m ?> min before</option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <label class="toggle-wrap">
+                            <input type="checkbox" name="user_session_reminder"
+                                <?= p($prefs,'user_session_reminder')==='1'?'checked':'' ?>
+                                onchange="toggleDependent(this,'user-reminder-time')"/>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
                     </div>
                 </div>
-                <div class="notif-card-right">
-                    <label class="toggle-wrap">
-                        <input type="checkbox" name="staff_trainee_sound"
-                            <?= p($prefs,'staff_trainee_sound')==='1'?'checked':'' ?>/>
-                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                    </label>
+
+                <div class="notif-card">
+                    <div class="notif-card-left">
+                        <div class="notif-icon-wrap blue">
+                            <img src="../icons/Nextrainee.png" alt="Next Trainee" style="width:22px;height:22px;object-fit:contain;"/>
+                        </div>
+                        <div class="notif-info">
+                            <div class="notif-title">Next Trainee Sound Alert</div>
+                            <div class="notif-desc">Play a sound when it's your turn as the next trainee.</div>
+                        </div>
+                    </div>
+                    <div class="notif-card-right">
+                        <label class="toggle-wrap">
+                            <input type="checkbox" name="user_trainee_sound" <?= p($prefs,'user_trainee_sound')==='1'?'checked':'' ?>/>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="notif-card">
+                    <div class="notif-card-left">
+                        <div class="notif-icon-wrap purple"><i class="fas fa-calendar-plus"></i></div>
+                        <div class="notif-info">
+                            <div class="notif-title">New Session Notifications</div>
+                            <div class="notif-desc">Be notified when a new session is booked and open.</div>
+                        </div>
+                    </div>
+                    <div class="notif-card-right">
+                        <label class="toggle-wrap">
+                            <input type="checkbox" name="user_new_session" <?= p($prefs,'user_new_session')==='1'?'checked':'' ?>/>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="notif-card">
+                    <div class="notif-card-left">
+                        <div class="notif-icon-wrap red"><i class="far fa-window-close"></i></div>
+                        <div class="notif-info">
+                            <div class="notif-title">Session Cancellation Alerts</div>
+                            <div class="notif-desc">Get notified if a session you're part of is cancelled.</div>
+                        </div>
+                    </div>
+                    <div class="notif-card-right">
+                        <label class="toggle-wrap">
+                            <input type="checkbox" name="user_cancellation" <?= p($prefs,'user_cancellation')==='1'?'checked':'' ?>/>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="notif-card">
+                    <div class="notif-card-left">
+                        <div class="notif-icon-wrap amber"><i class="fas fa-bell"></i></div>
+                        <div class="notif-info">
+                            <div class="notif-title">Browser Notifications</div>
+                            <div class="notif-desc">Allow YSS to send native browser push notifications.</div>
+                        </div>
+                    </div>
+                    <div class="notif-card-right">
+                        <label class="toggle-wrap">
+                            <input type="checkbox" name="user_browser_notifs"
+                                <?= p($prefs,'user_browser_notifs')==='1'?'checked':'' ?>
+                                onchange="requestBrowserPermission(this)"/>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-save"><i class="fas fa-floppy-disk"></i> Save</button>
                 </div>
             </div>
+        </form>
+    </div>
 
-            <!-- Trainee Turn Ending Warning -->
-            <div class="notif-card">
-                <div class="notif-card-left">
-                    <div class="notif-icon-wrap amber"><i class="fas fa-hourglass-end"></i></div>
-                    <div class="notif-info">
-                        <div class="notif-title">Trainee Turn Ending Warning</div>
-                        <div class="notif-desc">Notify 1 minute before the current trainee's time ends.</div>
-                    </div>
-                </div>
-                <div class="notif-card-right">
-                    <label class="toggle-wrap">
-                        <input type="checkbox" name="staff_trainee_warning"
-                            <?= p($prefs,'staff_trainee_warning')==='1'?'checked':'' ?>/>
-                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Global Staff Announcement -->
-            <div class="notif-card">
-                <div class="notif-card-left">
-                    <div class="notif-icon-wrap purple"><i class="fas fa-bullhorn"></i></div>
-                    <div class="notif-info">
-                        <div class="notif-title">Global Staff Announcement</div>
-                        <div class="notif-desc">Display host announcements pushed during a live session.</div>
-                    </div>
-                </div>
-                <div class="notif-card-right">
-                    <div class="inline-control">
-                        <span class="inline-label">Display as</span>
-                        <select name="staff_announcement_display"
-                            class="inline-select <?= p($prefs,'staff_announcement_enabled')==='0'?'disabled':'' ?>"
-                            id="staff-announce-display">
-                            <option value="fullscreen" <?= p($prefs,'staff_announcement_display')==='fullscreen'?'selected':'' ?>>Full Screen</option>
-                            <option value="banner"     <?= p($prefs,'staff_announcement_display')==='banner'    ?'selected':'' ?>>Banner</option>
-                            <option value="toast"      <?= p($prefs,'staff_announcement_display')==='toast'     ?'selected':'' ?>>Toast</option>
-                        </select>
-                    </div>
-                    <label class="toggle-wrap">
-                        <input type="checkbox" name="staff_announcement_enabled" id="tog-announce"
-                            <?= p($prefs,'staff_announcement_enabled')==='1'?'checked':'' ?>
-                            onchange="toggleDependent(this,'staff-announce-display')"/>
-                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                    </label>
-                </div>
-            </div>
-
-            <?php else: ?>
-            <div class="not-staff-msg">
-                <i class="fas fa-lock"></i>
-                <p>Staff notifications are only available to active staff members.</p>
-            </div>
-            <?php endif; ?>
-
-        </div>
-
-        <!-- ════ USER PANEL ════ -->
-        <div class="notif-panel <?= $isStaff ? 'hidden' : '' ?>" id="panel-user">
-
-            <div class="panel-eyebrow"><i class="fas fa-user"></i> General Notifications</div>
-
-            <!-- Session Reminder -->
-            <div class="notif-card">
-                <div class="notif-card-left">
-                    <div class="notif-icon-wrap green"><i class="far fa-calendar-check"></i></div>
-                    <div class="notif-info">
-                        <div class="notif-title">Upcoming Session Reminder</div>
-                        <div class="notif-desc">Get reminded before a session you're assigned to begins.</div>
-                    </div>
-                </div>
-                <div class="notif-card-right">
-                    <div class="inline-control">
-                        <span class="inline-label">Remind me</span>
-                        <select name="user_reminder_time"
-                            class="inline-select <?= p($prefs,'user_session_reminder')==='0'?'disabled':'' ?>"
-                            id="user-reminder-time">
-                            <?php foreach (['5','10','15','30','60'] as $m): ?>
-                                <option value="<?= $m ?>" <?= p($prefs,'user_reminder_time')===$m?'selected':'' ?>><?= $m ?> min before</option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <label class="toggle-wrap">
-                        <input type="checkbox" name="user_session_reminder" id="tog-user-reminder"
-                            <?= p($prefs,'user_session_reminder')==='1'?'checked':'' ?>
-                            onchange="toggleDependent(this,'user-reminder-time')"/>
-                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Trainee Sound Alert -->
-            <div class="notif-card">
-                <div class="notif-card-left">
-                    <div class="notif-icon-wrap blue">
-                        <img src="../icons/Nextrainee.png" alt="Next Trainee" style="width:22px;height:22px;object-fit:contain;"/>
-                    </div>
-                    <div class="notif-info">
-                        <div class="notif-title">Next Trainee Sound Alert</div>
-                        <div class="notif-desc">Play a sound when it's your turn as the next trainee.</div>
-                    </div>
-                </div>
-                <div class="notif-card-right">
-                    <label class="toggle-wrap">
-                        <input type="checkbox" name="user_trainee_sound"
-                            <?= p($prefs,'user_trainee_sound')==='1'?'checked':'' ?>/>
-                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- New Session -->
-            <div class="notif-card">
-                <div class="notif-card-left">
-                    <div class="notif-icon-wrap purple"><i class="fas fa-calendar-plus"></i></div>
-                    <div class="notif-info">
-                        <div class="notif-title">New Session Notifications</div>
-                        <div class="notif-desc">Be notified when a new session is booked and open for sign-up.</div>
-                    </div>
-                </div>
-                <div class="notif-card-right">
-                    <label class="toggle-wrap">
-                        <input type="checkbox" name="user_new_session"
-                            <?= p($prefs,'user_new_session')==='1'?'checked':'' ?>/>
-                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Cancellation -->
-            <div class="notif-card">
-                <div class="notif-card-left">
-                    <div class="notif-icon-wrap red"><i class="far fa-window-close"></i></div>
-                    <div class="notif-info">
-                        <div class="notif-title">Session Cancellation Alerts</div>
-                        <div class="notif-desc">Get notified if a session you're part of is cancelled or postponed.</div>
-                    </div>
-                </div>
-                <div class="notif-card-right">
-                    <label class="toggle-wrap">
-                        <input type="checkbox" name="user_cancellation"
-                            <?= p($prefs,'user_cancellation')==='1'?'checked':'' ?>/>
-                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Browser Notifications -->
-            <div class="notif-card">
-                <div class="notif-card-left">
-                    <div class="notif-icon-wrap amber"><i class="fas fa-bell"></i></div>
-                    <div class="notif-info">
-                        <div class="notif-title">Browser Notifications</div>
-                        <div class="notif-desc">Allow YSS to send native browser push notifications.</div>
-                    </div>
-                </div>
-                <div class="notif-card-right">
-                    <label class="toggle-wrap">
-                        <input type="checkbox" name="user_browser_notifs" id="tog-browser"
-                            <?= p($prefs,'user_browser_notifs')==='1'?'checked':'' ?>
-                            onchange="requestBrowserPermission(this)"/>
-                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                    </label>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Save -->
-        <div class="form-actions">
-            <button type="submit" class="btn-save">
-                <i class="fas fa-floppy-disk"></i> Save Preferences
-            </button>
-        </div>
-
-    </form>
 </main>
 
+<!-- ════ CONFIRM MODAL ════ -->
+<div class="modal-backdrop" id="confirm-backdrop">
+    <div class="modal-box modal-sm" id="confirm-box">
+        <div class="modal-header">
+            <h2 class="modal-title">Confirm Change</h2>
+            <button class="modal-close-btn" onclick="closeConfirm()"><i class="fas fa-xmark"></i></button>
+        </div>
+        <p class="delete-msg" id="confirm-msg">Are you sure you want to change your display name?</p>
+        <div class="modal-footer">
+            <button type="button" class="btn-ghost" onclick="closeConfirm()">Cancel</button>
+            <button type="button" class="btn-save" id="confirm-ok-btn">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════ PROFANITY WARNING TOAST ════ -->
+<div class="profanity-toast" id="profanity-toast">
+    <div class="profanity-toast-inner">
+        <i class="fas fa-triangle-exclamation"></i>
+        <div>
+            <strong>Profanity Detected</strong>
+            <p>Your input contains inappropriate language and cannot be saved.</p>
+        </div>
+        <button onclick="closeProfanityToast()" class="profanity-toast-close"><i class="fas fa-xmark"></i></button>
+    </div>
+</div>
+
+<script>
+    // Pass PHP values to JS
+    const PROFANITY_API_KEY = 'YOUR_API_NINJAS_KEY_HERE'; // ← replace with your key
+</script>
 <script src="settings.js"></script>
 </body>
 </html>
