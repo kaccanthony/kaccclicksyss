@@ -37,7 +37,7 @@ $isStaff = mysqli_stmt_num_rows($stmt) > 0;
 
 // ── Load existing prefs or defaults ──
 $prefs = [];
-$stmt2 = mysqli_prepare($conn, "SELECT pref_key, pref_value FROM user_notification_prefs WHERE user_id = ?");
+$stmt2 = mysqli_prepare($conn, "SELECT pref_key, pref_value FROM user_staff_notif_prefs WHERE user_id = ?");
 mysqli_stmt_bind_param($stmt2, "s", $staffId);
 mysqli_stmt_execute($stmt2);
 $res2 = mysqli_stmt_get_result($stmt2);
@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Upsert
         $stmt3 = mysqli_prepare($conn,
-            "INSERT INTO user_notification_prefs (user_id, pref_key, pref_value)
+            "INSERT INTO user_staff_notif_prefs (user_id, pref_key, pref_value)
             VALUES (?, ?, ?)
             ON DUPLICATE KEY UPDATE pref_value = VALUES(pref_value)"
         );
