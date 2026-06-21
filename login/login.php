@@ -19,7 +19,8 @@ if (isset($_COOKIE['remember_token'])) {
 
     $stmt = mysqli_prepare($conn, "
         SELECT s.user_id, s.user_name, s.password_hash,
-            l.staff_rank, l.staff_perm_level, l.staff_roblox_name, l.staff_avatar
+            l.staff_rank, l.staff_perm_level, l.staff_roblox_name, 
+            l.staff_avatar, l.display_name, l.discord_username
         FROM pp_staff_pp s
         LEFT JOIN staff_list l ON l.staff_id = s.user_id
         WHERE s.remember_token = ?
