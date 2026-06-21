@@ -190,7 +190,7 @@ unset($_SESSION['db_error']);
                 <i class="fas fa-user"></i> Profile Settings
             </button>
             <button type="button" class="tab-btn active" data-tab="staff">
-                <i class="fas fa-shield-halved"></i> Staff Settings
+                <i class="fas fa-user-shield"></i> Staff Settings
             </button>
             <button type="button" class="tab-btn" data-tab="user">
                 <i class="fas fa-user"></i> User Settings

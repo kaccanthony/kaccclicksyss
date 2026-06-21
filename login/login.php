@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'expires'  => time() + (30 * 24 * 60 * 60),
             'path'     => '/',
             'secure'   => true,
-            'httponly' => true,   // JS cannot read it
+            'httponly' => true,
             'samesite' => 'Lax',
         ]);
     }
