@@ -27,7 +27,7 @@ if (empty($user['role'])) {
     exit;
 }
 
-// ── Is staff member? ──
+// ── Fetch Staff Data ──
 $isStaff = false;
 $staffRow = null;
 $stmt = mysqli_prepare($conn, "SELECT * FROM staff_list WHERE staff_id = ?");
@@ -38,7 +38,7 @@ if ($staffRow = mysqli_fetch_assoc($staffResult)) {
     $isStaff = true;
 }
 
-// ── Is user_list member? ──
+// ── Fetch User Data ──
 $isUser = false;
 $userRow = null;
 $stmtU = mysqli_prepare($conn, "SELECT * FROM user_list WHERE user_id = ?");
@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $hide_stats       = isset($_POST['hide_stats']) ? 1 : 0;
 
         $s4 = mysqli_prepare($conn,
-            "UPDATE staff_list SET display_name=?, discord_username=?, staff_roblox_name=?, hide_stats=? WHERE staff_id=?");
+            "UPDATE staff_list SET staff_display_name=?, staff_username=?, staff_roblox_name=?, hide_stats=? WHERE staff_id=?");
         mysqli_stmt_bind_param($s4, "sssii", $display_name, $discord_username, $roblox_name, $hide_stats, $staffId);
         mysqli_stmt_execute($s4);
 
@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $hide_trainee_stats  = isset($_POST['hide_trainee_stats']) ? 1 : 0;
 
         $s5 = mysqli_prepare($conn,
-            "UPDATE user_list SET display_name=?, discord_username=?, roblox_name=?, hide_trainee_stats=? WHERE user_id=?");
+            "UPDATE user_list SET user_display_name=?, user_name=?, user_roblox_name=?, hide_trainee_stats=? WHERE user_id=?");
         mysqli_stmt_bind_param($s5, "sssii", $display_name, $discord_username, $roblox_name, $hide_trainee_stats, $staffId);
         mysqli_stmt_execute($s5);
 
@@ -280,7 +280,7 @@ if ($isStaff && $staffRow) {
                 <div class="profile-avatar-row">
                     <div class="profile-avatar-big">
                         <?php if ($avatar): ?>
-                            <img src="<?= $avatar ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                            <img src="avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                         <?php else: ?>
                             <i class="fas fa-user"></i>
                         <?php endif; ?>
