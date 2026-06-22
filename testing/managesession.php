@@ -455,7 +455,7 @@ function statusBadge($status) {
 
         <!-- Trainees -->
         <?php
-            $num_slots = $tl['num_slots'];
+            $num_slots = $s['num_slots'];
             for ($i = 1; $i <= $num_slots; $i++){
                 echo "
                 <div class="form-row">
