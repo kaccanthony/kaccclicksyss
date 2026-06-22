@@ -20,6 +20,7 @@ $username  = htmlspecialchars($user['username']);
 $role      = htmlspecialchars($user['role'] ?? '');
 $permLevel = (int)($user['perm_level'] ?? 0);
 $avatar    = htmlspecialchars($user['avatar'] ?? '');
+$staffId   = $user['id'] ?? '';
 
 if (empty($user['role'])) {
     $_SESSION['error'] = 'Your account has no role assigned. Contact an admin.';
