@@ -45,7 +45,7 @@ if (empty($user['role'])) {
 }
 
 $allCards = [
-    'booking'      => ['label' => 'Manage Session(s)',   'sub' => 'Manager',               'icon' => '/public/assets/images/icons/OM.png',          'href' => '../managesession/managesession.php'],
+    'booking'      => ['label' => 'Manage Session(s)',   'sub' => 'Manager & Head Staff',               'icon' => '/public/assets/images/icons/OM.png',          'href' => '../managesession/managesession.php'],
     'setup'        => ['label' => 'Session Setup',       'sub' => 'Head-Staff',             'icon' => '/public/assets/images/icons/HS.png',          'href' => 'setup.php'],
     'panel_host'   => ['label' => 'Session Panel',       'sub' => 'Host Authorized',        'icon' => '/public/assets/images/icons/HS.png',          'href' => 'panel_host.php'],
     'panel_cohost' => ['label' => 'Session Panel',       'sub' => 'Co-Host Authorized',     'icon' => '/public/assets/images/icons/ST.png',          'href' => 'panel_cohost.php'],
@@ -59,7 +59,7 @@ $allCards = [
 $roleCards = [
     'Operations Manager'   => ['booking','setup','panel_host','panel_cohost','panel_asst','active','upcoming','past','staff'],
     'Community Manager'    => ['booking','setup','panel_host','panel_cohost','panel_asst','active','upcoming','past','staff'],
-    'Head Staff'           => ['setup','panel_host','panel_cohost','panel_asst','active','upcoming','past','staff'],
+    'Head Staff'           => ['booking', 'setup','panel_host','panel_cohost','panel_asst','active','upcoming','past','staff'],
     'Co-Host Authorized'   => ['panel_cohost','panel_asst','active','upcoming','past','staff'],
     'Assistant Authorized' => ['panel_asst','active','upcoming','past','staff'],
 ];
