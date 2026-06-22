@@ -462,8 +462,12 @@ function statusBadge($status) {
                     <div class="form-group">
                         <label>Trainee '.$i.'</label>
                         <input type="text" name="trainee_'.$i.'_name" id="f-trainee_'.$i.'_name" placeholder="Roblox username" required/>
+                    </div>
+                    <div class="form-group">
                         <label>Trainee '.$i.' Zone</label>
                         <input type="number" name="trainee_'.$i.'_zone" id="f-trainee_'.$i.'_zone" min="1" max="10" placeholder="Zone ID" required/>
+                    </div>
+                    <div class="form-group">
                         <label>Trainee '.$i.' Notes</label>
                         <input type="text" name="trainee_'.$i.'_notes" id="f-trainee_'.$i.'_notes" placeholder="Optional"/>
                     </div>
