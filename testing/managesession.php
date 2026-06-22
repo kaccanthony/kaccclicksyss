@@ -457,14 +457,14 @@ function statusBadge($status) {
         <?php
             $num_slots = $tl['num_slots'];
             for ($i = 1; $i <= $num_slots; $i++){
-                echo '
+                echo "
                 <div class="form-row">
                     <div class="form-group flex2">
                         <label>Trainee '.$i.'</label>
                         <input type="text" name="trainee_'.$i.'_name" id="f-trainee_'.$i.'_name" list="staff-datalist" placeholder="Roblox username" required/>
                     </div>
                 </div>
-                ';
+            ";
             }
         ?>
 
