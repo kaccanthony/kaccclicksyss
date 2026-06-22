@@ -188,7 +188,7 @@ if ($isStaff && $staffRow) {
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
                 <?php if ($avatar): ?>
-                    <img src="/modgules/portal/components/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                    <img src="/modules/portal/components/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                 <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
             </div>
             <div class="profile-meta">
@@ -201,7 +201,7 @@ if ($isStaff && $staffRow) {
             <div class="popup-header">
                 <div class="popup-avatar">
                     <?php if ($avatar): ?>
-                    <img src="/modgules/portal/components/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                    <img src="/modules/portal/components/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                     <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
                 </div>
                 <div>
@@ -271,7 +271,7 @@ if ($isStaff && $staffRow) {
                     <div class="profile-avatar-wrap">
                         <div class="profile-avatar-big" id="avatar-preview-wrap">
                             <?php if ($avatar): ?>
-                                <img src="/modgules/portal/components/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar"
+                                <img src="/modules/portal/components/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar"
                                     id="avatar-preview"
                                     style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                             <?php else: ?>
@@ -388,7 +388,7 @@ if ($isStaff && $staffRow) {
                     <div class="profile-avatar-wrap">
                         <div class="profile-avatar-big" id="avatar-preview-wrap">
                             <?php if ($avatar): ?>
-                                <img src="/modgules/portal/components/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar"
+                                <img src="/modules/portal/components/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar"
                                     id="avatar-preview"
                                     style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                             <?php else: ?>
