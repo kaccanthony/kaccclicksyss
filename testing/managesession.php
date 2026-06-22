@@ -451,6 +451,8 @@ function statusBadge($status) {
             <input type="text" name="additional_staff" id="f-additional_staff" placeholder="e.g. Yoshi5336 [Observer]"/>
         </div>
 
+        <div class="form-divider"><span>Trainee Assignment</span></div>
+
         <!-- Staff datalist autocomplete -->
         <datalist id="staff-datalist">
             <?php foreach ($staff_list as $sl): ?>
