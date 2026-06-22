@@ -97,7 +97,7 @@ foreach (($roleCards[$role] ?? []) as $key) {
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
                 <?php if ($hasAvatar): ?>
-                    <img src="/modgules/portal/components/avatar.php?id=<?= htmlspecialchars($staffId) ?>"
+                    <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>"
                         alt="Avatar"
                         style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                 <?php else: ?>
@@ -115,7 +115,7 @@ foreach (($roleCards[$role] ?? []) as $key) {
             <div class="popup-header">
                 <div class="popup-avatar">
                     <?php if ($hasAvatar): ?>
-                        <img src="/modules/portal/components/avatar.php?id=<?= htmlspecialchars($staffId) ?>"
+                        <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>"
                              alt="Avatar"
                              style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                     <?php else: ?>
