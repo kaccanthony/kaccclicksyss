@@ -277,3 +277,6 @@ html, body {
 .popup-item.danger { color: rgba(255,100,100,0.75); }
 .popup-item.danger:hover { background: rgba(255,60,60,0.12); color: #ff8080; }
 .popup-item.danger i { color: rgba(255,100,100,0.50); }
+
+.back-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.70); font-size: .82rem; text-decoration: none; transition: background .2s, color .2s; white-space: nowrap; }
+.back-btn:hover { background: rgba(255,255,255,.14); color: #fff; }

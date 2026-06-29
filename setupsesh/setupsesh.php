@@ -77,7 +77,7 @@ if ($staffId) {
         <div class="profile-popup" id="profile-popup">
             <div class="popup-header">
                 <div class="popup-avatar">
-                    <?php if ($avatar): ?>
+                    <?php if ($hasAvatar): ?>
                         <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                     <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
                 </div>
