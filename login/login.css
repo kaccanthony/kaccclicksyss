@@ -169,7 +169,7 @@ html, body {
     position: absolute;
     inset: 0;
     width: 0;
-    background: #F5F5F5;   /* Sliding color */
+    background: #000;   /* Sliding color */
     transition: width .3s ease;
     z-index: -1;
 }
