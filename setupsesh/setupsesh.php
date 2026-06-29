@@ -64,7 +64,7 @@ if ($staffId) {
         <a href="../dashboard/dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
-                <?php if ($avatar): ?>
+                <?php if ($hasAvatar): ?>
                     <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                 <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
             </div>
