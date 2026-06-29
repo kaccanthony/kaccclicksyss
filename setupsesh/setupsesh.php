@@ -45,7 +45,7 @@ if ($staffId) {
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="icon" type="image/png" href="/public/assets/images/YSS Logo.png"/>
-    <title>YSS – Dashboard</title>
+    <title>YSS – Setup Session</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -53,6 +53,7 @@ if ($staffId) {
     <link rel="stylesheet" href="setupsesh.css"/>
 </head>
 <body>
+<div id="bg"></div>
 <header class="topbar">
     <div class="logo-wrap">
         <div class="pulse-ring"></div>

@@ -184,7 +184,7 @@ if ($isStaff && $staffRow) {
     </div>
     <span class="app-name">YSS Session Manager</span>
     <div class="topbar-right">
-        <a href="dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        <a href="../dashboard/dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
                 <?php if ($avatar): ?>
