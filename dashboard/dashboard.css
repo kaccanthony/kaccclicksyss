@@ -18,7 +18,7 @@ html, body {
     inset: 0;
     background:
         linear-gradient(rgba(0,0,0,0.78), rgba(0,0,0,0.78)),
-        url("../images/YSSbgweb.png") center/cover no-repeat;
+        url("../public/assets/images/YSSbgweb.png") center/cover no-repeat;
     filter: blur(3px);
     scale: 1.05;
     z-index: 0;

@@ -163,13 +163,12 @@ html, body {
     transition: color .3s, transform .12s;
 }
 
-/* Sliding background */
 .btn-login::before {
     content: "";
     position: absolute;
     inset: 0;
     width: 0;
-    background: #000;   /* Sliding color */
+    background: #000;
     transition: width .3s ease;
     z-index: -1;
 }
