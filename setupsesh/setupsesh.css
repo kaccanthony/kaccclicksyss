@@ -90,9 +90,7 @@ html, body {
 }
 
 /* ── Profile button ── */
-.topbar-right {
-    position: relative;
-}
+.topbar-right { display: flex; align-items: center; gap: 10px; position: relative; }
 
 .profile-btn {
     display: flex;
