@@ -1,7 +1,7 @@
 
 <?php
 session_start();
-require_once '../login/cnn.php'; // adjust to your actual path
+require_once '../login/cnn.php';
 
 if (isset($_GET['logout'])) {
     session_destroy();
@@ -93,5 +93,7 @@ if ($staffId) {
         </div>
     </div>
 </header>
+<script src="setupsesh.js"></script>
 
 </body>
+</html>
