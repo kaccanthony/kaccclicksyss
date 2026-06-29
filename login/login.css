@@ -149,7 +149,7 @@ html, body {
     border-radius: 10px;
 
     background: rgba(255, 255, 255, .92);
-    color: #F5F5F5;
+    color: #000;
 
     font-size: .95rem;
     font-weight: 600;
@@ -169,7 +169,7 @@ html, body {
     position: absolute;
     inset: 0;
     width: 0;
-    background: #000;   /* Sliding color */
+    background: #F5F5F5;   /* Sliding color */
     transition: width .3s ease;
     z-index: -1;
 }
