@@ -161,7 +161,8 @@ html, body {
   letter-spacing: .03em;
   cursor: pointer;
   transition: background .2s, transform .12s;
-  &:after {
+}
+.btn-login:after {
     content: '';
     position: absolute;
     bottom: 0;
@@ -172,7 +173,7 @@ html, body {
     border-radius: 10rem;
     z-index: -2;
   }
-  &:before {
+  .btn-login:before {
     content: '';
     position: absolute;
     bottom: 0;
@@ -184,14 +185,13 @@ html, body {
     border-radius: 10rem;
     z-index: -1;
   }
-  &:hover {
+  .btn-login:hover {
     color: #fff;
     &:before {
       width: 100%;
     }
   }
-  &:active { transform: scale(.98); }
-}
+  .btn-login:active { transform: scale(.98); }
 
 /* ── Alert messages ─────────────────────────────────── */
 .alert {
