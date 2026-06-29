@@ -46,7 +46,7 @@ if (empty($user['role'])) {
 
 $allCards = [
     'booking'      => ['label' => 'Manage Session(s)',   'sub' => 'Manager & Head Staff',               'icon' => '/public/assets/images/icons/OM.png',          'href' => '../managesession/managesession.php'],
-    'setup'        => ['label' => 'Session Setup',       'sub' => 'Head-Staff',             'icon' => '/public/assets/images/icons/HS.png',          'href' => 'setup.php'],
+    'setup'        => ['label' => 'Session Setup',       'sub' => 'Head-Staff',             'icon' => '/public/assets/images/icons/HS.png',          'href' => '../setupsesh/setupsesh.php'],
     'panel_host'   => ['label' => 'Session Panel',       'sub' => 'Host Authorized',        'icon' => '/public/assets/images/icons/HS.png',          'href' => 'panel_host.php'],
     'panel_cohost' => ['label' => 'Session Panel',       'sub' => 'Co-Host Authorized',     'icon' => '/public/assets/images/icons/ST.png',          'href' => 'panel_cohost.php'],
     'panel_asst'   => ['label' => 'Session Panel',       'sub' => 'Assistant Authorized',   'icon' => '/public/assets/images/icons/ST.png',          'href' => 'panel_asst.php'],
