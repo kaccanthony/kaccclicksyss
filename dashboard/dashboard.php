@@ -74,7 +74,7 @@ foreach (($roleCards[$role] ?? []) as $key) {
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <link rel="icon" type="image/png" href="/public/assets/images/YSS Logo.png">
+    <link rel="icon" type="image/png" href="/public/assets/images/icons/YSS Logo.png">
     <title>YSS – Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -149,8 +149,8 @@ foreach (($roleCards[$role] ?? []) as $key) {
             <div class="bento-icon">
                 <?php if (str_starts_with($card['icon'], '/')): ?>
                     <img src="<?= htmlspecialchars($card['icon']) ?>"
-                         alt="<?= htmlspecialchars($card['label']) ?>"
-                         style="width:32px;height:32px;object-fit:contain;"/>
+                        alt="<?= htmlspecialchars($card['label']) ?>"
+                        style="width:32px;height:32px;object-fit:contain;"/>
                 <?php else: ?>
                     <i class="fas <?= htmlspecialchars($card['icon']) ?>"></i>
                 <?php endif; ?>
