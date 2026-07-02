@@ -13,7 +13,7 @@ html, body {
 /* ── Background ── */
 #bg {
     position: fixed; inset: 0;
-    background: url("../public/images/icons/YSSbgweb.png") center/cover no-repeat;
+    background: url("../public/assets/images/YSSbgweb.png") center/cover no-repeat;
     filter: blur(8px);
     transform: scale(1.1);
     z-index: 0;
