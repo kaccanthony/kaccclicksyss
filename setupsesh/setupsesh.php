@@ -202,8 +202,8 @@ $hostRanks   = ['Community Manager','Operations Manager','Head Staff'];
                     $slotsTotal = (int)$s['num_slots'];
                 ?>
                 <div class="sesh-card <?= $idx === 0 ? 'active' : '' ?>"
-                     data-id="<?= $s['session_id'] ?>"
-                     onclick="selectSession(this, <?= $s['session_id'] ?>)">
+                    data-id="<?= $s['session_id'] ?>"
+                    onclick="selectSession(this, <?= $s['session_id'] ?>)">
                     <div class="sesh-card-top">
                         <div class="sesh-time">
                             <i class="fas fa-clock"></i>
