@@ -21,7 +21,6 @@ $role      = htmlspecialchars($user['role'] ?? '');
 $permLevel = (int)($user['perm_level'] ?? 0);
 $staffId   = $user['id'] ?? '';   // ← define this
 
-// Check if avatar exists in DB (don't store blob in session)
 $hasAvatar = false;
 if ($staffId) {
     $stmt = mysqli_prepare($conn, "SELECT 1 FROM staff_list WHERE staff_id = ? AND LENGTH(staff_avatar) > 0");
