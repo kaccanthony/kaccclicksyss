@@ -68,6 +68,15 @@ while ($row = mysqli_fetch_assoc($resS)) {
     $sessions[] = $row;
 }
 
+// Add this right after the session query block to debug
+if (empty($sessions)) {
+    echo "<!-- DEBUG INSTRUCTIONS:
+    Logged in Staff ID: '$staffId'
+    Host Name Used for Query: '$hostDisplayName'
+    Date Used for Query: '$todayBST'
+    -->";
+}
+
 // ── Fetch all staff for dropdowns (grouped by rank) ──
 $staffByRank = [];
 $stmtStaff = mysqli_prepare($conn,
