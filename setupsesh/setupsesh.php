@@ -3,6 +3,13 @@ session_start();
 require_once '../login/cnn.php';
 
 // Forcing database connection to Europe Timezone
+// ── Get today's date in BST ──
+$bst = new DateTimeZone('Europe/London');
+$now = new DateTime('now', $bst);
+$offset = $now->format('P'); // Outputs "+01:00" or "+00:00" depending on Daylight Savings
+$todayBST = $now->format('Y-m-d');
+
+mysqli_query($conn, "SET time_zone = '$offset';");
 
 if (isset($_GET['logout'])) {
     session_destroy();
@@ -38,12 +45,6 @@ if ($staffId) {
     mysqli_stmt_store_result($stmt);
     $hasAvatar = mysqli_stmt_num_rows($stmt) > 0;
 }
-
-// ── Get today's date in BST ──
-$bst = new DateTimeZone('Europe/London');
-$now = new DateTime('now', $bst);
-$offset = $now->format('P'); // Outputs "+01:00" or "+00:00" depending on Daylight Savings
-$todayBST = $now->format('Y-m-d');
 
 // ── Fetch the logged-in user's display name from staff_list ──
 $hostDisplayName = '';
