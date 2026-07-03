@@ -15,7 +15,7 @@
 </head>
 <body>
 <div id="bg"></div>
-
+ 
 <header class="topbar">
   <div class="logo-wrap">
     <div class="pulse-ring"></div>
@@ -27,50 +27,78 @@
   <span class="sync-note" id="sync-note">synced 2s ago</span>
   <a href="../dashboard/dashboard.php" class="back-btn" style="margin-left:14px;"><i class="fas fa-arrow-left"></i> Dashboard</a>
 </header>
-
+ 
 <main>
   <div class="session-head">
     <div>
       <div class="session-title">Session #482 — Vlackar</div>
-      <div class="session-sub">Viewing as <strong>Trainer</strong> · role-based edit access is enforced server-side</div>
+      <div class="session-sub">Viewing as <strong>Trainer</strong> · edits are locked by default — use overrides below to unlock specific sections</div>
     </div>
   </div>
-
+ 
+  <!-- Override controls -->
+  <section class="panel">
+    <div class="panel-title">Session Controls <span style="font-weight:400;color:var(--text-faint);text-transform:none;letter-spacing:0;">— overrides prevent accidental edits until switched on</span></div>
+    <div class="override-bar">
+      <button class="ovr-btn" data-ovr="session-details"><span class="sw"></span><i class="fas fa-lock"></i> Override Session Details</button>
+      <button class="ovr-btn" data-ovr="trainees"><span class="sw"></span><i class="fas fa-user-plus"></i> Override Trainees</button>
+      <button class="ovr-btn" data-ovr="staff-roles"><span class="sw"></span><i class="fas fa-user-shield"></i> Allow Assistant Override Staff Roles</button>
+      <button class="ovr-btn" data-ovr="drivers-disable"><span class="sw"></span><i class="fas fa-ban"></i> Disable Assistant Input on Drivers</button>
+      <button class="ovr-btn" data-ovr="slot-order"><span class="sw"></span><i class="fas fa-arrow-up-wide-short"></i> Override Slot Ordering</button>
+    </div>
+  </section>
+ 
   <!-- Session info -->
   <section class="panel">
-    <div class="panel-title">Session Details</div>
-    <div class="info-grid">
+    <div class="panel-title">
+      Session Details
+      <span class="lock-tag is-locked" id="details-lock-tag"><i class="fas fa-lock"></i> Locked</span>
+    </div>
+    <div class="info-grid" id="details-grid">
       <div class="info-cell">
         <div class="info-label">Session Host</div>
-        <div class="info-value"><select class="cell-input"><option>Vlackar</option><option>Mikael</option></select></div>
+        <div class="info-value"><select class="cell-input details-field" disabled><option>Vlackar</option><option>Mikael</option></select></div>
       </div>
       <div class="info-cell">
         <div class="info-label">Discord ID</div>
-        <div class="info-value"><input class="cell-input" value="479880148842184725" placeholder="Discord ID"/></div>
+        <div class="info-value"><input class="cell-input details-field" disabled value="479880148842184725" placeholder="Discord ID"/></div>
       </div>
       <div class="info-cell">
         <div class="info-label">Session Date</div>
-        <div class="info-value"><input class="cell-input" type="date"/></div>
+        <div class="info-value"><input class="cell-input details-field" disabled type="date"/></div>
       </div>
       <div class="info-cell">
         <div class="info-label">Session Time</div>
-        <div class="info-value"><input class="cell-input" type="time"/></div>
+        <div class="info-value"><input class="cell-input details-field" disabled type="time"/></div>
       </div>
       <div class="info-cell" style="grid-column:1/3;">
-        <div class="info-label">Status</div>
-        <span class="status-badge"><span class="live-dot" style="width:5px;height:5px;"></span> In Progress</span>
+        <div class="info-label">Session Status</div>
+        <div class="info-value">
+          <select class="cell-input details-field" id="status-select" disabled>
+            <option value="inprogress">In Progress</option>
+            <option value="paused">Paused</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="concluded">Concluded</option>
+          </select>
+        </div>
+      </div>
+      <div class="info-cell" style="grid-column:3/5;display:flex;align-items:flex-end;">
+        <span class="status-badge status-inprogress" id="status-badge"><span class="status-dot"></span> In Progress</span>
       </div>
     </div>
   </section>
-
+ 
   <!-- Trainees table -->
   <section class="panel">
-    <div class="panel-title">Trainees Panel</div>
-    <div class="table-wrap">
+    <div class="panel-title">
+      Trainees Panel
+      <span style="font-weight:400;color:var(--text-faint);text-transform:none;letter-spacing:0;font-size:.68rem;">scroll wheel over the table scrolls sideways · ctrl+scroll still zooms the page</span>
+    </div>
+    <div class="table-wrap" id="trainee-scroll">
       <table>
         <thead>
           <tr>
-            <th>Schedule</th>
+            <th>Slot</th>
             <th>Trainee Discord</th>
             <th>Discord ID</th>
             <th>Roblox</th>
@@ -79,17 +107,20 @@
             <th>Attendance</th>
             <th>Trainer</th>
             <th>Trainer Discord ID</th>
-            <th style="min-width:220px;">Announcements</th>
-            <th style="min-width:160px;">Trainee Notes</th>
+            <th>Feedback</th>
+            <th style="min-width:200px;">Announcements</th>
+            <th style="min-width:150px;">Trainee Notes</th>
+            <th>Completed</th>
           </tr>
         </thead>
-        <tbody id="trainee-rows">
-          <!-- rows generated below -->
-        </tbody>
+        <tbody id="trainee-rows"></tbody>
       </table>
     </div>
+    <div class="add-row-bar">
+      <button class="add-btn" id="add-trainee-btn" disabled><i class="fas fa-plus"></i> Add unallocated trainee (requires Override Trainees)</button>
+    </div>
   </section>
-
+ 
   <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:20px;">
     <!-- Drivers -->
     <section class="panel">
@@ -97,54 +128,102 @@
       <div class="table-wrap">
         <table>
           <thead><tr><th>Discord</th><th>Roblox</th><th>Attendance</th></tr></thead>
-          <tbody>
-            <tr><td><input class="cell-input" placeholder="username"/></td><td><input class="cell-input" placeholder="username"/></td><td><input type="checkbox" class="chk"/></td></tr>
-            <tr><td><input class="cell-input" placeholder="username"/></td><td><input class="cell-input" placeholder="username"/></td><td><input type="checkbox" class="chk"/></td></tr>
-            <tr><td><input class="cell-input" placeholder="username"/></td><td><input class="cell-input" placeholder="username"/></td><td><input type="checkbox" class="chk"/></td></tr>
-          </tbody>
+          <tbody id="driver-rows"></tbody>
         </table>
       </div>
+      <div class="add-row-bar">
+        <button class="add-btn" id="add-driver-btn"><i class="fas fa-plus"></i> Add driver</button>
+      </div>
     </section>
-
+ 
     <!-- Staff -->
     <section class="panel">
       <div class="panel-title staff">Staff</div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Role in Shift</th><th>Discord</th><th>Attendance</th><th>Notes</th></tr></thead>
-          <tbody>
-            <tr>
-              <td><select class="cell-input"><option style="color:#f2a5b0;">Main AST</option><option>Co-Host</option><option>Select</option></select></td>
-              <td><input class="cell-input" placeholder="username"/></td>
-              <td><input type="checkbox" class="chk"/></td>
-              <td><input class="cell-input" placeholder="—"/></td>
-            </tr>
-            <tr>
-              <td><select class="cell-input"><option>Select</option></select></td>
-              <td><input class="cell-input" placeholder="username"/></td>
-              <td><input type="checkbox" class="chk"/></td>
-              <td><input class="cell-input" placeholder="—"/></td>
-            </tr>
-            <tr>
-              <td><select class="cell-input"><option>Select</option></select></td>
-              <td><input class="cell-input" placeholder="username"/></td>
-              <td><input type="checkbox" class="chk"/></td>
-              <td><input class="cell-input" placeholder="—"/></td>
-            </tr>
-          </tbody>
+          <tbody id="staff-rows"></tbody>
         </table>
+      </div>
+      <div class="add-row-bar">
+        <button class="add-btn" id="add-staff-btn"><i class="fas fa-plus"></i> Add staff member</button>
       </div>
     </section>
   </div>
 </main>
-
-<!-- Soundboard: only visible/enabled to roles with sound-trigger permission -->
+ 
+<!-- Soundboard -->
 <div class="soundboard" id="soundboard">
   <span class="sb-label">Soundboard</span>
   <button class="sb-btn" data-sound="airhorn"><i class="fas fa-bullhorn"></i>Airhorn</button>
   <button class="sb-btn" data-sound="bell"><i class="fas fa-bell"></i>Bell</button>
   <button class="sb-btn" data-sound="applause"><i class="fas fa-hands-clapping"></i>Clap</button>
   <button class="sb-btn" data-sound="alert"><i class="fas fa-triangle-exclamation"></i>Alert</button>
+</div>
+ 
+<!-- Feedback Modal -->
+<div class="modal-overlay" id="feedback-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>JTR / NTR</h2>
+      <button class="modal-close" id="modal-close"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="mf-grid">
+        <div class="mf-field">
+          <label>Zone</label>
+          <select><option>Select</option><option>Zone A</option><option>Zone B</option><option>Zone C</option><option>Zone D</option></select>
+        </div>
+        <div class="mf-field">
+          <label>Date</label>
+          <input type="date"/>
+        </div>
+        <div class="mf-field">
+          <label>Name (Trainee)</label>
+          <input type="text" id="fb-trainee-name" placeholder="Trainee name"/>
+        </div>
+        <div class="mf-field">
+          <label>Trains</label>
+          <input type="text" placeholder="Trains"/>
+        </div>
+        <div class="mf-field">
+          <label>Setup time</label>
+          <input type="text" placeholder="0:01:02"/>
+        </div>
+      </div>
+ 
+      <div class="mf-section-label">Script</div>
+      <div class="mf-field mf-notes" style="margin-bottom:6px;">
+        <textarea placeholder="YSS JTR+ Briefing script / copypasta goes here...">YSS JTR+ Briefing
+#N/A
+Before we start...
+Here are some ground rules.
+You have 11 minutes.
+While you are being trained...
+You are timed.
+Do you have any questions? — wait for question
+If you have none, we'll begin — no questions
+Time's up. — end of trainee's time</textarea>
+      </div>
+ 
+      <div class="mf-section-label">Feedback</div>
+      <div class="rating-row"><span class="r-label">Setup</span><div class="rating-scale" data-field="setup"></div></div>
+      <div class="rating-row"><span class="r-label">Conflict Handling</span><div class="rating-scale" data-field="conflict"></div></div>
+      <div class="rating-row"><span class="r-label">Priority</span><div class="rating-scale" data-field="priority"></div></div>
+      <div class="rating-row"><span class="r-label">RB &amp; Timing</span><div class="rating-scale" data-field="rbtiming"></div></div>
+      <div class="rating-row"><span class="r-label">Overall</span><div class="rating-scale" data-field="overall"></div></div>
+ 
+      <div class="mf-section-label">Notes / Advice</div>
+      <div class="mf-field mf-notes">
+        <textarea id="fb-notes" placeholder="Write notes and advice for the trainee..."></textarea>
+      </div>
+ 
+      <div class="modal-footer">
+        <button class="mbtn" id="fb-cancel">Cancel</button>
+        <button class="mbtn primary" id="fb-save">Save feedback</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="sessiongoing.js"></script>
