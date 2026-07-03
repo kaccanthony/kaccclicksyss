@@ -71,15 +71,6 @@ while ($row = mysqli_fetch_assoc($resS)) {
     $sessions[] = $row;
 }
 
-// ── Improved Debugger (View Page Source to Inspect) ──
-echo "<!-- SESSION DATA DEBUG: " . print_r($_SESSION['user'], true) . " -->";
-echo "<!-- DATABASE QUERY DEBUG:
-    Logged in Staff ID: '$staffId'
-    Resolved Host Name: '$hostDisplayName'
-    Query Date (BST):   '$todayBST'
-    Sessions Found:     " . count($sessions) . "
--->";
-
 // ── Fetch all staff for dropdowns (grouped by rank) ──
 $staffByRank = [];
 $stmtStaff = mysqli_prepare($conn,
