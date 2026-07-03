@@ -2,6 +2,9 @@
 session_start();
 require_once '../login/cnn.php';
 
+// Forcing database connection to Europe Timezone
+mysqli_query($conn, "SET time_zone = 'Europe/London';");
+
 if (isset($_GET['logout'])) {
     session_destroy();
     setcookie('remember_token', '', time() - 3600, '/', '', true, true);
@@ -18,7 +21,7 @@ $user      = $_SESSION['user'];
 $username  = htmlspecialchars($user['username']);
 $role      = htmlspecialchars($user['role'] ?? '');
 $permLevel = (int)($user['perm_level'] ?? 0);
-$staffId   = $user['user_id'] ?? '';
+$staffId   = $user['id'] ?? '';
 
 // Redirect if not authorized (Head Staff+)
 $allowedRoles = ['Head Staff', 'Operations Manager', 'Community Manager'];
@@ -68,14 +71,14 @@ while ($row = mysqli_fetch_assoc($resS)) {
     $sessions[] = $row;
 }
 
-// Add this right after the session query block to debug
-if (empty($sessions)) {
-    echo "<!-- DEBUG INSTRUCTIONS:
+// ── Improved Debugger (View Page Source to Inspect) ──
+echo "<!-- SESSION DATA DEBUG: " . print_r($_SESSION['user'], true) . " -->";
+echo "<!-- DATABASE QUERY DEBUG:
     Logged in Staff ID: '$staffId'
-    Host Name Used for Query: '$hostDisplayName'
-    Date Used for Query: '$todayBST'
-    -->";
-}
+    Resolved Host Name: '$hostDisplayName'
+    Query Date (BST):   '$todayBST'
+    Sessions Found:     " . count($sessions) . "
+-->";
 
 // ── Fetch all staff for dropdowns (grouped by rank) ──
 $staffByRank = [];
