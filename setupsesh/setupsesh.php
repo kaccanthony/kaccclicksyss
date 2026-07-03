@@ -196,7 +196,7 @@ $hostRanks   = ['Community Manager','Operations Manager','Head Staff'];
             <?php else: ?>
             <div class="session-list">
                 <?php foreach ($sessions as $idx => $s):
-                    $timeFormatted = date('g:i A', strtotime($s['session_time']));
+                    $timeFormatted = date('H:i', strtotime($s['session_time']));
                     $statusClass   = strtolower($s['session_status']);
                     $isBooked      = (int)$s['session_booked'];
                     $slotsFilled   = 0;
