@@ -3,7 +3,6 @@ session_start();
 require_once '../login/cnn.php';
 
 // Forcing database connection to Europe Timezone
-mysqli_query($conn, "SET time_zone = 'Europe/London';");
 
 if (isset($_GET['logout'])) {
     session_destroy();
