@@ -18,7 +18,7 @@ $user      = $_SESSION['user'];
 $username  = htmlspecialchars($user['username']);
 $role      = htmlspecialchars($user['role'] ?? '');
 $permLevel = (int)($user['perm_level'] ?? 0);
-$staffId   = $user['id'] ?? '';
+$staffId   = $user['user_id'] ?? '';
 
 // Redirect if not authorized (Head Staff+)
 $allowedRoles = ['Head Staff', 'Operations Manager', 'Community Manager'];
@@ -44,12 +44,12 @@ $todayBST = $now->format('Y-m-d');
 
 // ── Fetch the logged-in user's display name from staff_list ──
 $hostDisplayName = '';
-$stmtHost = mysqli_prepare($conn, "SELECT staff_display_name, staff_name FROM staff_list WHERE staff_id = ?");
+$stmtHost = mysqli_prepare($conn, "SELECT staff_roblox_name, staff_name FROM staff_list WHERE staff_id = ?");
 mysqli_stmt_bind_param($stmtHost, "s", $staffId);
 mysqli_stmt_execute($stmtHost);
 $resHost = mysqli_stmt_get_result($stmtHost);
 if ($rowHost = mysqli_fetch_assoc($resHost)) {
-    $hostDisplayName = $rowHost['staff_display_name'] ?: $rowHost['staff_name'];
+    $hostDisplayName = $rowHost['staff_roblox_name'] ?: $rowHost['staff_name'];
 }
 
 // ── Fetch today's sessions where logged-in user is Host ──
@@ -57,9 +57,9 @@ if ($rowHost = mysqli_fetch_assoc($resHost)) {
 $sessions = [];
 $stmtS = mysqli_prepare($conn,
     "SELECT * FROM session_upcoming
-     WHERE session_date = ?
-       AND host = ?
-     ORDER BY session_time ASC"
+    WHERE session_date = ?
+    AND host = ?
+    ORDER BY session_time ASC"
 );
 mysqli_stmt_bind_param($stmtS, "ss", $todayBST, $hostDisplayName);
 mysqli_stmt_execute($stmtS);
@@ -71,15 +71,15 @@ while ($row = mysqli_fetch_assoc($resS)) {
 // ── Fetch all staff for dropdowns (grouped by rank) ──
 $staffByRank = [];
 $stmtStaff = mysqli_prepare($conn,
-    "SELECT staff_id, staff_display_name, staff_name, staff_rank
-     FROM staff_list
-     WHERE staff_rank IN (
-         'Assistant Authorized','Co-Host Authorized',
-         'Head Staff','Operations Manager','Community Manager'
-     )
-     ORDER BY
-       FIELD(staff_rank,'Community Manager','Operations Manager','Head Staff','Co-Host Authorized','Assistant Authorized'),
-       staff_display_name ASC"
+"SELECT staff_id, staff_display_name, staff_name, staff_rank
+    FROM staff_list
+    WHERE staff_rank IN (
+        'Assistant Authorized','Co-Host Authorized',
+        'Head Staff','Operations Manager','Community Manager'
+    )
+    ORDER BY
+    FIELD(staff_rank,'Community Manager','Operations Manager','Head Staff','Co-Host Authorized','Assistant Authorized'),
+    staff_display_name ASC"
 );
 mysqli_stmt_execute($stmtStaff);
 $resStaff = mysqli_stmt_get_result($stmtStaff);
