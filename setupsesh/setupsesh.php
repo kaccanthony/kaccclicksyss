@@ -57,7 +57,6 @@ if ($rowHost = mysqli_fetch_assoc($resHost)) {
 }
 
 // ── Fetch today's sessions where logged-in user is Host ──
-// Host field stores a display name like "Yoshi5336"
 $sessions = [];
 $stmtS = mysqli_prepare($conn,
     "SELECT * FROM session_upcoming
