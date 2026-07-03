@@ -94,9 +94,9 @@ function openSetupModal(sessionId) {
 
     // 4. Populate Trainees list inside the Modal
     const traineeListEl = document.getElementById('modal-trainee-list');
-    // if (trainees.length === 0) {
-    //     traineeListEl.innerHTML = '<div class="no-trainees-msg">No trainees registered for this session.</div>';
-    // } else {
+    if (trainees.length === 0) {
+        traineeListEl.innerHTML = '<div class="no-trainees-msg">No trainees registered for this session.</div>';
+    } else {
         traineeListEl.innerHTML = trainees.map((tr, idx) => `
             <div class="modal-trainee-row" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
                 <span class="mtr-num" style="opacity: 0.5;">#${idx + 1}</span>
@@ -105,7 +105,7 @@ function openSetupModal(sessionId) {
                 ${tr.note ? `<span class="mtr-note" title="${escapeHtml(tr.note)}" style="font-size: 0.85em; opacity: 0.6;"><i class="fas fa-note-sticky"></i> ${escapeHtml(tr.note)}</span>` : ''}
             </div>
         `).join('');
-    // }
+    }
 
     // 5. Open the Modal
     const modalBackdrop = document.getElementById('modal-backdrop');
