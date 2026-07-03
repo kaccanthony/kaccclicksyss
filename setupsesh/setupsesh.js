@@ -186,12 +186,12 @@ async function confirmSetup() {
 function formatTime(timeStr) {
     if (!timeStr) return '—';
     const [hours, minutes] = timeStr.split(':');
-    let hh = parseInt(hours, 10);
-    const m = minutes || '00';
-    const ampm = hh >= 12 ? 'PM' : 'AM';
-    hh = hh % 12;
-    hh = hh ? hh : 12; // convert 0 to 12
-    return `${hh}:${m} ${ampm}`;
+    
+    // Pad hours and minutes with leading zeros to keep them double-digit (e.g. "09:05")
+    const hh = hours.padStart(2, '0');
+    const mm = (minutes || '00').padStart(2, '0');
+    
+    return `${hh}:${mm}`;
 }
 
 function escapeHtml(str) {

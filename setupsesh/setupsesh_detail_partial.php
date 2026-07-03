@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 // 1. Define the rendering function
 if (!function_exists('renderDetailPanel')) {
     function renderDetailPanel(array $s, array $staffByRank = [], array $assistRanks = [], array $cohostRanks = [], array $hostRanks = []): string {
-        $timeFormatted = date('g:i A', strtotime($s['session_time']));
+        $timeFormatted = date('H:i', strtotime($s['session_time']));
         $slotsFilled = 0;
         for ($t = 1; $t <= 10; $t++) {
             if (!empty($s["trainee_{$t}_name"])) $slotsFilled++;
