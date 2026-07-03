@@ -794,3 +794,39 @@ html, body {
     transition: background 0.18s;
 }
 .btn-primary:hover { background: #e0e0e0; }
+
+/* ── Trainee Input Grid Styles ── */
+.trainee-row-input-grid {
+    display: grid;
+    grid-template-columns: 30px 1fr 100px 1.5fr;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.trainee-row-num {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.35);
+    text-align: center;
+}
+
+.trainee-input {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #fff;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.18s;
+}
+
+.trainee-input:focus {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.trainee-zone-field {
+    text-align: center;
+}

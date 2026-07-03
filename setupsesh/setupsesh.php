@@ -276,6 +276,22 @@ $hostRanks   = ['Community Manager','Operations Manager','Head Staff'];
 
         <div class="modal-body">
 
+            <!-- ── NEW: Quick Auto-Fill Tool ── -->
+            <div class="modal-section" style="background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.15); padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+                <div class="modal-section-title"><i class="fas fa-magic"></i> Quick Auto-Fill Tool</div>
+                <textarea class="modal-textarea" id="m-paste-box" rows="3" placeholder="Paste staff list or trainee list here...
+                Example Staff:
+                Host: Yoshi5336
+                Co-Host 1: PlayerA
+                Example Trainees:
+                Player1 (Zone 1)
+                Player2 (Zone 3) - Fast learner" style="margin-bottom: 10px;"></textarea>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-ghost" onclick="autofillStaff()" style="flex: 1; padding: 8px; font-size: 0.8rem;"><i class="fas fa-user-shield"></i> Autofill Staff</button>
+                    <button type="button" class="btn-ghost" onclick="autofillTrainees()" style="flex: 1; padding: 8px; font-size: 0.8rem;"><i class="fas fa-graduation-cap"></i> Autofill Trainees</button>
+                </div>
+            </div>
+
             <!-- Session Info Banner -->
             <div class="modal-info-banner" id="modal-info-banner">
                 <div class="mib-row">
