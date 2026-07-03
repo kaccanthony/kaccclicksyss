@@ -175,3 +175,42 @@ textarea.cell-input{resize:vertical;min-height:34px;font-size:.78rem;line-height
 .mbtn:hover{filter:brightness(1.1);}
 .modal-close{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.15);border:none;width:28px;height:28px;border-radius:50%;color:#fff;cursor:pointer;font-size:.85rem;}
 .modal-head{position:relative;}
+
+.feedback-row{
+    display:grid;
+    grid-template-columns:25% 75%;   /* or 220px 1fr */
+    gap:16px;
+    align-items:start;
+    padding:12px 0;
+    border-bottom:1px solid var(--border);
+}
+
+.feedback-row:last-child{
+    border-bottom:none;
+}
+
+.feedback-label{
+    display:flex;
+    align-items:center;
+    min-height:90px;      /* matches textarea height */
+    font-size:.82rem;
+    font-weight:500;
+    color:rgba(255,255,255,.85);
+}
+
+.feedback-text{
+    width:100%;
+    min-height:90px;
+    resize:vertical;
+    padding:10px 12px;
+    background:rgba(255,255,255,.06);
+    border:1px solid var(--border-strong);
+    border-radius:10px;
+    color:#fff;
+    font:inherit;
+}
+
+.feedback-text:focus{
+    outline:none;
+    border-color:var(--accent);
+}
