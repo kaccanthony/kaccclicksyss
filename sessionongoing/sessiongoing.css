@@ -150,9 +150,9 @@ textarea.cell-input{resize:vertical;min-height:34px;font-size:.78rem;line-height
 .sb-label{font-size:.62rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;padding:0 10px;display:flex;align-items:center;border-right:1px solid var(--border);margin-right:2px;}
  
 /* ── modal ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:300;display:none;align-items:center;justify-content:center;padding:24px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:300;display:none;align-items:center;justify-content:center;padding:24px;}
 .modal-overlay.open{display:flex;}
-.modal{width:100%;max-width:640px;max-height:88vh;overflow-y:auto;background:#121214;border:1px solid var(--border-strong);border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.7);}
+.modal{width:96vw;max-width:1240px;max-height:88vh;overflow-y:auto;background:#121214;border:1px solid var(--border-strong);border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.7);}
 .modal-head{position:sticky;top:0;background:linear-gradient(135deg,#2a6fd6,#4a9eff);padding:18px 22px;text-align:center;z-index:2;}
 .modal-head h2{font-family:'Libre Baskerville',serif;font-size:1.15rem;letter-spacing:.03em;color:#fff;}
 .modal-body{padding:20px 22px 24px;}
@@ -214,3 +214,40 @@ textarea.cell-input{resize:vertical;min-height:34px;font-size:.78rem;line-height
     outline:none;
     border-color:var(--accent);
 }
+/* ============ row delete buttons ============ */
+.row-del-btn{width:26px;height:26px;border-radius:7px;border:1px solid rgba(255,107,107,.35);background:rgba(255,107,107,.08);color:#ff8080;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0 auto;}
+.row-del-btn:hover{background:rgba(255,107,107,.18);}
+.row-del-btn:disabled{opacity:.25;cursor:not-allowed;}
+
+/* ============ trainee row: setup-done / override-timer ============ */
+.timer-btn.setup-done.done{background:rgba(74,222,128,.15);border-color:rgba(74,222,128,.4);color:var(--live);}
+.timer-btn.override{width:auto;padding:0 10px;gap:6px;font-size:.68rem;}
+.timer-btn.override:hover{background:rgba(124,196,255,.14);border-color:var(--accent);color:var(--accent);}
+
+/* ============ host-only override button, hidden unless JS unlocks it ============ */
+.ovr-btn.host-only{display:none;}
+.ovr-btn.host-only.visible{display:flex;}
+
+/* ============ in-modal timer box ============ */
+.modal-timer-box{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:18px;}
+.modal-timer-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);margin-right:auto;}
+.modal-timer-box .timer-display{font-size:1rem;}
+
+/* ============ script preview (copy-only lines) ============ */
+.script-preview{display:flex;flex-direction:column;gap:8px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:6px;}
+.script-line{display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,.05);border:1px solid var(--border-strong);border-radius:10px;padding:10px 12px;}
+.script-line-text{flex:1;font-size:.82rem;line-height:1.5;color:rgba(255,255,255,.88);}
+.script-copy-btn{flex-shrink:0;width:30px;height:30px;border-radius:8px;border:1px solid var(--border-strong);background:rgba(124,196,255,.1);color:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.script-copy-btn.copied{background:rgba(74,222,128,.15);border-color:rgba(74,222,128,.4);color:var(--live);}
+.script-hint{font-weight:400;text-transform:none;letter-spacing:0;font-size:.62rem;color:var(--text-faint);margin-left:8px;}
+.placeholder-tag{color:var(--accent);background:rgba(124,196,255,.12);padding:0 4px;border-radius:4px;font-weight:600;}
+
+/* ============ resizable column handles ============ */
+.col-resizer{position:absolute;top:0;right:0;width:6px;height:100%;cursor:col-resize;user-select:none;}
+.col-resizer:hover, .col-resizer.resizing{background:rgba(124,196,255,.35);}
+table.resizable-cols{table-layout:fixed;}
+
+/* ============ Drivers & Staff: compact default widths, no forced 1500px scroll ============ */
+.drivers-table, .staff-table{min-width:0;}
+.drivers-table th:nth-child(1), .drivers-table th:nth-child(2),
+.staff-table th:nth-child(2){width:35%;}
