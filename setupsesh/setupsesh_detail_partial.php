@@ -65,7 +65,7 @@ if (!function_exists('renderDetailPanel')) {
                     'co_host1'        => ['icon' => 'fa-user-tie', 'label' => 'Co-Host'],
                     'co_host2'        => ['icon' => 'fa-user-tie', 'label' => 'Co-Host'],
                     'co_host3'        => ['icon' => 'fa-user-tie', 'label' => 'Co-Host'],
-                    'co_host4'        => ['icon' => 'fa-user-gear', 'label' => 'Supervisor'],
+                    'co_host4'        => ['icon' => 'fa-cog', 'label' => 'Supervisor'],
                     'assistant_1'     => ['icon' => 'fa-user',     'label' => 'Asst'],
                     'assistant_2'     => ['icon' => 'fa-user',     'label' => 'Asst'],
                     'assistant_3'     => ['icon' => 'fa-user',     'label' => 'Asst'],
