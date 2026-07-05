@@ -383,6 +383,6 @@
 </div>
 <script src="sessionongoing.js"></script>
 
-<?php include __DIR__ . '/version_badge.php'; ?>
+<?php include __DIR__ . '../public/assets/version_badge.php'; ?>
 </body>
 </html>
