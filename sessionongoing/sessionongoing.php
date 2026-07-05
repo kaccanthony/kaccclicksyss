@@ -224,9 +224,9 @@
   </button>
 </div>
 
-<audio id="sound-host-bell" src="TrainerBuzzer.ogg" preload="auto"></audio>
-<audio id="sound-cohost-ack" src="CoHostBuzzer.ogg" preload="auto"></audio>
-<audio id="sound-assistant-ack" src="AssistantBuzzer.ogg" preload="auto"></audio>
+<audio id="sound-host-bell" src="../public/assets/sounds/TrainerBuzzer.ogg" preload="auto"></audio>
+<audio id="sound-cohost-ack" src="../public/assets/sounds/CoHostBuzzer.ogg" preload="auto"></audio>
+<audio id="sound-assistant-ack" src="../public/assets/sounds/AssistantBuzzer.ogg" preload="auto"></audio>
 
 <!-- Toasts -->
 <div class="toast-container" id="toast-container"></div>
