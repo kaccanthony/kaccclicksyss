@@ -2,6 +2,16 @@
 let currentSessionId = null;
 let currentNumSlots = 10;
 
+function findDuplicates(values) {
+    const counts = {};
+    values.forEach(v => {
+        const key = (v || '').trim().toLowerCase();
+        if (!key) return;
+        counts[key] = (counts[key] || 0) + 1;
+    });
+    return Object.keys(counts).filter(k => counts[k] > 1);
+}
+
 // ── Profile Popup Toggle ──────────────────────────────
 const profileBtn   = document.getElementById('profile-btn');
 const profilePopup = document.getElementById('profile-popup');
@@ -89,14 +99,18 @@ function openSetupModal(sessionId) {
     let traineeHtml = '';
     let slotsFilled = 0;
     
-    for (let t = 1; t <= 10; t++) {
+        for (let t = 1; t <= currentNumSlots; t++) {
         const name = session[`trainee_${t}_name`] || '';
+        const discord = session[`trainee_${t}_discord`] || '';
+        const discordId = session[`trainee_${t}_discord_id`] || '';
         const zone = session[`trainee_${t}_zone`] || '';
         const note = session[`trainee_${t}_note`] || '';
         if (name) slotsFilled++;
         traineeHtml += `
             <div class="trainee-row-input-grid">
                 <span class="trainee-row-num">#${t}</span>
+                <input type="text" class="trainee-input trainee-discord-field" id="m-trainee-${t}-discord" value="${escapeHtml(discord)}" placeholder="Trainee Discord username">
+                <input type="text" class="trainee-input trainee-discordid-field" id="m-trainee-${t}-discordid" value="${escapeHtml(discordId)}" placeholder="Discord ID">
                 <input type="text" class="trainee-input trainee-name-field" id="m-trainee-${t}-name" value="${escapeHtml(name)}" placeholder="Trainee Roblox username">
                 <input type="number" class="trainee-input trainee-zone-field" id="m-trainee-${t}-zone" value="${zone}" placeholder="Zone" min="1" max="99">
                 <input type="text" class="trainee-input trainee-note-field" id="m-trainee-${t}-note" value="${escapeHtml(note)}" placeholder="Note (e.g. Fast learner)">
@@ -149,23 +163,29 @@ function autofillTrainees() {
 
     // Reset inputs for this session's slots first
     for (let t = 1; t <= maxSlots; t++) {
+        document.getElementById(`m-trainee-${t}-discord`).value = '';
+        document.getElementById(`m-trainee-${t}-discordid`).value = '';
         document.getElementById(`m-trainee-${t}-name`).value = '';
         document.getElementById(`m-trainee-${t}-zone`).value = '';
         document.getElementById(`m-trainee-${t}-note`).value = '';
     }
 
-    lines.forEach((line, index) => {
+        lines.forEach((line, index) => {
         const t = index + 1;
         // Strip leading list numbering e.g. "1. " or "- "
         let cleanLine = line.replace(/^\d+[\s\.\-\:]+/, '').replace(/^[\-\*]\s+/, '').trim();
 
-        // Expected format: Name : Zone : Note  (Zone and Note both optional)
+        // Expected format: Discord : DiscordID : Roblox : Zone : Note  (all but Discord are optional)
         const parts = cleanLine.split(':').map(p => p.trim());
-        const name = parts[0] || '';
-        const zone = (parts[1] || '').replace(/[^\d]/g, ''); // digits only, so "Zone 8" or "8" both work
-        const note = parts.slice(2).join(':').trim();
+        const discord   = parts[0] || '';
+        const discordId = (parts[1] || '').replace(/[^\d]/g, '');
+        const roblox    = parts[2] || '';
+        const zone      = (parts[3] || '').replace(/[^\d]/g, '');
+        const note      = parts.slice(4).join(':').trim();
 
-        document.getElementById(`m-trainee-${t}-name`).value = name;
+        document.getElementById(`m-trainee-${t}-discord`).value = discord;
+        document.getElementById(`m-trainee-${t}-discordid`).value = discordId;
+        document.getElementById(`m-trainee-${t}-name`).value = roblox;
         document.getElementById(`m-trainee-${t}-zone`).value = zone;
         document.getElementById(`m-trainee-${t}-note`).value = note;
     });
@@ -265,15 +285,48 @@ async function confirmSetup() {
         const nameEl = document.getElementById(`m-trainee-${t}-name`);
         if (!nameEl) {
             payload[`trainee_${t}_name`] = null;
+            payload[`trainee_${t}_discord`] = null;
+            payload[`trainee_${t}_discord_id`] = null;
             payload[`trainee_${t}_zone`] = null;
             payload[`trainee_${t}_note`] = null;
             continue;
         }
         payload[`trainee_${t}_name`] = nameEl.value.trim();
+        payload[`trainee_${t}_discord`] = document.getElementById(`m-trainee-${t}-discord`).value.trim();
+        payload[`trainee_${t}_discord_id`] = document.getElementById(`m-trainee-${t}-discordid`).value.trim();
         const zoneVal = document.getElementById(`m-trainee-${t}-zone`).value;
         payload[`trainee_${t}_zone`] = zoneVal !== '' ? parseInt(zoneVal) : null;
         payload[`trainee_${t}_note`] = document.getElementById(`m-trainee-${t}-note`).value.trim();
     }
+
+    // ── Duplicate checks ──
+    const staffDupes = findDuplicates([
+        payload.host, payload.co_host1, payload.co_host2, payload.co_host3, payload.co_host4,
+        payload.assistant_1, payload.assistant_2, payload.assistant_3, payload.assistant_4
+    ]);
+    if (staffDupes.length > 0) {
+        alert(`The same staff member is assigned to more than one role: ${staffDupes.join(', ')}. Please fix before saving.`);
+        return;
+    }
+
+    const traineeNames = [], traineeDiscords = [], traineeDiscordIds = [];
+    for (let t = 1; t <= 10; t++) {
+        if (payload[`trainee_${t}_name`]) traineeNames.push(payload[`trainee_${t}_name`]);
+        if (payload[`trainee_${t}_discord`]) traineeDiscords.push(payload[`trainee_${t}_discord`]);
+        if (payload[`trainee_${t}_discord_id`]) traineeDiscordIds.push(payload[`trainee_${t}_discord_id`]);
+    }
+    const nameDupes = findDuplicates(traineeNames);
+    const discordDupes = findDuplicates(traineeDiscords);
+    const discordIdDupes = findDuplicates(traineeDiscordIds);
+    if (nameDupes.length || discordDupes.length || discordIdDupes.length) {
+        let msg = 'Duplicate trainee entries found:\n';
+        if (nameDupes.length) msg += `- Roblox username: ${nameDupes.join(', ')}\n`;
+        if (discordDupes.length) msg += `- Discord username: ${discordDupes.join(', ')}\n`;
+        if (discordIdDupes.length) msg += `- Discord ID: ${discordIdDupes.join(', ')}\n`;
+        alert(msg);
+        return;
+    }
+
     try {
         const response = await fetch('save_session_setup.php', {
             method: 'POST',

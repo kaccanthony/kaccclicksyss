@@ -810,7 +810,7 @@ html, body {
 /* ── Trainee Input Grid Styles ── */
 .trainee-row-input-grid {
     display: grid;
-    grid-template-columns: 30px 1fr 100px 1.5fr;
+    grid-template-columns: 30px 1fr 120px 1fr 80px 1.5fr;
     gap: 12px;
     align-items: center;
     margin-bottom: 8px;

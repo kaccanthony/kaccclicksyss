@@ -39,9 +39,11 @@ $sharedFields = [
 ];
 
 for ($t = 1; $t <= 10; $t++) {
-    $sharedFields["trainee_{$t}_name"] = !empty($data["trainee_{$t}_name"]) ? $data["trainee_{$t}_name"] : null;
-    $sharedFields["trainee_{$t}_zone"] = !empty($data["trainee_{$t}_zone"]) ? (int)$data["trainee_{$t}_zone"] : null;
-    $sharedFields["trainee_{$t}_note"] = !empty($data["trainee_{$t}_note"]) ? $data["trainee_{$t}_note"] : null;
+    $sharedFields["trainee_{$t}_name"]       = !empty($data["trainee_{$t}_name"]) ? $data["trainee_{$t}_name"] : null;
+    $sharedFields["trainee_{$t}_discord"]    = !empty($data["trainee_{$t}_discord"]) ? $data["trainee_{$t}_discord"] : null;
+    $sharedFields["trainee_{$t}_discord_id"] = !empty($data["trainee_{$t}_discord_id"]) ? $data["trainee_{$t}_discord_id"] : null;
+    $sharedFields["trainee_{$t}_zone"]       = !empty($data["trainee_{$t}_zone"]) ? (int)$data["trainee_{$t}_zone"] : null;
+    $sharedFields["trainee_{$t}_note"]       = !empty($data["trainee_{$t}_note"]) ? $data["trainee_{$t}_note"] : null;
 }
 mysqli_begin_transaction($conn);
 
@@ -66,8 +68,10 @@ try {
         'co_host4/supervisor', 'assistant_1', 'assistant_2', 'assistant_3', 'assistant_4',
         'additional_staff', 'staff_attendance', 'session_date', 'session_time', 'trainee_timer',
     ];
-    for ($t = 1; $t <= 10; $t++) {
+for ($t = 1; $t <= 10; $t++) {
         $ongoingColumns[] = "trainee_{$t}_name";
+        $ongoingColumns[] = "trainee_{$t}_discord";
+        $ongoingColumns[] = "trainee_{$t}_discord_id";
         $ongoingColumns[] = "trainee_{$t}_zone";
         $ongoingColumns[] = "trainee_{$t}_note";
     }

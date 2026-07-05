@@ -283,9 +283,9 @@ $hostRanks   = ['Community Manager','Operations Manager','Head Staff'];
                 Example Staff:
                 Host: Yoshi5336
                 Co-Host 1: PlayerA
-                Example Trainees:
-                Player1 : 1
-                Player2 : 3 : Fast learner" style="margin-bottom: 10px;"></textarea>
+                Example Trainees (Discord : Discord ID : Roblox : Zone : Note):
+                DiscordName1 : 123456789012345678 : RobloxName1 : 1
+                DiscordName2 : 987654321098765432 : RobloxName2 : 3 : Fast learner" style="margin-bottom: 10px;"></textarea>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="btn-ghost" onclick="autofillStaff()" style="flex: 1; padding: 8px; font-size: 0.8rem;"><i class="fas fa-user-shield"></i> Autofill Staff</button>
                     <button type="button" class="btn-ghost" onclick="autofillTrainees()" style="flex: 1; padding: 8px; font-size: 0.8rem;"><i class="fas fa-graduation-cap"></i> Autofill Trainees</button>
@@ -543,7 +543,7 @@ function renderDetailPanel(array $s, array $staffByRank, array $assistRanks, arr
     <?php if (!empty($trainees)): ?>
     <div class="detail-section">
         <div class="detail-section-label">Trainees (<?= count($trainees) ?>)</div>
-        <div class="trainee-chips">
+        <div class="chips">
             <?php foreach ($trainees as $tr): ?>
             <div class="trainee-chip">
                 <div class="trainee-chip-avatar"><i class="fas fa-graduation-cap"></i></div>
