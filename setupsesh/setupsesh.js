@@ -2,6 +2,90 @@
 let currentSessionId = null;
 let currentNumSlots = 10;
 
+// ── Toasts ────────────────────────────────────────────
+const toastContainer = document.getElementById('toast-container');
+function showToast(message) {
+    if (!toastContainer) return;
+    const el = document.createElement('div');
+    el.className = 'toast';
+    const msgEl = document.createElement('div');
+    msgEl.className = 'toast-msg';
+    msgEl.innerHTML = '<i class="fas fa-triangle-exclamation"></i> ';
+    msgEl.appendChild(document.createTextNode(message));
+    const barWrap = document.createElement('div');
+    barWrap.className = 'toast-bar';
+    const barFill = document.createElement('div');
+    barFill.className = 'toast-bar-fill';
+    barWrap.appendChild(barFill);
+    el.appendChild(msgEl);
+    el.appendChild(barWrap);
+    toastContainer.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+    const TOAST_MS = 5000;
+    const removeTimer = setTimeout(() => {
+        el.classList.add('hide');
+        setTimeout(() => el.remove(), 250);
+    }, TOAST_MS);
+    // click to dismiss early
+    el.addEventListener('click', () => {
+        clearTimeout(removeTimer);
+        el.classList.add('hide');
+        setTimeout(() => el.remove(), 250);
+    });
+}
+
+const STAFF_SELECT_IDS = ['m-host','m-cohost1','m-cohost2','m-cohost3','m-cohost4','m-asst1','m-asst2','m-asst3','m-asst4'];
+const STAFF_ROLE_LABELS = {
+    'm-host': 'Host',
+    'm-cohost1': 'Co-Host 1',
+    'm-cohost2': 'Co-Host 2',
+    'm-cohost3': 'Co-Host 3',
+    'm-cohost4': 'Co-Host 4 / Supervisor',
+    'm-asst1': 'Assistant 1',
+    'm-asst2': 'Assistant 2',
+    'm-asst3': 'Assistant 3',
+    'm-asst4': 'Assistant 4',
+};
+
+// Warn live when a staff member gets assigned to a role that already has them
+STAFF_SELECT_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', () => {
+        const val = el.value.trim();
+        if (!val) return;
+        const key = val.toLowerCase();
+        const match = STAFF_SELECT_IDS
+            .map(oid => document.getElementById(oid))
+            .find(other => other && other !== el && other.value.trim().toLowerCase() === key);
+        if (match) {
+            showToast(`${val} is already assigned as ${STAFF_ROLE_LABELS[match.id]} — can't also be ${STAFF_ROLE_LABELS[id]}.`);
+        }
+    });
+});
+
+// Warn live when a trainee field (Discord, Discord ID, Roblox) duplicates another trainee row
+document.getElementById('modal-trainee-list').addEventListener('input', (e) => {
+    const el = e.target;
+    let groupClass = null, fieldLabel = null;
+    if (el.classList.contains('trainee-discord-field')) { groupClass = '.trainee-discord-field'; fieldLabel = 'Discord username'; }
+    else if (el.classList.contains('trainee-discordid-field')) { groupClass = '.trainee-discordid-field'; fieldLabel = 'Discord ID'; }
+    else if (el.classList.contains('trainee-name-field')) { groupClass = '.trainee-name-field'; fieldLabel = 'Roblox username'; }
+    else return;
+
+    const val = el.value.trim();
+    if (!val) return;
+    const key = val.toLowerCase();
+    const match = Array.from(document.querySelectorAll(groupClass))
+        .find(other => other !== el && other.value.trim().toLowerCase() === key);
+    if (match) {
+        const slotMatch = match.id.match(/m-trainee-(\d+)-/);
+        const slotNum = slotMatch ? slotMatch[1] : '?';
+        showToast(`This ${fieldLabel} is already used by Trainee #${slotNum}.`);
+    }
+});
+
+// -- Duplicate Detection Utility --
 function findDuplicates(values) {
     const counts = {};
     values.forEach(v => {
@@ -305,7 +389,7 @@ async function confirmSetup() {
         payload.assistant_1, payload.assistant_2, payload.assistant_3, payload.assistant_4
     ]);
     if (staffDupes.length > 0) {
-        alert(`The same staff member is assigned to more than one role: ${staffDupes.join(', ')}. Please fix before saving.`);
+        showToast(`Cannot save — the same staff member is assigned to more than one role: ${staffDupes.join(', ')}.`);
         return;
     }
 
@@ -319,11 +403,11 @@ async function confirmSetup() {
     const discordDupes = findDuplicates(traineeDiscords);
     const discordIdDupes = findDuplicates(traineeDiscordIds);
     if (nameDupes.length || discordDupes.length || discordIdDupes.length) {
-        let msg = 'Duplicate trainee entries found:\n';
-        if (nameDupes.length) msg += `- Roblox username: ${nameDupes.join(', ')}\n`;
-        if (discordDupes.length) msg += `- Discord username: ${discordDupes.join(', ')}\n`;
-        if (discordIdDupes.length) msg += `- Discord ID: ${discordIdDupes.join(', ')}\n`;
-        alert(msg);
+        const parts = [];
+        if (nameDupes.length) parts.push(`Roblox username: ${nameDupes.join(', ')}`);
+        if (discordDupes.length) parts.push(`Discord username: ${discordDupes.join(', ')}`);
+        if (discordIdDupes.length) parts.push(`Discord ID: ${discordIdDupes.join(', ')}`);
+        showToast(`Cannot save — duplicate trainee entries found (${parts.join('; ')}).`);
         return;
     }
 

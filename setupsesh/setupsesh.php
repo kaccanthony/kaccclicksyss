@@ -444,6 +444,9 @@ $hostRanks   = ['Community Manager','Operations Manager','Head Staff'];
     </div>
 </div>
 
+<!-- Toasts -->
+<div class="toast-container" id="toast-container"></div>
+
 <!-- Embed session data for JS -->
 <script>
 const SESSIONS_DATA = <?= json_encode($sessions, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
