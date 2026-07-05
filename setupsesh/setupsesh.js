@@ -59,11 +59,11 @@ STAFF_SELECT_IDS.forEach(id => {
             .map(oid => document.getElementById(oid))
             .find(other => other && other !== el && other.value.trim().toLowerCase() === key);
         if (match) {
-            showToast(`${val} is already assigned as ${STAFF_ROLE_LABELS[match.id]} — can't also be ${STAFF_ROLE_LABELS[id]}.`);
+            showToast(`${val} is already assigned as ${STAFF_ROLE_LABELS[match.id]} — can't also be ${STAFF_ROLE_LABELS[id]}. Selection reverted.`);
+            el.value = '';
         }
     });
 });
-
 // Warn live when a trainee field (Discord, Discord ID, Roblox) duplicates another trainee row
 document.getElementById('modal-trainee-list').addEventListener('input', (e) => {
     const el = e.target;
@@ -81,8 +81,22 @@ document.getElementById('modal-trainee-list').addEventListener('input', (e) => {
     if (match) {
         const slotMatch = match.id.match(/m-trainee-(\d+)-/);
         const slotNum = slotMatch ? slotMatch[1] : '?';
-        showToast(`This ${fieldLabel} is already used by Trainee #${slotNum}.`);
+        showToast(`This ${fieldLabel} is already used by Trainee #${slotNum}. Entry cleared.`);
+        el.value = '';
+        if (el.classList.contains('trainee-name-field')) updateSlotsFilledCount();
     }
+});
+
+function updateSlotsFilledCount() {
+    const nameFields = document.querySelectorAll('#modal-trainee-list .trainee-name-field');
+    let filled = 0;
+    nameFields.forEach(f => { if (f.value.trim()) filled++; });
+    const slotsEl = document.getElementById('m-slots');
+    if (slotsEl) slotsEl.textContent = `${filled}/${currentNumSlots}`;
+}
+
+document.getElementById('modal-trainee-list').addEventListener('input', (e) => {
+    if (e.target.classList.contains('trainee-name-field')) updateSlotsFilledCount();
 });
 
 // -- Duplicate Detection Utility --
@@ -202,7 +216,7 @@ function openSetupModal(sessionId) {
         `;
     }
     traineeListEl.innerHTML = traineeHtml;
-    document.getElementById('m-slots').textContent = `${slotsFilled}/${session.num_slots}`;
+    updateSlotsFilledCount();
     // 4. Description & Notes
     document.getElementById('m-desc').value = session.session_desc || '';
     document.getElementById('m-notes').value = session.additional_notes || '';
@@ -273,6 +287,7 @@ function autofillTrainees() {
         document.getElementById(`m-trainee-${t}-zone`).value = zone;
         document.getElementById(`m-trainee-${t}-note`).value = note;
     });
+    updateSlotsFilledCount();
     alert(`Parsed and autofilled ${lines.length} trainees!`);
 }
 function autofillStaff() {
