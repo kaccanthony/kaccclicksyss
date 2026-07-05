@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://kit.fontawesome.com/6c33013ae6.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="sessiongoing.css?v=<?= filemtime(__DIR__ . '/sessiongoing.css') ?>"/>
+<link rel="stylesheet" href="sessionongoing.css?v=<?= filemtime(__DIR__ . '/sessionongoing.css') ?>"/>
 <style>
 
 </style>
