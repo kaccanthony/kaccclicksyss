@@ -658,9 +658,13 @@ html, body {
     transition: opacity 0.25s ease;
 }
 
-.modal-backdrop.active {
+.modal-backdrop.active, .modal-backdrop.closing {
     opacity: 1;
     pointer-events: all;
+}
+
+.modal-backdrop.closing {
+    opacity: 0;
 }
 
 .modal {
@@ -673,13 +677,21 @@ html, body {
     display: flex;
     flex-direction: column;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
-    transform: translateY(12px);
-    transition: transform 0.25s ease;
 }
 
-.modal-backdrop.active .modal {
-    transform: translateY(0);
+@keyframes modalBounceIn{
+  0%{opacity:0;transform:scale(.75);}
+  60%{opacity:1;transform:scale(1.04);}
+  80%{transform:scale(.98);}
+  100%{transform:scale(1);}
 }
+@keyframes modalBounceOut{
+  0%{opacity:1;transform:scale(1);}
+  30%{transform:scale(1.03);}
+  100%{opacity:0;transform:scale(.8);}
+}
+.modal-backdrop.active .modal{animation:modalBounceIn .4s cubic-bezier(.34,1.56,.64,1) both;}
+.modal-backdrop.closing .modal{animation:modalBounceOut .25s ease both;}
 
 .modal-header {
     padding: 20px 24px;

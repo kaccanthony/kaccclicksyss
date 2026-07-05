@@ -1,5 +1,6 @@
 // ── State Management ──────────────────────────────────
 let currentSessionId = null;
+let currentNumSlots = 10;
 
 // ── Profile Popup Toggle ──────────────────────────────
 const profileBtn   = document.getElementById('profile-btn');
@@ -83,6 +84,7 @@ function openSetupModal(sessionId) {
     document.getElementById('m-asst3').value = session.assistant_3 || '';
     document.getElementById('m-asst4').value = session.assistant_4 || '';
     // 3. Render 10 Trainee Input rows
+    currentNumSlots = parseInt(session.num_slots, 10) || 10;
     const traineeListEl = document.getElementById('modal-trainee-list');
     let traineeHtml = '';
     let slotsFilled = 0;
@@ -114,8 +116,13 @@ function openSetupModal(sessionId) {
 
 function closeModal() {
     const modalBackdrop = document.getElementById('modal-backdrop');
+    if (!modalBackdrop.classList.contains('active')) return;
     modalBackdrop.classList.remove('active');
-    modalBackdrop.style.display = 'none';
+    modalBackdrop.classList.add('closing');
+    setTimeout(() => {
+        modalBackdrop.classList.remove('closing');
+        modalBackdrop.style.display = 'none';
+    }, 250);
     currentSessionId = null;
 }
 
@@ -134,40 +141,30 @@ function autofillTrainees() {
         alert('Please paste some text into the paste box first!');
         return;
     }
+    const maxSlots = currentNumSlots || 10;
     const lines = text.split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0)
-        .slice(0, 10); // Limit to maximum 10 trainee rows
-    // Reset all 10 trainee inputs first
-    for (let t = 1; t <= 10; t++) {
+        .slice(0, maxSlots);
+
+    // Reset inputs for this session's slots first
+    for (let t = 1; t <= maxSlots; t++) {
         document.getElementById(`m-trainee-${t}-name`).value = '';
         document.getElementById(`m-trainee-${t}-zone`).value = '';
         document.getElementById(`m-trainee-${t}-note`).value = '';
     }
+
     lines.forEach((line, index) => {
         const t = index + 1;
-        
-        // Strip out list numbers e.g. "1. PlayerName" or "- PlayerName"
+        // Strip leading list numbering e.g. "1. " or "- "
         let cleanLine = line.replace(/^\d+[\s\.\-\:]+/, '').replace(/^[\-\*]\s+/, '').trim();
-        
-        let name = '';
-        let zone = '';
-        let note = '';
-        // 1. Extract Zone: Look for "Zone 3", "Z2", or bracket numbers "(2)"
-        const zoneMatch = cleanLine.match(/(?:zone|z)?\s*\(?(\d+)\)?/i);
-        if (zoneMatch) {
-            zone = zoneMatch[1];
-            cleanLine = cleanLine.replace(zoneMatch[0], '').trim();
-        }
-        // 2. Extract Notes: Look for text following a dash "-" or inside brackets "[...]"
-        const noteMatch = cleanLine.match(/[\-\–]\s*(.+)$/) || cleanLine.match(/\[(.+)\]$/);
-        if (noteMatch) {
-            note = noteMatch[1].trim();
-            cleanLine = cleanLine.replace(noteMatch[0], '').trim();
-        }
-        // 3. Name is whatever is left
-        name = cleanLine.replace(/[,\(\)\[\]\-\–]/g, '').trim();
-        // Populate fields
+
+        // Expected format: Name : Zone : Note  (Zone and Note both optional)
+        const parts = cleanLine.split(':').map(p => p.trim());
+        const name = parts[0] || '';
+        const zone = (parts[1] || '').replace(/[^\d]/g, ''); // digits only, so "Zone 8" or "8" both work
+        const note = parts.slice(2).join(':').trim();
+
         document.getElementById(`m-trainee-${t}-name`).value = name;
         document.getElementById(`m-trainee-${t}-zone`).value = zone;
         document.getElementById(`m-trainee-${t}-note`).value = note;
@@ -263,9 +260,16 @@ async function confirmSetup() {
         session_desc: document.getElementById('m-desc').value,
         additional_notes: document.getElementById('m-notes').value
     };
-    // Grab Trainee Input Values dynamically
+    // Grab Trainee Input Values dynamically — only rendered up to num_slots; the rest get cleared
     for (let t = 1; t <= 10; t++) {
-        payload[`trainee_${t}_name`] = document.getElementById(`m-trainee-${t}-name`).value.trim();
+        const nameEl = document.getElementById(`m-trainee-${t}-name`);
+        if (!nameEl) {
+            payload[`trainee_${t}_name`] = null;
+            payload[`trainee_${t}_zone`] = null;
+            payload[`trainee_${t}_note`] = null;
+            continue;
+        }
+        payload[`trainee_${t}_name`] = nameEl.value.trim();
         const zoneVal = document.getElementById(`m-trainee-${t}-zone`).value;
         payload[`trainee_${t}_zone`] = zoneVal !== '' ? parseInt(zoneVal) : null;
         payload[`trainee_${t}_note`] = document.getElementById(`m-trainee-${t}-note`).value.trim();

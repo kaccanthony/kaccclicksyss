@@ -284,8 +284,8 @@ $hostRanks   = ['Community Manager','Operations Manager','Head Staff'];
                 Host: Yoshi5336
                 Co-Host 1: PlayerA
                 Example Trainees:
-                Player1 (Zone 1)
-                Player2 (Zone 3) - Fast learner" style="margin-bottom: 10px;"></textarea>
+                Player1 : 1
+                Player2 : 3 : Fast learner" style="margin-bottom: 10px;"></textarea>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="btn-ghost" onclick="autofillStaff()" style="flex: 1; padding: 8px; font-size: 0.8rem;"><i class="fas fa-user-shield"></i> Autofill Staff</button>
                     <button type="button" class="btn-ghost" onclick="autofillTrainees()" style="flex: 1; padding: 8px; font-size: 0.8rem;"><i class="fas fa-graduation-cap"></i> Autofill Trainees</button>
@@ -453,6 +453,7 @@ const COHOST_RANKS  = <?= json_encode($cohostRanks) ?>;
 const ASST_RANKS    = <?= json_encode($assistRanks) ?>;
 </script>
 <script src="setupsesh.js"></script>
+<?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
 </body>
 </html>
 <?php
