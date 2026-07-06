@@ -1,3 +1,4 @@
+// sessionongoing.js
 /* ================= STATE ================= */
 const staffRoles = ['Main AST','Assistant','Co-Host','Internal Helper'];
 let staffCount = 0;
@@ -677,6 +678,7 @@ function renderScriptPreview(minutes){
   SCRIPT_LINES.forEach(
 
     lineText=>{
+    let name = lineText.replace(/\[NAME\]/g, '.trainee-name'); // To be done, trainee for this line
     const resolvedText = lineText.replace(/XX/g, displayMinutes);
     const line = document.createElement('div');
     line.className = 'script-line';
