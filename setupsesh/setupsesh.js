@@ -1,3 +1,4 @@
+// setupsesh.js
 // ── State Management ──────────────────────────────────
 let currentSessionId = null;
 let currentNumSlots = 10;

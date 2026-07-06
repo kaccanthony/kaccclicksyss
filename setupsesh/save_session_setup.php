@@ -1,4 +1,5 @@
 <?php
+// save_session_setup.php
 session_start();
 require_once '../login/cnn.php';
 header('Content-Type: application/json');

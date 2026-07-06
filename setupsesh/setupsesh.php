@@ -1,4 +1,5 @@
 <?php
+// setupsesh.php
 session_start();
 require_once '../login/cnn.php';
 

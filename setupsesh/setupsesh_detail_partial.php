@@ -1,5 +1,6 @@
 <?php
 // Prevent session start errors if already started
+// setupsesh_detail_partial.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
