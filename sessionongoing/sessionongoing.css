@@ -367,7 +367,7 @@ table.resizable-cols{table-layout:fixed;}
 #trainee-scroll table th:nth-child(10){width: 110px;min-width:80px;max-width:110px;}  /* Feedback */
 #trainee-scroll table th:nth-child(11){width:220px;min-width:220px;max-width:300px;} /* Announcements */
 #trainee-scroll table th:nth-child(12){width: 200px;min-width:200px;max-width:300px;} /* Trainee Notes */
-#trainee-scroll table th:nth-child(13){width: 105px;min-width:65thepx;max-width:105px;} /* Completed */
+#trainee-scroll table th:nth-child(13){width: 105px;min-width:65px;max-width:105px;} /* Completed */
 #trainee-scroll table th:nth-child(14){width: 80px;min-width:70px;max-width:80px;} /* Remove */
 
 #trainee-scroll table td:nth-child(6){text-align:center;}   /* Timer */

@@ -431,7 +431,6 @@ document.getElementById('add-trainee-btn').addEventListener('click', (e)=> {
   if(e.currentTarget.classList.contains('is-locked')) return;
   addTraineeRow(true);
 });
-let initialTraineeCount = 0;
 const initialTraineeCount = parseInt(SESSION_DATA.num_slots, 10) || 10;
 for(let i=0;i<initialTraineeCount;i++) addTraineeRow(false);
 
@@ -965,6 +964,13 @@ document.getElementById('announcement-float-close').addEventListener('click', ()
 
 /* ================= INIT ================= */
 applyOverrides();
+
+function fmtHMS(seconds) {
+  const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+  const s = String(seconds % 60).padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
 
 /* ================= GLOBAL TRAINEE TIMER (overall session clock) ================= */
 const sessionStartMs = SESSION_STARTED_AT ? new Date(SESSION_STARTED_AT.replace(' ', 'T') + 'Z').getTime() : Date.now();
