@@ -513,6 +513,6 @@ const SESSION_STARTED_AT = <?= json_encode($sessionRow['started_at']) ?>; // e.g
 <script src="sessionongoing.js"></script>
 
 <?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
-<script src="../public/assets/avatar-cache.js"></script>
+<script src="../public/assets/js/avatar-cache.js"></script>
 </body>
 </html>
