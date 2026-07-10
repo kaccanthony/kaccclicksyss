@@ -606,7 +606,29 @@ function updateStaffAddState(){
 }
 
 document.getElementById('add-staff-btn').addEventListener('click', addStaffRow);
-addStaffRow(); addStaffRow(); addStaffRow();
+
+function seedStaffFromSession(){
+  const seeds = [
+    { name: SESSION_DATA.co_host1, role: 'Co-Host' },
+    { name: SESSION_DATA.co_host2, role: 'Co-Host' },
+    { name: SESSION_DATA.co_host3, role: 'Co-Host' },
+    { name: SESSION_DATA['co_host4/supervisor'], role: 'Co-Host' },
+    { name: SESSION_DATA.assistant_1, role: 'Assistant' },
+    { name: SESSION_DATA.assistant_2, role: 'Assistant' },
+    { name: SESSION_DATA.assistant_3, role: 'Assistant' },
+    { name: SESSION_DATA.assistant_4, role: 'Assistant' },
+  ].filter(s => s.name);
+
+  if(!seeds.length){ addStaffRow(); addStaffRow(); addStaffRow(); return; }
+
+  seeds.forEach(s => {
+    addStaffRow();
+    const tr = document.querySelector('#staff-rows tr:last-child');
+    tr.querySelector('.staff-role-select').value = s.role;
+    tr.querySelectorAll('.cell-input')[0].value = s.name; // Discord username column
+  });
+}
+seedStaffFromSession();
 
 document.getElementById('staff-rows').addEventListener('click', (e)=>{
   const delBtn = e.target.closest('.staff-del-btn');
@@ -1332,13 +1354,17 @@ document.getElementById('conclude-session-btn').addEventListener('click', async 
   const ok = await showConfirm(html, 'Conclude this session?', true);
   if(!ok) return;
 
-  const statusSelect = document.getElementById('status-select');
-  statusSelect.value = 'concluded';
-  statusSelect.dispatchEvent(new Event('change'));
-  updateConcludeButtonState();
-  queueLiveStateSync();
-  await pushState(); // push immediately, don't wait for the 5s cycle
-  showToast('Session concluded. Redirecting everyone shortly...');
+  const result = await fetch('conclude_session.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: SESSION_DATA.session_id }),
+  }).then(r => r.json());
+
+  if(!result.success){
+    showToast('Failed to conclude: ' + (result.message || 'Unknown error'));
+    return;
+  }
+  showToast('Session concluded and archived. Redirecting everyone shortly...');
   setTimeout(()=>{ window.location.href = '../dashboard/dashboard.php'; }, 2000);
 });
 
@@ -1507,6 +1533,11 @@ async function pullState() {
     syncInFlight = true;
     try {
         const res = await fetch(`sync_session.php?session_id=${SESSION_DATA.session_id}`);
+        if (res.status === 404) {
+            showToast('This session has been concluded. Returning to dashboard...');
+            setTimeout(()=>{ window.location.href = '../dashboard/dashboard.php'; }, 2000);
+            return;
+        }
         const data = await res.json();
         if (data.success) applyRemoteState(data.session, data.live_state || {});
     } catch (err) {
