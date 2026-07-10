@@ -415,7 +415,13 @@ $hostRanks   = ['Community Manager','Operations Manager','Head Staff'];
 
             <!-- Trainee List -->
             <div class="modal-section">
-                <div class="modal-section-title"><i class="fas fa-graduation-cap"></i> Trainees</div>
+                <div class="modal-section-title">
+                    <i class="fas fa-graduation-cap"></i> Trainees
+                    <div class="trainer-mode-toggle" style="margin-left:auto;display:flex;gap:8px;">
+                        <button type="button" class="mode-btn active" id="mode-auto-btn" onclick="setTrainerMode('auto')">Automatic</button>
+                        <button type="button" class="mode-btn" id="mode-manual-btn" onclick="setTrainerMode('manual')">Manual</button>
+                    </div>
+                </div>
                 <div class="trainee-list" id="modal-trainee-list">
                     <!-- filled by JS -->
                 </div>

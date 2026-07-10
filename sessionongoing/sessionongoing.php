@@ -1,4 +1,35 @@
-<!-- sessionongoing.php -->
+<?php
+session_start();
+require_once '../login/cnn.php';
+
+if (!isset($_SESSION['user'])) {
+    header('Location: /login/login.php');
+    exit;
+}
+
+$sessionId = (int)($_GET['session_id'] ?? 0);
+if (!$sessionId) {
+    header('Location: ../setupsesh/setupsesh.php');
+    exit;
+}
+
+$stmt = mysqli_prepare($conn, "SELECT * FROM session_ongoing WHERE session_id = ?");
+mysqli_stmt_bind_param($stmt, "i", $sessionId);
+mysqli_stmt_execute($stmt);
+$sessionRow = mysqli_stmt_get_result($stmt)->fetch_assoc();
+
+if (!$sessionRow) {
+    header('Location: ../setupsesh/setupsesh.php');
+    exit;
+}
+
+$liveState = [];
+if (!empty($sessionRow['live_state'])) {
+    $decoded = json_decode($sessionRow['live_state'], true);
+    if (is_array($decoded)) $liveState = $decoded;
+}
+?>
+<!-- sessionongoing.php --> 
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -382,6 +413,12 @@
     <div class="announcement-float-preview" id="announcement-float-preview"></div>
   </div>
 </div>
+
+
+<script>
+const SESSION_DATA = <?= json_encode($sessionRow, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const LIVE_STATE = <?= json_encode($liveState, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+</script>
 <script src="sessionongoing.js"></script>
 
 <?php include __DIR__ . '/../public/assets/version_badge.php'; ?>

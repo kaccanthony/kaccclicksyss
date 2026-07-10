@@ -37,6 +37,7 @@ $sharedFields = [
     'assistant_4'         => $data['assistant_4'] ?: null,
     'session_desc'        => $data['session_desc'] ?: null,
     'additional_notes'    => $data['additional_notes'] ?: null,
+    'trainer_assignment_mode' => in_array($data['trainer_assignment_mode'] ?? '', ['auto','manual'], true) ? $data['trainer_assignment_mode'] : 'auto',
 ];
 
 for ($t = 1; $t <= 10; $t++) {
@@ -45,6 +46,7 @@ for ($t = 1; $t <= 10; $t++) {
     $sharedFields["trainee_{$t}_discord_id"] = !empty($data["trainee_{$t}_discord_id"]) ? $data["trainee_{$t}_discord_id"] : null;
     $sharedFields["trainee_{$t}_zone"]       = !empty($data["trainee_{$t}_zone"]) ? (int)$data["trainee_{$t}_zone"] : null;
     $sharedFields["trainee_{$t}_note"]       = !empty($data["trainee_{$t}_note"]) ? $data["trainee_{$t}_note"] : null;
+    $sharedFields["trainee_{$t}_trainer_name"] = !empty($data["trainee_{$t}_trainer_name"]) ? $data["trainee_{$t}_trainer_name"] : null;
 }
 mysqli_begin_transaction($conn);
 
@@ -68,6 +70,7 @@ try {
         'session_duration', 'num_slots', 'host', 'co_host1', 'co_host2', 'co_host3',
         'co_host4/supervisor', 'assistant_1', 'assistant_2', 'assistant_3', 'assistant_4',
         'additional_staff', 'staff_attendance', 'session_date', 'session_time', 'trainee_timer',
+        'trainer_assignment_mode',
     ];
 for ($t = 1; $t <= 10; $t++) {
         $ongoingColumns[] = "trainee_{$t}_name";
@@ -75,6 +78,7 @@ for ($t = 1; $t <= 10; $t++) {
         $ongoingColumns[] = "trainee_{$t}_discord_id";
         $ongoingColumns[] = "trainee_{$t}_zone";
         $ongoingColumns[] = "trainee_{$t}_note";
+        $ongoingColumns[] = "trainee_{$t}_trainer_name";
     }
     $ongoingColumns[] = 'trainee_attendance';
 

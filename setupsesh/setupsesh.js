@@ -3,6 +3,58 @@
 let currentSessionId = null;
 let currentNumSlots = 10;
 
+// Trainer Assignment Automation
+let trainerAssignmentMode = 'auto'; // 'auto' | 'manual'
+
+function getTrainerCandidates() {
+    const ids = ['m-host', 'm-cohost1', 'm-cohost2', 'm-cohost3', 'm-cohost4'];
+    return ids.map(id => document.getElementById(id).value.trim()).filter(v => v);
+}
+
+// Splits traineeCount as evenly as possible across trainers, priority order (host first)
+// gets the leftover "extra" slots when it doesn't divide evenly.
+function computeAutoDistribution(trainers, traineeCount) {
+    if (!trainers.length || traineeCount <= 0) return [];
+    const base = Math.floor(traineeCount / trainers.length);
+    const remainder = traineeCount % trainers.length;
+    const counts = trainers.map((_, i) => base + (i < remainder ? 1 : 0));
+    const assignment = [];
+    trainers.forEach((name, i) => {
+        for (let c = 0; c < counts[i]; c++) assignment.push(name);
+    });
+    return assignment; // assignment[0] -> trainee #1's trainer, etc.
+}
+
+function applyTrainerAssignment() {
+    const trainers = getTrainerCandidates();
+    const assignment = computeAutoDistribution(trainers, currentNumSlots);
+    for (let t = 1; t <= currentNumSlots; t++) {
+        const sel = document.getElementById(`m-trainee-${t}-trainer`);
+        if (!sel) continue;
+        if (trainerAssignmentMode === 'auto') {
+            sel.value = assignment[t - 1] || '';
+            sel.disabled = true;
+        } else {
+            sel.disabled = false;
+        }
+    }
+}
+
+function setTrainerMode(mode) {
+    trainerAssignmentMode = mode;
+    document.getElementById('mode-auto-btn').classList.toggle('active', mode === 'auto');
+    document.getElementById('mode-manual-btn').classList.toggle('active', mode === 'manual');
+    applyTrainerAssignment();
+}
+
+// Recompute automatically whenever staff assignment changes, if in auto mode
+['m-host','m-cohost1','m-cohost2','m-cohost3','m-cohost4'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', () => {
+        if (trainerAssignmentMode === 'auto') applyTrainerAssignment();
+    });
+});
+
 // ── Toasts ────────────────────────────────────────────
 const toastContainer = document.getElementById('toast-container');
 function showToast(message) {
@@ -205,18 +257,38 @@ function openSetupModal(sessionId) {
         const zone = session[`trainee_${t}_zone`] || '';
         const note = session[`trainee_${t}_note`] || '';
         if (name) slotsFilled++;
+        const trainerName = session[`trainee_${t}_trainer_name`] || '';
         traineeHtml += `
-            <div class="trainee-row-input-grid">
+            <div class="trainee-row-input-grid with-trainer">
                 <span class="trainee-row-num">#${t}</span>
                 <input type="text" class="trainee-input trainee-discord-field" id="m-trainee-${t}-discord" value="${escapeHtml(discord)}" placeholder="Trainee Discord username">
                 <input type="text" class="trainee-input trainee-discordid-field" id="m-trainee-${t}-discordid" value="${escapeHtml(discordId)}" placeholder="Discord ID">
                 <input type="text" class="trainee-input trainee-name-field" id="m-trainee-${t}-name" value="${escapeHtml(name)}" placeholder="Trainee Roblox username">
                 <input type="number" class="trainee-input trainee-zone-field" id="m-trainee-${t}-zone" value="${zone}" placeholder="Zone" min="1" max="99">
+                <select class="trainee-input trainee-trainer-field" id="m-trainee-${t}-trainer" disabled></select>
                 <input type="text" class="trainee-input trainee-note-field" id="m-trainee-${t}-note" value="${escapeHtml(note)}" placeholder="Note (e.g. Fast learner)">
             </div>
         `;
     }
     traineeListEl.innerHTML = traineeHtml;
+    const trainerOptionSource = getTrainerCandidates();
+    for (let t = 1; t <= currentNumSlots; t++) {
+        const sel = document.getElementById(`m-trainee-${t}-trainer`);
+        if (!sel) continue;
+        sel.innerHTML = '<option value="">— None —</option>' +
+            trainerOptionSource.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+    }
+    trainerAssignmentMode = session.trainer_assignment_mode === 'manual' ? 'manual' : 'auto';
+    document.getElementById('mode-auto-btn').classList.toggle('active', trainerAssignmentMode === 'auto');
+    document.getElementById('mode-manual-btn').classList.toggle('active', trainerAssignmentMode === 'manual');
+    if (trainerAssignmentMode === 'auto') {
+        applyTrainerAssignment();
+    } else {
+        for (let t = 1; t <= currentNumSlots; t++) {
+            const sel = document.getElementById(`m-trainee-${t}-trainer`);
+            if (sel) { sel.value = session[`trainee_${t}_trainer_name`] || ''; sel.disabled = false; }
+        }
+    }
     updateSlotsFilledCount();
     // 4. Description & Notes
     document.getElementById('m-desc').value = session.session_desc || '';
@@ -397,7 +469,10 @@ async function confirmSetup() {
         const zoneVal = document.getElementById(`m-trainee-${t}-zone`).value;
         payload[`trainee_${t}_zone`] = zoneVal !== '' ? parseInt(zoneVal) : null;
         payload[`trainee_${t}_note`] = document.getElementById(`m-trainee-${t}-note`).value.trim();
+        const trainerSel = document.getElementById(`m-trainee-${t}-trainer`);
+        payload[`trainee_${t}_trainer_name`] = trainerSel ? trainerSel.value.trim() : '';
     }
+    payload.trainer_assignment_mode = trainerAssignmentMode;
 
     // ── Duplicate checks ──
     const staffDupes = findDuplicates([
@@ -443,8 +518,8 @@ async function confirmSetup() {
                 const activeCard = document.querySelector(`.sesh-card[data-id="${currentSessionId}"]`);
                 if (activeCard) selectSession(activeCard, currentSessionId);
             }
-            closeModal();
-            alert('Session details successfully saved!');
+            window.location.href = `../sessionongoing/sessionongoing.php?session_id=${currentSessionId}`;
+            return; // navigating away — no need to close the modal manually
         } else {
             alert('Failed to save setup: ' + (result.message || 'Unknown error'));
         }

@@ -242,98 +242,123 @@ function fmt(s){
   return `${sign}${m}:${sec}`;
 }
 
-function updateTimerDisplay(row){
-  const t = timers[row];
-  const rowDisplay = document.querySelector(`[data-timer="${row}"]`);
-  if(rowDisplay){
-    rowDisplay.textContent = fmt(t.seconds);
-    rowDisplay.classList.toggle('running', t.seconds > 60 && t.running);
-    rowDisplay.classList.toggle('low', t.seconds <= 60 && t.seconds > 0);
-    rowDisplay.classList.toggle('expired', t.seconds <= 0);
-  }
-  updateModalTimerIfOpen(row);
+// Timer model: { remainingSeconds, running, syncedAt (ms epoch), setupSeconds }
+// remainingSeconds is the authoritative value as of syncedAt. While running, the
+// live value is derived from wall-clock time, so every viewer computes the same
+// number regardless of when their last poll happened — no drift between clients.
+function computeCurrentRemaining(t) {
+    if (!t.running) return t.remainingSeconds;
+    const elapsed = Math.floor((Date.now() - t.syncedAt) / 1000);
+    return Math.max(0, t.remainingSeconds - elapsed);
 }
 
-function toggleTimer(row){
-  const t = timers[row];
-  if(!t) return;
-  const rowPlayBtn = document.querySelector(`.timer-btn.play[data-row="${row}"]`);
-  if(!t.running){
-    t.running = true;
-    if(rowPlayBtn){ rowPlayBtn.innerHTML = '<i class="fas fa-pause"></i>'; rowPlayBtn.classList.add('active'); }
-    syncModalPlayBtn(row, true);
-    t.interval = setInterval(()=>{ t.seconds--; updateTimerDisplay(row); }, 1000);
-  } else {
+function updateTimerDisplay(row) {
+    const t = timers[row];
+    if (!t) return;
+    const live = computeCurrentRemaining(t);
+    const rowDisplay = document.querySelector(`[data-timer="${row}"]`);
+    if (rowDisplay) {
+        rowDisplay.textContent = fmt(live);
+        rowDisplay.classList.toggle('running', live > 60 && t.running);
+        rowDisplay.classList.toggle('low', live <= 60 && live > 0);
+        rowDisplay.classList.toggle('expired', live <= 0);
+    }
+    updateModalTimerIfOpen(row);
+}
+
+function toggleTimer(row) {
+    const t = timers[row];
+    if (!t) return;
+    const rowPlayBtn = document.querySelector(`.timer-btn.play[data-row="${row}"]`);
+    if (!t.running) {
+        t.running = true;
+        t.syncedAt = Date.now();
+        if (rowPlayBtn) { rowPlayBtn.innerHTML = '<i class="fas fa-pause"></i>'; rowPlayBtn.classList.add('active'); }
+        syncModalPlayBtn(row, true);
+    } else {
+        t.remainingSeconds = computeCurrentRemaining(t);
+        t.running = false;
+        if (rowPlayBtn) { rowPlayBtn.innerHTML = '<i class="fas fa-play"></i>'; rowPlayBtn.classList.remove('active'); }
+        syncModalPlayBtn(row, false);
+    }
+    updateTimerDisplay(row);
+    queueLiveStateSync();
+}
+
+function resetTimer(row) {
+    const t = timers[row];
+    if (!t) return;
     t.running = false;
-    clearInterval(t.interval);
-    if(rowPlayBtn){ rowPlayBtn.innerHTML = '<i class="fas fa-play"></i>'; rowPlayBtn.classList.remove('active'); }
+    t.remainingSeconds = COUNTDOWN_START;
+    t.syncedAt = Date.now();
+    const rowPlayBtn = document.querySelector(`.timer-btn.play[data-row="${row}"]`);
+    if (rowPlayBtn) { rowPlayBtn.innerHTML = '<i class="fas fa-play"></i>'; rowPlayBtn.classList.remove('active'); }
     syncModalPlayBtn(row, false);
-  }
+    updateTimerDisplay(row);
+    queueLiveStateSync();
 }
 
-function resetTimer(row){
-  const t = timers[row];
-  if(!t) return;
-  t.running = false;
-  clearInterval(t.interval);
-  t.seconds = COUNTDOWN_START;
-  const rowPlayBtn = document.querySelector(`.timer-btn.play[data-row="${row}"]`);
-  if(rowPlayBtn){ rowPlayBtn.innerHTML = '<i class="fas fa-play"></i>'; rowPlayBtn.classList.remove('active'); }
-  syncModalPlayBtn(row, false);
-  updateTimerDisplay(row);
+function setTimerValue(row, mmss) {
+    const t = timers[row];
+    if (!t) return;
+    const parts = String(mmss).split(':').map(n => parseInt(n, 10) || 0);
+    t.remainingSeconds = parts.length === 2 ? (parts[0] * 60 + parts[1]) : (parseInt(mmss, 10) || 0);
+    t.syncedAt = Date.now();
+    updateTimerDisplay(row);
+    queueLiveStateSync();
 }
 
-function setTimerValue(row, mmss){
-  const t = timers[row];
-  if(!t) return;
-  const parts = String(mmss).split(':').map(n => parseInt(n,10) || 0);
-  t.seconds = parts.length === 2 ? (parts[0]*60 + parts[1]) : (parseInt(mmss,10) || 0);
-  updateTimerDisplay(row);
+function syncModalPlayBtn(row, running) {
+    if (String(activeFeedbackRow) !== String(row)) return;
+    const btn = document.getElementById('fb-timer-toggle');
+    if (!btn) return;
+    btn.innerHTML = running ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+    btn.classList.toggle('active', running);
 }
 
-function syncModalPlayBtn(row, running){
-  if(String(activeFeedbackRow) !== String(row)) return;
-  const btn = document.getElementById('fb-timer-toggle');
-  if(!btn) return;
-  btn.innerHTML = running ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
-  btn.classList.toggle('active', running);
+function updateModalTimerIfOpen(row) {
+    if (String(activeFeedbackRow) !== String(row)) return;
+    const disp = document.getElementById('fb-timer-display');
+    if (disp) disp.textContent = fmt(computeCurrentRemaining(timers[row]));
 }
 
-function updateModalTimerIfOpen(row){
-  if(String(activeFeedbackRow) !== String(row)) return;
-  const disp = document.getElementById('fb-timer-display');
-  if(disp) disp.textContent = fmt(timers[row].seconds);
+function recordSetupDone(row) {
+    const t = timers[row];
+    if (!t) return;
+    t.setupSeconds = Math.max(0, COUNTDOWN_START - computeCurrentRemaining(t));
+    updateModalSetupTimeIfOpen(row);
+    queueLiveStateSync();
 }
 
-function recordSetupDone(row){
-  const t = timers[row];
-  if(!t) return;
-  t.setupSeconds = Math.max(0, COUNTDOWN_START - t.seconds); // elapsed time, not remaining time — countdown keeps running
-  updateModalSetupTimeIfOpen(row);
+function syncModalSetupDoneBtn(row, done) {
+    if (String(activeFeedbackRow) !== String(row)) return;
+    const btn = document.getElementById('fb-setup-done');
+    if (btn) btn.classList.toggle('done', done);
 }
 
-function syncModalSetupDoneBtn(row, done){
-  if(String(activeFeedbackRow) !== String(row)) return;
-  const btn = document.getElementById('fb-setup-done');
-  if(btn) btn.classList.toggle('done', done);
+function overrideSetupTime(row) {
+    const t = timers[row];
+    if (!t) return;
+    const current = t.setupSeconds !== undefined ? fmt(t.setupSeconds) : '00:00';
+    const input = prompt('Override setup time (MM:SS):', current);
+    if (input === null) return;
+    const parts = String(input).split(':').map(n => parseInt(n, 10) || 0);
+    t.setupSeconds = parts.length === 2 ? (parts[0] * 60 + parts[1]) : (parseInt(input, 10) || 0);
+    updateModalSetupTimeIfOpen(row);
+    queueLiveStateSync();
 }
 
-function overrideSetupTime(row){
-  const t = timers[row];
-  if(!t) return;
-  const current = t.setupSeconds !== undefined ? fmt(t.setupSeconds) : '00:00';
-  const input = prompt('Override setup time (MM:SS):', current);
-  if(input === null) return;
-  const parts = String(input).split(':').map(n => parseInt(n,10) || 0);
-  t.setupSeconds = parts.length === 2 ? (parts[0]*60 + parts[1]) : (parseInt(input,10) || 0);
-  updateModalSetupTimeIfOpen(row);
+function updateModalSetupTimeIfOpen(row) {
+    if (String(activeFeedbackRow) !== String(row)) return;
+    const input = document.getElementById('fb-setup-time');
+    if (input) input.value = fmt(timers[row].setupSeconds);
 }
 
-function updateModalSetupTimeIfOpen(row){
-  if(String(activeFeedbackRow) !== String(row)) return;
-  const input = document.getElementById('fb-setup-time');
-  if(input) input.value = fmt(timers[row].setupSeconds);
-}
+// Local 1s ticker — purely re-renders the display from wall-clock time; never
+// mutates remainingSeconds itself, so it can't drift or fight with sync.
+setInterval(() => {
+    Object.keys(timers).forEach(row => { if (timers[row].running) updateTimerDisplay(row); });
+}, 1000);
 
 function addTraineeRow(unallocated){
   const idx = traineeCount++;
@@ -392,7 +417,7 @@ function addTraineeRow(unallocated){
     </td>
   `;
   document.getElementById('trainee-rows').appendChild(tr);
-  timers[idx] = { seconds: COUNTDOWN_START, interval:null, running:false, totalMinutes: COUNTDOWN_START/60, setupSeconds: undefined};
+  timers[idx] = { remainingSeconds: COUNTDOWN_START, running: false, syncedAt: Date.now(), totalMinutes: COUNTDOWN_START/60, setupSeconds: undefined };
   applyOverrides();
   renderAnnouncementPreview(idx);
   updateStatusLockState();
@@ -419,8 +444,8 @@ document.getElementById('trainee-rows').addEventListener('click', (e)=>{
           recordSetupDone(row);
           syncModalSetupDoneBtn(row, true);
         }
-        if(action === 'override'){
-          const input = prompt('Override timer to MM:SS (e.g. 05:30):', fmt(timers[row].seconds));
+    if(action === 'override'){
+          const input = prompt('Override timer to MM:SS (e.g. 05:30):', fmt(computeCurrentRemaining(timers[row])));
           if(input !== null) setTimerValue(row, input);
         }
     return;
@@ -755,7 +780,7 @@ function openFeedbackModal(triggerBtn){
   document.getElementById('fb-date').value = new Date().toISOString().slice(0,10);
 
   const t = timers[row];
-  document.getElementById('fb-timer-display').textContent = fmt(t.seconds);
+  document.getElementById('fb-timer-display').textContent = fmt(computeCurrentRemaining(t));
   syncModalPlayBtn(row, t.running);
 
   document.getElementById('fb-setup-time').value = t.setupSeconds !== undefined ? fmt(t.setupSeconds) : '';
@@ -801,7 +826,7 @@ document.getElementById('fb-timer-reset').addEventListener('click', ()=>{
 });
 document.getElementById('fb-timer-override').addEventListener('click', ()=>{
   if(activeFeedbackRow === null) return;
-  const input = prompt('Set timer to MM:SS (e.g. 05:30):', fmt(timers[activeFeedbackRow].seconds));
+  const input = prompt('Set timer to MM:SS (e.g. 05:30):', fmt(computeCurrentRemaining(timers[activeFeedbackRow])));
   if(input !== null) setTimerValue(activeFeedbackRow, input);
 });
 document.getElementById('fb-setup-done').addEventListener('click', ()=>{
@@ -1266,3 +1291,191 @@ document.getElementById('conclude-session-btn').addEventListener('click', async 
   updateConcludeButtonState();
   showToast('Session concluded.');
 });
+
+/* ================= POLLING SYNC (session_ongoing) ================= */
+const SYNC_INTERVAL_MS = 5000;
+let syncInFlight = false;
+let pendingLiveStateFlush = false;
+
+function queueLiveStateSync() { pendingLiveStateFlush = true; }
+
+function isEditingField(el) {
+    if (!el) return false;
+    const tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}
+
+// Core columns: real DB fields, safe to push straight through
+function collectCoreUpdates() {
+    const updates = {};
+    updates.session_status = document.getElementById('status-select').value;
+
+    let staffAttendance = '';
+    document.querySelectorAll('#staff-rows .chk').forEach(cb => { staffAttendance += cb.checked ? '1' : '0'; });
+    if (staffAttendance) updates.staff_attendance = staffAttendance;
+
+    const traineeAttendanceParts = [];
+    document.querySelectorAll('#trainee-rows tr').forEach(tr => {
+        const chk = tr.querySelector('td:nth-child(7) .chk');
+        traineeAttendanceParts.push(chk && chk.checked ? '1' : '0');
+    });
+    if (traineeAttendanceParts.length) updates.trainee_attendance = traineeAttendanceParts.join(',');
+
+    document.querySelectorAll('#trainee-rows tr').forEach(tr => {
+        const row = tr.dataset.row;
+        const idx = parseInt(row, 10) + 1; // DB columns are 1-indexed
+        const nameEl = tr.querySelector('.trainee-name');
+        const detailFields = tr.querySelectorAll('.trainee-detail-field');
+        const trainerFields = tr.querySelectorAll('.trainer-detail-field');
+        if (nameEl) updates[`trainee_${idx}_name`] = nameEl.value.trim();
+        if (detailFields[1]) updates[`trainee_${idx}_discord_id`] = detailFields[1].value.trim();
+        if (detailFields[2]) updates[`trainee_${idx}_name`] = detailFields[2].value.trim(); // roblox
+        if (detailFields[0]) updates[`trainee_${idx}_discord`] = detailFields[0].value.trim();
+        const zoneSelect = tr.querySelector('select.trainee-detail-field');
+        if (zoneSelect) updates[`trainee_${idx}_zone`] = zoneSelect.value !== 'Select' ? zoneSelect.value : null;
+        const notesArea = tr.querySelector('.trainee-notes-input');
+        if (notesArea) updates[`trainee_${idx}_note`] = notesArea.value.trim();
+        if (trainerFields[0]) updates[`trainee_${idx}_trainer_name`] = trainerFields[0].value.trim();
+    });
+
+    return updates;
+}
+
+// Everything without a real DB column: timers, bell state, driver rows, staff-shift rows, feedback drafts
+function collectLiveState() {
+    const timerState = {};
+    Object.keys(timers).forEach(row => {
+        const t = timers[row];
+        timerState[row] = {
+            remainingSeconds: t.remainingSeconds,
+            running: t.running,
+            syncedAt: t.syncedAt,
+            setupSeconds: t.setupSeconds,
+        };
+    });
+
+    const drivers = Array.from(document.querySelectorAll('#driver-rows tr')).map(tr => {
+        const inputs = tr.querySelectorAll('.driver-field');
+        return { discord: inputs[0]?.value.trim() || '', roblox: inputs[1]?.value.trim() || '', attended: inputs[2]?.checked || false };
+    });
+
+    const staffShift = Array.from(document.querySelectorAll('#staff-rows tr')).map(tr => {
+        const role = tr.querySelector('.staff-role-select')?.value || '';
+        const discord = tr.querySelector('.cell-input:not(select)')?.value.trim() || '';
+        const notesInput = tr.querySelectorAll('.cell-input')[1]?.value.trim() || '';
+        return { role, discord, notes: notesInput };
+    });
+
+    return {
+        timers: timerState,
+        bellState: bellState,
+        drivers: drivers,
+        staffShift: staffShift,
+        feedbackData: feedbackData,
+    };
+}
+
+async function pushState() {
+    if (!pendingLiveStateFlush) return;
+    pendingLiveStateFlush = false;
+    try {
+        await fetch('sync_session.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                session_id: SESSION_DATA.session_id,
+                updates: collectCoreUpdates(),
+                live_state: collectLiveState(),
+            }),
+        });
+    } catch (err) {
+        console.error('Sync push failed:', err);
+    }
+}
+
+function applyRemoteTimers(remoteTimers) {
+    if (!remoteTimers) return;
+    Object.keys(remoteTimers).forEach(row => {
+        if (!timers[row]) return;
+        const remote = remoteTimers[row];
+        // Only adopt remote timer state if it's actually newer/different — a running
+        // timer's syncedAt keeps moving forward locally each tick via display only,
+        // not via mutation, so comparing raw values here is safe.
+        timers[row].remainingSeconds = remote.remainingSeconds;
+        timers[row].running = remote.running;
+        timers[row].syncedAt = remote.syncedAt;
+        timers[row].setupSeconds = remote.setupSeconds;
+        updateTimerDisplay(row);
+        const rowPlayBtn = document.querySelector(`.timer-btn.play[data-row="${row}"]`);
+        if (rowPlayBtn) {
+            rowPlayBtn.innerHTML = remote.running ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+            rowPlayBtn.classList.toggle('active', remote.running);
+        }
+    });
+}
+
+function applyRemoteState(session, liveState) {
+    const active = document.activeElement;
+
+    if (!isEditingField(active) || active.id !== 'status-select') {
+        const statusSelect = document.getElementById('status-select');
+        if (statusSelect.value !== session.session_status) {
+            statusSelect.value = session.session_status;
+            statusSelect.dispatchEvent(new Event('change'));
+        }
+    }
+
+    document.querySelectorAll('#trainee-rows tr').forEach(tr => {
+        const idx = parseInt(tr.dataset.row, 10) + 1;
+        const nameEl = tr.querySelector('.trainee-name');
+        const detailFields = tr.querySelectorAll('.trainee-detail-field');
+        const trainerFields = tr.querySelectorAll('.trainer-detail-field');
+        const notesArea = tr.querySelector('.trainee-notes-input');
+
+        if (nameEl && active !== nameEl) nameEl.value = session[`trainee_${idx}_name`] || '';
+        if (detailFields[0] && active !== detailFields[0]) detailFields[0].value = session[`trainee_${idx}_discord`] || '';
+        if (detailFields[1] && active !== detailFields[1]) detailFields[1].value = session[`trainee_${idx}_discord_id`] || '';
+        const zoneSelect = tr.querySelector('select.trainee-detail-field');
+        if (zoneSelect && active !== zoneSelect && session[`trainee_${idx}_zone`]) zoneSelect.value = 'Zone ' + session[`trainee_${idx}_zone`];
+        if (notesArea && active !== notesArea) notesArea.value = session[`trainee_${idx}_note`] || '';
+        if (trainerFields[0] && active !== trainerFields[0]) trainerFields[0].value = session[`trainee_${idx}_trainer_name`] || '';
+
+        renderAnnouncementPreview(tr.dataset.row);
+    });
+
+    if (liveState.timers) applyRemoteTimers(liveState.timers);
+    if (liveState.feedbackData) Object.assign(feedbackData, liveState.feedbackData);
+    if (liveState.bellState) bellState = liveState.bellState;
+}
+
+async function pullState() {
+    if (syncInFlight) return;
+    syncInFlight = true;
+    try {
+        const res = await fetch(`sync_session.php?session_id=${SESSION_DATA.session_id}`);
+        const data = await res.json();
+        if (data.success) applyRemoteState(data.session, data.live_state || {});
+    } catch (err) {
+        console.error('Sync pull failed:', err);
+    } finally {
+        syncInFlight = false;
+    }
+}
+
+setInterval(async () => {
+    await pushState();
+    await pullState();
+}, SYNC_INTERVAL_MS);
+
+// Any change to a synced field marks live_state dirty so the next cycle pushes it
+document.getElementById('trainee-rows').addEventListener('input', queueLiveStateSync);
+document.getElementById('trainee-rows').addEventListener('change', queueLiveStateSync);
+document.getElementById('driver-rows').addEventListener('input', queueLiveStateSync);
+document.getElementById('staff-rows').addEventListener('input', queueLiveStateSync);
+document.getElementById('staff-rows').addEventListener('change', queueLiveStateSync);
+document.getElementById('status-select').addEventListener('change', queueLiveStateSync);
+
+// Initial load: seed local state from SESSION_DATA / LIVE_STATE if the page provided them
+if (typeof SESSION_DATA !== 'undefined' && SESSION_DATA) {
+    applyRemoteState(SESSION_DATA, typeof LIVE_STATE !== 'undefined' ? LIVE_STATE : {});
+}
