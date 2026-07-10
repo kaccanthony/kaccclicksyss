@@ -423,7 +423,7 @@ async function confirmSetup() {
         if (nameDupes.length) parts.push(`Roblox username: ${nameDupes.join(', ')}`);
         if (discordDupes.length) parts.push(`Discord username: ${discordDupes.join(', ')}`);
         if (discordIdDupes.length) parts.push(`Discord ID: ${discordIdDupes.join(', ')}`);
-        showToast(`Cannot save — duplicate trainee entries found (${parts.join('; ')}).`);
+        showToast(`Cannot start — duplicate trainee entries found (${parts.join('; ')}).`);
         return;
     }
 

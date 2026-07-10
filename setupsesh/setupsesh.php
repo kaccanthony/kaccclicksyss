@@ -438,7 +438,7 @@ $hostRanks   = ['Community Manager','Operations Manager','Head Staff'];
         <div class="modal-footer">
             <button type="button" class="btn-ghost" onclick="closeModal()">Cancel</button>
             <button type="button" class="btn-primary" id="confirm-setup-btn" onclick="confirmSetup()">
-                <i class="fas fa-play"></i> Start Session Setup
+                <i class="fas fa-play"></i> Start Session
             </button>
         </div>
 
