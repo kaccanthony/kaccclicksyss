@@ -2,6 +2,17 @@
 session_start();
 require_once '../login/cnn.php';
 
+if (!isset($_SESSION['user'])) {
+    header('Location: /login/login.php');
+    exit;
+}
+
+$sessionId = (int)($_GET['session_id'] ?? 0);
+if (!$sessionId) {
+    header('Location: ../setupsesh/setupsesh.php');
+    exit;
+}
+
 function buildOptions(array $staffByRank, array $allowedRanks, string $selected = ''): string {
     $html = '<option value="">— None —</option>';
     foreach ($allowedRanks as $rank) {
@@ -36,17 +47,6 @@ if ($staffId) {
     mysqli_stmt_execute($stmt);
     mysqli_stmt_store_result($stmt);
     $hasAvatar = mysqli_stmt_num_rows($stmt) > 0;
-}
-
-if (!isset($_SESSION['user'])) {
-    header('Location: /login/login.php');
-    exit;
-}
-
-$sessionId = (int)($_GET['session_id'] ?? 0);
-if (!$sessionId) {
-    header('Location: ../setupsesh/setupsesh.php');
-    exit;
 }
 
 $stmt = mysqli_prepare($conn, "SELECT * FROM session_ongoing WHERE session_id = ?");
