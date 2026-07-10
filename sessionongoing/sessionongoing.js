@@ -432,7 +432,7 @@ document.getElementById('add-trainee-btn').addEventListener('click', (e)=> {
   addTraineeRow(true);
 });
 let initialTraineeCount = 0;
-for(let t=1; t<=10; t++){ if(SESSION_DATA[`trainee_${t}_name`]) initialTraineeCount = t; }
+const initialTraineeCount = parseInt(SESSION_DATA.num_slots, 10) || 10;
 for(let i=0;i<initialTraineeCount;i++) addTraineeRow(false);
 
 document.getElementById('signal-time-apply').addEventListener('click', applySignalMinutes);

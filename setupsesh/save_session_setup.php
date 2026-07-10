@@ -69,8 +69,8 @@ try {
         'session_id', 'session_status', 'session_name', 'session_desc', 'additional_notes',
         'session_duration', 'num_slots', 'host', 'co_host1', 'co_host2', 'co_host3',
         'co_host4/supervisor', 'assistant_1', 'assistant_2', 'assistant_3', 'assistant_4',
-        'additional_staff', 'staff_attendance', 'session_date', 'session_time', 'additional_staff', 'staff_attendance', 'session_date', 'session_time', 'started_at', 'trainee_timer',
-        'trainer_assignment_mode','trainee_timer', 'trainer_assignment_mode',
+        'additional_staff', 'staff_attendance', 'session_date', 'session_time', 'started_at',
+        'trainee_timer', 'trainer_assignment_mode',
     ];
 for ($t = 1; $t <= 10; $t++) {
         $ongoingColumns[] = "trainee_{$t}_name";

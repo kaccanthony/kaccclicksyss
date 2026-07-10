@@ -2,6 +2,42 @@
 session_start();
 require_once '../login/cnn.php';
 
+function buildOptions(array $staffByRank, array $allowedRanks, string $selected = ''): string {
+    $html = '<option value="">— None —</option>';
+    foreach ($allowedRanks as $rank) {
+        if (empty($staffByRank[$rank])) continue;
+        $html .= '<optgroup label="' . htmlspecialchars($rank) . '">';
+        foreach ($staffByRank[$rank] as $s) {
+            $name = htmlspecialchars($s['staff_display_name'] ?: $s['staff_name']);
+            $sel  = ($selected === $name) ? ' selected' : '';
+            $html .= '<option value="' . $name . '"' . $sel . '>' . $name . '</option>';
+        }
+        $html .= '</optgroup>';
+    }
+    return $html;
+}
+
+$hostRanks = ['Community Manager', 'Operations Manager', 'Head Staff'];
+$staffByRank = [];
+$resStaff = mysqli_query($conn, "SELECT staff_id, staff_display_name, staff_name, staff_rank FROM staff_list WHERE staff_rank IN ('Head Staff','Operations Manager','Community Manager')");
+while ($r = mysqli_fetch_assoc($resStaff)) {
+    $staffByRank[$r['staff_rank']][] = $r;
+}
+
+$user      = $_SESSION['user'];
+$username  = htmlspecialchars($user['username']);
+$role      = htmlspecialchars($user['role'] ?? '');
+$staffId   = $user['id'] ?? '';
+
+$hasAvatar = false;
+if ($staffId) {
+    $stmt = mysqli_prepare($conn, "SELECT 1 FROM staff_list WHERE staff_id = ? AND LENGTH(staff_avatar) > 0");
+    mysqli_stmt_bind_param($stmt, "s", $staffId);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_store_result($stmt);
+    $hasAvatar = mysqli_stmt_num_rows($stmt) > 0;
+}
+
 if (!isset($_SESSION['user'])) {
     header('Location: /login/login.php');
     exit;
@@ -66,9 +102,8 @@ if (!empty($sessionRow['live_state'])) {
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
                 <?php if ($hasAvatar): ?>
-                    <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>"
-                        alt="Avatar"
-                        style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                    <i class="fas fa-user avatar-fallback-icon"></i>
+                    <img class="js-avatar" data-avatar-id="<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                 <?php else: ?>
                     <i class="fas fa-user"></i>
                 <?php endif; ?>
@@ -480,5 +515,6 @@ const SESSION_STARTED_AT = <?= json_encode($sessionRow['started_at']) ?>; // e.g
 <script src="sessionongoing.js"></script>
 
 <?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
+<script src="../public/assets/avatar-cache.js"></script>
 </body>
 </html>
