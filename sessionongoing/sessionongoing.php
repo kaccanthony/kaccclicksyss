@@ -17,6 +17,12 @@ $stmt = mysqli_prepare($conn, "SELECT * FROM session_ongoing WHERE session_id = 
 mysqli_stmt_bind_param($stmt, "i", $sessionId);
 mysqli_stmt_execute($stmt);
 $sessionRow = mysqli_stmt_get_result($stmt)->fetch_assoc();
+$staffDirectory = [];
+$resStaff = mysqli_query($conn, "SELECT staff_id, staff_display_name, staff_name, staff_roblox_name FROM staff_list");
+while ($r = mysqli_fetch_assoc($resStaff)) {
+    $label = $r['staff_display_name'] ?: $r['staff_name'];
+    $staffDirectory[$label] = $r['staff_id']; // staff_id = Discord ID per schema comment
+}
 
 if (!$sessionRow) {
     header('Location: ../setupsesh/setupsesh.php');
@@ -49,15 +55,57 @@ if (!empty($sessionRow['live_state'])) {
 <div id="bg"></div>
 
 <header class="topbar">
-  <div class="logo-wrap">
-    <div class="pulse-ring"></div>
-    <div class="pulse-ring ring2"></div>
-    <div class="logo-img"></div>
-  </div>
-  <span class="app-name">YSS Session Manager</span>
-  <div class="live-pill"><span class="live-dot"></span> LIVE SESSION</div>
-  <span class="sync-note" id="sync-note">synced 2s ago</span>
-  <a href="../dashboard/dashboard.php" class="back-btn" style="margin-left:14px;"><i class="fas fa-arrow-left"></i> Dashboard</a>
+    <div class="logo-wrap">
+        <div class="pulse-ring"></div>
+        <div class="pulse-ring ring2"></div>
+        <img src="/public/assets/images/YSS Logo.png" alt="YSS Logo" class="logo-img"/>
+    </div>
+    <span class="app-name">YSS Session Manager</span>
+
+    <div class="topbar-right">
+        <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
+            <div class="avatar">
+                <?php if ($hasAvatar): ?>
+                    <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>"
+                        alt="Avatar"
+                        style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                <?php else: ?>
+                    <i class="fas fa-user"></i>
+                <?php endif; ?>
+            </div>
+            <div class="profile-meta">
+                <span class="profile-name"><?= $username ?></span>
+                <span class="profile-role"><?= $role ?></span>
+            </div>
+            <i class="fas fa-chevron-down chev" id="chev"></i>
+        </button>
+
+        <div class="profile-popup" id="profile-popup">
+            <div class="popup-header">
+                <div class="popup-avatar">
+                    <?php if ($hasAvatar): ?>
+                        <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>"
+                             alt="Avatar"
+                             style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                    <?php else: ?>
+                        <i class="fas fa-user"></i>
+                    <?php endif; ?>
+                </div>
+                <div>
+                    <div class="popup-name"><?= $username ?></div>
+                    <div class="popup-role"><?= $role ?></div>
+                </div>
+            </div>
+            <div class="popup-section-label">Assigned Sessions</div>
+            <div class="popup-sessions" id="popup-sessions">
+                <span class="session-pill"><i class="fas fa-circle-dot"></i> No active sessions</span>
+            </div>
+            <div class="popup-divider"></div>
+            <a href="notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>
+            <a href="../settings/settings.php"      class="popup-item"><i class="fas fa-cog"></i> Settings</a>
+            <a href="dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-sign-out-alt"></i> Log out</a>
+        </div>
+    </div>
 </header>
 
 <main>
@@ -102,19 +150,25 @@ if (!empty($sessionRow['live_state'])) {
     <div class="info-grid" id="details-grid">
       <div class="info-cell">
         <div class="info-label">Session Host</div>
-        <div class="info-value"><select class="cell-input details-field" data-lock-msg="Session details are locked. Ask the host to enable Override Session Details."><option>Vlackar</option><option>Mikael</option></select></div>
+        <div class="info-value"><select class="cell-input details-field" id="session-host-select" data-lock-msg="Session details are locked. Ask the host to enable Override Session Details."><?= buildOptions($staffByRank, $hostRanks, $sessionRow['host']) ?></select></div>
       </div>
       <div class="info-cell">
         <div class="info-label">Discord ID</div>
-        <div class="info-value"><input class="cell-input details-field" data-lock-msg="Session details are locked. Ask the host to enable Override Session Details." value="479880148842184725" placeholder="Discord ID"/></div>
+        <?php
+        $hostDiscordId = '';
+        foreach (($staffByRank['Head Staff'] ?? []) as $s) if (($s['staff_display_name'] ?: $s['staff_name']) === $sessionRow['host']) $hostDiscordId = $s['staff_id'];
+        foreach (($staffByRank['Operations Manager'] ?? []) as $s) if (($s['staff_display_name'] ?: $s['staff_name']) === $sessionRow['host']) $hostDiscordId = $s['staff_id'];
+        foreach (($staffByRank['Community Manager'] ?? []) as $s) if (($s['staff_display_name'] ?: $s['staff_name']) === $sessionRow['host']) $hostDiscordId = $s['staff_id'];
+        ?>
+        <div class="info-value"><input class="cell-input" id="session-host-discordid" value="<?= htmlspecialchars($hostDiscordId) ?>" readonly data-lock-msg="Discord ID syncs automatically from the selected Host."/></div>
       </div>
       <div class="info-cell">
         <div class="info-label">Session Date</div>
-        <div class="info-value"><input class="cell-input details-field" id="session-date-input" data-lock-msg="Session details are locked. Ask the host to enable Override Session Details." type="date"/></div>
+        <div class="info-value"><input class="cell-input details-field" id="session-date-input" value="<?= htmlspecialchars($sessionRow['session_date']) ?>" data-lock-msg="Session details are locked. Ask the host to enable Override Session Details." type="date"/></div>
       </div>
       <div class="info-cell">
         <div class="info-label">Session Time</div>
-        <div class="info-value"><input class="cell-input details-field" id="session-time-input" data-lock-msg="Session details are locked. Ask the host to enable Override Session Details." type="time" lang="en-GB"/></div>
+        <div class="info-value"><input class="cell-input details-field" id="session-time-input" value="<?= htmlspecialchars($sessionRow['session_time']) ?>" data-lock-msg="Session details are locked. Ask the host to enable Override Session Details." type="time" lang="en-GB"/></div>
       </div>
         <div class="info-cell status-cell" style="grid-column:1/3;">
         <div class="status-row status-row-select">
@@ -418,6 +472,10 @@ if (!empty($sessionRow['live_state'])) {
 <script>
 const SESSION_DATA = <?= json_encode($sessionRow, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 const LIVE_STATE = <?= json_encode($liveState, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const STAFF_DIRECTORY = <?= json_encode($staffDirectory, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) ?>;
+</script>
+<script>
+const SESSION_STARTED_AT = <?= json_encode($sessionRow['started_at']) ?>; // e.g. "2026-07-10 14:32:00"
 </script>
 <script src="sessionongoing.js"></script>
 

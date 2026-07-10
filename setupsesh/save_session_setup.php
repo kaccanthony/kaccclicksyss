@@ -69,8 +69,8 @@ try {
         'session_id', 'session_status', 'session_name', 'session_desc', 'additional_notes',
         'session_duration', 'num_slots', 'host', 'co_host1', 'co_host2', 'co_host3',
         'co_host4/supervisor', 'assistant_1', 'assistant_2', 'assistant_3', 'assistant_4',
-        'additional_staff', 'staff_attendance', 'session_date', 'session_time', 'trainee_timer',
-        'trainer_assignment_mode',
+        'additional_staff', 'staff_attendance', 'session_date', 'session_time', 'additional_staff', 'staff_attendance', 'session_date', 'session_time', 'started_at', 'trainee_timer',
+        'trainer_assignment_mode','trainee_timer', 'trainer_assignment_mode',
     ];
 for ($t = 1; $t <= 10; $t++) {
         $ongoingColumns[] = "trainee_{$t}_name";
@@ -83,6 +83,8 @@ for ($t = 1; $t <= 10; $t++) {
     $ongoingColumns[] = 'trainee_attendance';
 
     $ongoingRow['session_status'] = 'Ongoing';
+
+    $ongoingRow['started_at'] = date('Y-m-d H:i:s');
 
     // 9 staff slots (host, co_host1-3, co_host4/supervisor, assistant_1-4), 1 char each,
     // no separator — matches varchar(10). All start unattended.

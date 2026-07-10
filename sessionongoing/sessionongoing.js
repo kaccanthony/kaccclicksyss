@@ -391,8 +391,13 @@ function addTraineeRow(unallocated){
       </div>
     </td>
     <td style="text-align:center;"><input type="checkbox" class="chk"/></td>
-    <td><input class="cell-input trainer-detail-field" placeholder="Trainer name" data-lock-msg="Trainer assignment is locked. Ask the host to enable Override Trainer Assignment."/></td>
-    <td><input class="cell-input trainer-detail-field" placeholder="Discord ID" data-lock-msg="Trainer assignment is locked. Ask the host to enable Override Trainer Assignment."/></td>
+    <td>
+      <select class="cell-input trainer-detail-field trainer-name-select" data-lock-msg="Trainer assignment is locked. Ask the host to enable Override Trainer Assignment.">
+        <option value="">— None —</option>
+        ${Object.keys(STAFF_DIRECTORY).map(n=>`<option value="${n}">${n}</option>`).join('')}
+      </select>
+    </td>
+    <td><input class="cell-input trainer-detail-field trainer-discord-id" placeholder="Discord ID" readonly data-lock-msg="This fills in automatically from the trainer's staff record."/></td>
     <td style="text-align:center;">
       <button class="feedback-btn" data-row="${idx}"><i class="fas fa-comment-dots"></i> Feedback</button>
     </td>
@@ -426,7 +431,9 @@ document.getElementById('add-trainee-btn').addEventListener('click', (e)=> {
   if(e.currentTarget.classList.contains('is-locked')) return;
   addTraineeRow(true);
 });
-for(let i=0;i<10;i++) addTraineeRow(false);
+let initialTraineeCount = 0;
+for(let t=1; t<=10; t++){ if(SESSION_DATA[`trainee_${t}_name`]) initialTraineeCount = t; }
+for(let i=0;i<initialTraineeCount;i++) addTraineeRow(false);
 
 document.getElementById('signal-time-apply').addEventListener('click', applySignalMinutes);
 
@@ -522,6 +529,12 @@ document.getElementById('trainee-rows').addEventListener('input', (e)=>{
 document.getElementById('trainee-rows').addEventListener('change', (e)=>{
   if(e.target.matches('select.trainee-detail-field')){
     renderAnnouncementPreview(e.target.closest('tr').dataset.row);
+  }
+});
+document.getElementById('trainee-rows').addEventListener('change', (e)=>{
+  if(e.target.classList.contains('trainer-name-select')){
+    const idInput = e.target.closest('tr').querySelector('.trainer-discord-id');
+    if(idInput) idInput.value = STAFF_DIRECTORY[e.target.value] || '';
   }
 });
 
@@ -954,17 +967,11 @@ document.getElementById('announcement-float-close').addEventListener('click', ()
 applyOverrides();
 
 /* ================= GLOBAL TRAINEE TIMER (overall session clock) ================= */
-let globalTimerSeconds = 0;
-function fmtHMS(s){
-  const h = String(Math.floor(s/3600)).padStart(2,'0');
-  const m = String(Math.floor((s%3600)/60)).padStart(2,'0');
-  const sec = String(s%60).padStart(2,'0');
-  return `${h}:${m}:${sec}`;
-}
+const sessionStartMs = SESSION_STARTED_AT ? new Date(SESSION_STARTED_AT.replace(' ', 'T') + 'Z').getTime() : Date.now();
 setInterval(()=>{
-  globalTimerSeconds++;
+  const elapsed = Math.max(0, Math.floor((Date.now() - sessionStartMs) / 1000));
   const el = document.getElementById('global-timer-display');
-  if(el) el.textContent = fmtHMS(globalTimerSeconds);
+  if(el) el.textContent = fmtHMS(elapsed);
 }, 1000);
 
 /* mock sync indicator */
@@ -1039,6 +1046,8 @@ let bellState = {
   globalCooldownUntil: 0,
   initiationCount: 0,
 };
+const sessionHasCohost = !!(SESSION_DATA.co_host1 || SESSION_DATA.co_host2 || SESSION_DATA.co_host3 || SESSION_DATA['co_host4/supervisor']);
+const sessionHasAssistant = !!(SESSION_DATA.assistant_1 || SESSION_DATA.assistant_2 || SESSION_DATA.assistant_3 || SESSION_DATA.assistant_4);
 const localButtonCooldownUntil = { host:0, cohost:0, assistant:0 };
 
 function renderBellState(){
@@ -1065,6 +1074,8 @@ function renderBellState(){
   bellButtons.assistant.disabled = globalCooldownActive || localButtonCooldownUntil.assistant > now ||
     (bellState.active ? bellState.acks.assistant : true);
   bellFabDot.classList.toggle('show', bellState.active);
+  if(!sessionHasCohost) bellButtons.cohost.disabled = true;
+  if(!sessionHasAssistant) bellButtons.assistant.disabled = true;
 }
 
 function armButtonCooldown(role){
@@ -1079,9 +1090,12 @@ function armButtonCooldown(role){
 }
 
 function checkAllAcked(){
-  return ['host','cohost','assistant'].filter(r => r !== bellState.initiatorRole).every(r => bellState.acks[r]);
+  return ['host','cohost','assistant'].filter(r => r !== bellState.initiatorRole).every(r => {
+    if(r === 'cohost' && !sessionHasCohost) return true;
+    if(r === 'assistant' && !sessionHasAssistant) return true;
+    return bellState.acks[r];
+  });
 }
-
 function endCycleWithCooldown(){
   bellState.active = false;
   bellState.globalCooldownUntil = Date.now() + BELL_GLOBAL_COOLDOWN_MS;
@@ -1289,7 +1303,10 @@ document.getElementById('conclude-session-btn').addEventListener('click', async 
   statusSelect.value = 'concluded';
   statusSelect.dispatchEvent(new Event('change'));
   updateConcludeButtonState();
-  showToast('Session concluded.');
+  queueLiveStateSync();
+  await pushState(); // push immediately, don't wait for the 5s cycle
+  showToast('Session concluded. Redirecting everyone shortly...');
+  setTimeout(()=>{ window.location.href = '../dashboard/dashboard.php'; }, 2000);
 });
 
 /* ================= POLLING SYNC (session_ongoing) ================= */
@@ -1424,6 +1441,10 @@ function applyRemoteState(session, liveState) {
             statusSelect.dispatchEvent(new Event('change'));
         }
     }
+    if(session.session_status === 'concluded' && myRole !== 'host'){
+    showToast('The host has concluded this session. Returning to dashboard...');
+    setTimeout(()=>{ window.location.href = '../dashboard/dashboard.php'; }, 2500);
+  }
 
     document.querySelectorAll('#trainee-rows tr').forEach(tr => {
         const idx = parseInt(tr.dataset.row, 10) + 1;
@@ -1479,3 +1500,8 @@ document.getElementById('status-select').addEventListener('change', queueLiveSta
 if (typeof SESSION_DATA !== 'undefined' && SESSION_DATA) {
     applyRemoteState(SESSION_DATA, typeof LIVE_STATE !== 'undefined' ? LIVE_STATE : {});
 }
+
+// Change listener for host select syncing discord ID:
+document.getElementById('session-host-select')?.addEventListener('change', (e)=>{
+  document.getElementById('session-host-discordid').value = STAFF_DIRECTORY[e.target.value] || '';
+});
