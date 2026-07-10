@@ -503,15 +503,13 @@ if (!empty($sessionRow['live_state'])) {
   </div>
 </div>
 
-<script src="sessionongoing.js"></script>
 <script>
 const SESSION_DATA = <?= json_encode($sessionRow, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 const LIVE_STATE = <?= json_encode($liveState, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 const STAFF_DIRECTORY = <?= json_encode($staffDirectory, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) ?>;
-</script>
-<script>
 const SESSION_STARTED_AT = <?= json_encode($sessionRow['started_at']) ?>; // e.g. "2026-07-10 14:32:00"
 </script>
+<script src="sessionongoing.js"></script>
 
 <?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
 <script src="../public/assets/avatar-cache.js"></script>
