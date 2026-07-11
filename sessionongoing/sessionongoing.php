@@ -147,7 +147,7 @@ if (!empty($sessionRow['live_state'])) {
 <main>
   <div class="session-head">
     <div>
-      <div class="session-title">Session #<?php echo $sessionId . " - " . $hostDiscordId?> — </div>
+      <div class="session-title">Session #<?php echo $sessionId . " — " . buildOptions($staffByRank, $hostRanks, $sessionRow['host']) ?></div>
       <div class="session-sub">Viewing as <strong>Trainer</strong> · edits are locked by default — use overrides below to unlock specific sections</div>
     </div>
   </div>
