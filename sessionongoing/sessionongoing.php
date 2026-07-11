@@ -65,6 +65,23 @@ if (!$sessionRow) {
     exit;
 }
 
+// ADD THIS BLOCK — stamp started_at exactly once, the first time anyone opens the session
+if (empty($sessionRow['started_at'])) {
+    $now = date('Y-m-d H:i:s');
+    $stmtStart = mysqli_prepare($conn, "UPDATE session_ongoing SET started_at = ? WHERE session_id = ?");
+    mysqli_stmt_bind_param($stmtStart, "si", $now, $sessionId);
+    mysqli_stmt_execute($stmtStart);
+    $sessionRow['started_at'] = $now;
+}
+
+$myDisplayName = $username; // adjust if your session lookup key differs from $_SESSION['user']['username']
+$viewerRole = 'Assistant';
+if ($sessionRow['host'] === $myDisplayName) {
+    $viewerRole = 'Host';
+} elseif (in_array($myDisplayName, [$sessionRow['co_host1'], $sessionRow['co_host2'], $sessionRow['co_host3'], $sessionRow['co_host4/supervisor']], true)) {
+    $viewerRole = 'Co-Host';
+}
+
 $liveState = [];
 if (!empty($sessionRow['live_state'])) {
     $decoded = json_decode($sessionRow['live_state'], true);
@@ -97,6 +114,9 @@ if (!empty($sessionRow['live_state'])) {
         <img src="/public/assets/images/YSS Logo.png" alt="YSS Logo" class="logo-img"/>
     </div>
     <span class="app-name">YSS Session Manager</span>
+
+    <div class="live-pill"><span class="live-dot"></span> LIVE SESSION</div>
+    <span class="sync-note" id="sync-note">synced 0s ago</span>
 
     <div class="topbar-right">
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
@@ -147,8 +167,8 @@ if (!empty($sessionRow['live_state'])) {
 <main>
   <div class="session-head">
     <div>
-      <div class="session-title">Session #<?php echo $sessionId . " — " . "plesholder" ?></div>
-      <div class="session-sub">Viewing as <strong>Trainer</strong> · edits are locked by default — use overrides below to unlock specific sections</div>
+    <div class="session-title">Session #<?= $sessionId ?> — <?= htmlspecialchars($sessionRow['session_name'] ?: 'Untitled Session') ?></div>
+    <div class="session-sub">Viewing as <strong><?= htmlspecialchars($viewerRole) ?></strong> · <?= $viewerRole === 'Host' ? 'edits are locked by default — use overrides below to unlock specific sections' : 'ask the host to enable overrides to unlock specific actions' ?></div>
     </div>
   </div>
 
@@ -509,6 +529,7 @@ const SESSION_DATA = <?= json_encode($sessionRow, JSON_HEX_TAG | JSON_HEX_APOS |
 const LIVE_STATE = <?= json_encode($liveState, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 const STAFF_DIRECTORY = <?= json_encode($staffDirectory, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) ?>;
 const SESSION_STARTED_AT = <?= json_encode($sessionRow['started_at']) ?>; // e.g. "2026-07-10 14:32:00"
+const MY_ROLE = <?= json_encode(strtolower(str_replace('-', '', $viewerRole))) ?>; // 'host' | 'cohost' | 'assistant'
 </script>
 <script src="sessionongoing.js"></script>
 

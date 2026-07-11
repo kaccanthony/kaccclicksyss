@@ -37,7 +37,7 @@ try {
     $stmtLog = mysqli_prepare($conn, "INSERT INTO session_staff_logs
         (session_id, host, cohost_1, cohost_2, cohost_3, `cohost_4/supervisor`, assistant_1, assistant_2, assistant_3, assistant_4, date, started, ended, duration)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    mysqli_stmt_bind_param($stmtLog, "issssssssssss",
+    mysqli_stmt_bind_param($stmtLog, "isssssssssssss",
         $sessionId, $s['host'], $s['co_host1'], $s['co_host2'], $s['co_host3'], $s['co_host4/supervisor'],
         $s['assistant_1'], $s['assistant_2'], $s['assistant_3'], $s['assistant_4'],
         $s['session_date'], $startTime, $endTime, $s['session_duration']
@@ -62,7 +62,7 @@ try {
         $stmtFull = mysqli_prepare($conn, "INSERT INTO session_full_logs
             (session_id, trainee_id, trainee_roblox, trainee_zone, trainee_attendance, trainer_id, trainee_notes, staff_notes, trainee_assessed, trainee_feedback, feedback_sent)
             VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 0, 0, 0)");
-        mysqli_stmt_bind_param($stmtFull, "issiis",
+        mysqli_stmt_bind_param($stmtFull, "issiiss",
             $sessionId, $discordId, $name, $zone, $attended, $trainerId, $notes
         );
         // note: trainee_notes bound as string via the 's' in "issiis" placeholder position — see below

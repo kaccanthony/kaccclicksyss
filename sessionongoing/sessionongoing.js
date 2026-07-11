@@ -6,11 +6,10 @@ let driverCount = 0;
 let traineeCount = 0;
 const timers = {};
 const overrides = { 'session-details':false, 'trainees':false, 'staff-roles':false, 'drivers-disable':false, 'slot-order':false, 'staff-delete':false, 'trainee-details':false, 'trainer-details':false, 'allow-all':false };
-// TODO: replace with the real logged-in role from your PHP session once wired up
-const isHost = true;
 
-// TODO: replace with the real logged-in role from your PHP session once wired up
-const myRole = 'host'; // 'host' | 'cohost' | 'assistant'
+const myRole = MY_ROLE; // 'host' | 'cohost' | 'assistant' — set server-side in sessionongoing.php
+const isHost = myRole === 'host';
+
 const myClientId = (function(){
   let id = localStorage.getItem('yss_client_id');
   if(!id){ id = 'c_' + Math.random().toString(36).slice(2) + Date.now(); localStorage.setItem('yss_client_id', id); }
@@ -195,6 +194,9 @@ function applyOverrides(){
   const slotOrderUnlocked = allowAll || overrides['slot-order'];
   document.querySelectorAll('.order-btn').forEach(b=> setLocked(b, !slotOrderUnlocked));
 
+
+  // Host Discord ID — always locked, only "Allow Override for Everyone" unlocks it
+  setLocked(document.getElementById('session-host-discordid'), !allowAll);
   updateStatusLockState();
 }
 
@@ -1396,6 +1398,21 @@ function collectCoreUpdates() {
         traineeAttendanceParts.push(chk && chk.checked ? '1' : '0');
     });
     if (traineeAttendanceParts.length) updates.trainee_attendance = traineeAttendanceParts.join(',');
+
+    // Persist staff rows into their real DB columns, by role
+    const cohostCols = ['co_host1', 'co_host2', 'co_host3', 'co_host4/supervisor'];
+    const assistantCols = ['assistant_1', 'assistant_2', 'assistant_3', 'assistant_4'];
+    let cohostIdx = 0, assistantIdx = 0;
+    document.querySelectorAll('#staff-rows tr').forEach(tr => {
+        const role = tr.querySelector('.staff-role-select')?.value;
+        const discord = tr.querySelector('.cell-input:not(select)')?.value.trim();
+        if (!discord) return;
+        if ((role === 'Co-Host' || role === 'Main AST') && cohostIdx < cohostCols.length) {
+            updates[cohostCols[cohostIdx++]] = discord;
+        } else if (assistantIdx < assistantCols.length) {
+            updates[assistantCols[assistantIdx++]] = discord;
+        }
+    });
 
     document.querySelectorAll('#trainee-rows tr').forEach(tr => {
         const row = tr.dataset.row;
