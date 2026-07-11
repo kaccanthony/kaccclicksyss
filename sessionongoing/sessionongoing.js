@@ -424,9 +424,8 @@ function addTraineeRow(unallocated){
     </td>
     <td style="text-align:center;"><input type="checkbox" class="chk"/></td>
     <td>
-        <select class="cell-input trainer-detail-field trainer-name-select" data-lock-msg="Trainer assignment is locked. Ask the host to enable Override Trainer Assignment."></select>
+      <select class="cell-input trainer-detail-field trainer-name-select" data-lock-msg="Trainer assignment is locked. Ask the host to enable Override Trainer Assignment.">
         <option value="">— None —</option>
-        ${Object.keys(STAFF_DIRECTORY).map(n=>`<option value="${n}">${n}</option>`).join('')}
       </select>
     </td>
     <td><input class="cell-input trainer-detail-field trainer-discord-id" placeholder="Discord ID" readonly data-lock-msg="This fills in automatically from the trainer's staff record."/></td>
