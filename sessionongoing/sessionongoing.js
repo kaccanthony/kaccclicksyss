@@ -1246,7 +1246,7 @@ async function ackBell(role){
 }
 function mapServerBell(s){
   return { active:s.active, initiatorRole:s.initiator_role, acks:s.acks,
-           globalCooldownUntil: s.cooldown_until ? s.cooldown_until*1000 : 0, initiationCount: 0 };
+          globalCooldownUntil: s.cooldown_until ? s.cooldown_until*1000 : 0, initiationCount: 0 };
 }
 async function pollBell(){
   try{
@@ -1668,7 +1668,7 @@ function applyRemoteState(session, liveState) {
     }
 }
 
-async function pullState() {
+function pullState() {
     if (syncInFlight) return;
     syncInFlight = true;
     try {
