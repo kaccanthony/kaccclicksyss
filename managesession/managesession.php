@@ -578,6 +578,6 @@ function statusBadge($status) {
 </div>
 </div>
 <?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
-<script src="script.js"></script>
+<script src="script.js?v=<?= filemtime(__DIR__ . '/script.js') ?>"></script>
 </body>
 </html>
