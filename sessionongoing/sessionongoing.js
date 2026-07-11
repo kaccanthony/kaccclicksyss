@@ -49,6 +49,8 @@ const allowAllBtn = document.querySelector('.ovr-btn[data-ovr="allow-all"]');
 if(allowAllBtn && isHost) allowAllBtn.classList.add('visible');
 const concludePanel = document.getElementById('conclude-panel');
 if(concludePanel && isHost) concludePanel.classList.add('visible');
+const sessionControlsPanel = document.getElementById('session-controls-panel');
+if(sessionControlsPanel && isHost) sessionControlsPanel.classList.add('visible');
 /* ================= ANNOUNCEMENT TEMPLATE (must exist before the first trainee rows are built below) ================= */
 const ANNOUNCEMENT_TEMPLATE = `# 📢 Zone Announcement
 **Zone:** [ZONE]
@@ -141,6 +143,7 @@ document.querySelectorAll('.ovr-btn').forEach(btn=>{
     overrides[key] = !overrides[key];
     btn.classList.toggle('on', overrides[key]);
     applyOverrides();
+    queueLiveStateSync();
   });
 });
 
@@ -256,7 +259,7 @@ document.getElementById('status-select').addEventListener('change', (e)=>{
 
 /* ================= TRAINEE ROWS ================= */
 const zones = ['Zone 1','Zone 2','Zone 3','Zone 4', 'Zone 5','Zone 6','Zone 7','Zone 8','Zone 9','Zone 10'];
-let COUNTDOWN_START = 12*60; // 12 minutes — overridable via Trainee Signal Time control
+let COUNTDOWN_START = (parseInt(SESSION_DATA.trainee_timer, 10) || 12) * 60; // from session_ongoing.trainee_timer
 
 const fbZoneSelect = document.getElementById('fb-zone');
 if(fbZoneSelect){
@@ -519,6 +522,7 @@ document.getElementById('trainee-rows').addEventListener('click', (e)=>{
       delete timers[delBtn.dataset.row];
       delBtn.closest('tr').remove();
       updateStatusLockState();
+      queueLiveStateSync();
       return;
     }
 
@@ -609,6 +613,26 @@ function updateStaffAddState(){
 
 document.getElementById('add-staff-btn').addEventListener('click', addStaffRow);
 
+function applyRemoteStaff(staffArr) {
+    if (!Array.isArray(staffArr)) return;
+    const tbody = document.getElementById('staff-rows');
+    const activeInStaff = document.activeElement && tbody.contains(document.activeElement);
+    if (activeInStaff) return; // don't yank focus/values while someone's mid-edit
+
+    tbody.innerHTML = '';
+    staffCount = 0;
+    if (!staffArr.length) { seedStaffFromSession(); return; }
+    staffArr.forEach(s => {
+        addStaffRow();
+        const tr = document.querySelector('#staff-rows tr:last-child');
+        if (s.role) tr.querySelector('.staff-role-select').value = s.role;
+        tr.querySelector('.staff-username').value = s.discord || '';
+        const notesInput = tr.querySelectorAll('.cell-input')[1];
+        if (notesInput) notesInput.value = s.notes || '';
+    });
+    updateStaffAddState();
+}
+
 function seedStaffFromSession(){
   const seeds = [
     { name: SESSION_DATA.co_host1, role: 'Co-Host' },
@@ -630,7 +654,11 @@ function seedStaffFromSession(){
     tr.querySelector('.staff-username').value = s.name; // Discord username column
   });
 }
-seedStaffFromSession();
+if (LIVE_STATE.staffShift && LIVE_STATE.staffShift.length) {
+  applyRemoteStaff(LIVE_STATE.staffShift);
+} else {
+  seedStaffFromSession();
+}
 
 document.getElementById('staff-rows').addEventListener('click', (e)=>{
   const delBtn = e.target.closest('.staff-del-btn');
@@ -638,6 +666,7 @@ document.getElementById('staff-rows').addEventListener('click', (e)=>{
     if(delBtn.classList.contains('is-locked')) return;
     delBtn.closest('tr').remove();
     updateStaffAddState();
+    queueLiveStateSync();
   }
 });
 
@@ -693,7 +722,10 @@ applyRemoteDrivers(LIVE_STATE.drivers);
 
 document.getElementById('driver-rows').addEventListener('click', (e)=>{
   const delBtn = e.target.closest('.driver-del-btn');
-  if(delBtn) delBtn.closest('tr').remove();
+  if(delBtn){
+    delBtn.closest('tr').remove();
+    queueLiveStateSync();
+  }
 });
 
 /* ================= FEEDBACK MODAL ================= */
@@ -1052,12 +1084,12 @@ setInterval(()=>{
   if(el) el.textContent = fmtHMS(elapsed);
 }, 1000);
 
-/* mock sync indicator */
-let lastSync = 0;
+/* real sync indicator — only resets after an actual successful round-trip */
+let lastSuccessfulSyncAt = Date.now();
 setInterval(()=>{
-  lastSync += 1;
-  document.getElementById('sync-note').textContent = `synced ${lastSync}s ago`;
-  if(lastSync >= 5) lastSync = 0;
+  const secondsAgo = Math.floor((Date.now() - lastSuccessfulSyncAt) / 1000);
+  const el = document.getElementById('sync-note');
+  if (el) el.textContent = `synced ${secondsAgo}s ago`;
 }, 1000);
 
 /* ================= BELL SYSTEM ================= */
@@ -1486,6 +1518,7 @@ function collectLiveState() {
         drivers: drivers,
         staffShift: staffShift,
         feedbackData: feedbackData,
+        overrides: overrides,
     };
 }
 
@@ -1566,8 +1599,16 @@ function applyRemoteState(session, liveState) {
 
     if (liveState.timers) applyRemoteTimers(liveState.timers);
     if (liveState.drivers) applyRemoteDrivers(liveState.drivers);
+    if (liveState.staffShift) applyRemoteStaff(liveState.staffShift);
     if (liveState.feedbackData) Object.assign(feedbackData, liveState.feedbackData);
     if (liveState.bellState) bellState = liveState.bellState;
+    if (liveState.overrides) {
+        const changed = JSON.stringify(overrides) !== JSON.stringify(liveState.overrides);
+        if (changed) {
+            Object.assign(overrides, liveState.overrides);
+            applyOverrides();
+        }
+    }
 }
 
 async function pullState() {
@@ -1581,7 +1622,10 @@ async function pullState() {
             return;
         }
         const data = await res.json();
-        if (data.success) applyRemoteState(data.session, data.live_state || {});
+        if (data.success) {
+            applyRemoteState(data.session, data.live_state || {});
+            lastSuccessfulSyncAt = Date.now();
+        }
     } catch (err) {
         console.error('Sync pull failed:', err);
     } finally {

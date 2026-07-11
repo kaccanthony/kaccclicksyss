@@ -67,7 +67,7 @@ if (!$sessionRow) {
 
 // ADD THIS BLOCK — stamp started_at exactly once, the first time anyone opens the session
 if (empty($sessionRow['started_at'])) {
-    $now = date('Y-m-d H:i:s');
+    $now = gmdate('Y-m-d H:i:s');
     $stmtStart = mysqli_prepare($conn, "UPDATE session_ongoing SET started_at = ? WHERE session_id = ?");
     mysqli_stmt_bind_param($stmtStart, "si", $now, $sessionId);
     mysqli_stmt_execute($stmtStart);
@@ -244,7 +244,7 @@ if (!empty($sessionRow['live_state'])) {
       <div class="info-cell" style="grid-column:3/4;">
         <div class="info-label">Trainee Signal Time</div>
         <div class="signal-time-wrap">
-          <input type="number" class="cell-input details-field" id="signal-time-input" min="1" max="60" value="12" data-lock-msg="Session details are locked. Ask the host to enable Override Session Details."/>
+          <input type="number" class="cell-input details-field" id="signal-time-input" min="1" max="60" value="<?= (int)($sessionRow['trainee_timer'] ?: 12) ?>" data-lock-msg="Session details are locked. Ask the host to enable Override Session Details."/>
           <span class="signal-time-suffix">min</span>
           <button type="button" class="mini-override-btn details-field" id="signal-time-apply" data-lock-msg="Session details are locked. Ask the host to enable Override Session Details."><i class="fas fa-check"></i></button>
         </div>
@@ -257,7 +257,7 @@ if (!empty($sessionRow['live_state'])) {
   </section>
 
   <!-- Trainees table -->
-  <section class="panel">
+  <section class="panel host-only" id="session-controls-panel">
   <div class="panel-title">
       Trainees Panel
       <span style="font-weight:400;color:var(--text-faint);text-transform:none;letter-spacing:0;font-size:.68rem;">scroll wheel over the table scrolls sideways · ctrl+scroll still zooms the page</span>

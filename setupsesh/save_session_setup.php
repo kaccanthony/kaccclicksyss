@@ -82,9 +82,9 @@ for ($t = 1; $t <= 10; $t++) {
     }
     $ongoingColumns[] = 'trainee_attendance';
 
-    $ongoingRow['session_status'] = 'Ongoing';
+    $ongoingRow['session_status'] = 'inprogress';
 
-    $ongoingRow['started_at'] = date('Y-m-d H:i:s');
+    $ongoingRow['started_at'] = gmdate('Y-m-d H:i:s');
 
     // 9 staff slots (host, co_host1-3, co_host4/supervisor, assistant_1-4), 1 char each,
     // no separator — matches varchar(10). All start unattended.

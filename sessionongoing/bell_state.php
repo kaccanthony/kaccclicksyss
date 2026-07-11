@@ -1,41 +1,57 @@
 <?php
-// bell_state.php — lightweight shared state for the Host/Co-host/Assistant bell system.
-// GET  -> returns current state (also runs expiry/timeout checks)
-// POST -> { action: 'ring'|'ack', role: 'host'|'cohost'|'assistant', client_id: '...' }
-
+// bell_session.php — per-session shared bell state (Host/Co-host/Assistant), scoped by session_id.
+// GET  ?session_id=123           -> returns current state for that session
+// POST { session_id, action: 'ring'|'ack', role: 'host'|'cohost'|'assistant', client_id }
+session_start();
+require_once '../login/cnn.php';
 header('Content-Type: application/json');
 
-$stateFile = __DIR__ . '/bell_state.json';
-$lockFile  = __DIR__ . '/bell_state.lock';
+if (!isset($_SESSION['user'])) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
 
-const ACK_TIMEOUT_SECONDS      = 30;   // if no ack within this long, cycle ends and cooldown starts anyway
-const COOLDOWN_SECONDS         = 300;  // 5 minutes
-const MAX_INITIATIONS_PER_USER = 3;    // per client_id, resets when cooldown fully expires
+const ACK_TIMEOUT_SECONDS      = 30;
+const COOLDOWN_SECONDS         = 300;
+const MAX_INITIATIONS_PER_USER = 3;
 
 function defaultState() {
     return [
-        'active'             => false,
-        'initiator_role'     => null,     // 'host' | 'cohost' | null
-        'initiator_client'   => null,
-        'acks'               => ['host' => false, 'cohost' => false, 'assistant' => false],
-        'ring_started_at'    => null,
-        'cooldown_until'     => null,
-        'initiation_counts'  => [],        // client_id => count
-        'updated_at'         => time(),
+        'active'            => false,
+        'initiator_role'    => null,
+        'initiator_client'  => null,
+        'acks'              => ['host' => false, 'cohost' => false, 'assistant' => false],
+        'ring_started_at'   => null,
+        'cooldown_until'    => null,
+        'initiation_counts' => [],
+        'updated_at'        => time(),
     ];
 }
 
-function loadState($stateFile) {
-    if (!file_exists($stateFile)) return defaultState();
-    $data = json_decode(file_get_contents($stateFile), true);
+function loadState($file) {
+    if (!file_exists($file)) return defaultState();
+    $data = json_decode(file_get_contents($file), true);
     return is_array($data) ? array_merge(defaultState(), $data) : defaultState();
 }
 
-function saveState($stateFile, $state) {
+function saveState($file, $state) {
     $state['updated_at'] = time();
-    file_put_contents($stateFile, json_encode($state), LOCK_EX);
+    file_put_contents($file, json_encode($state), LOCK_EX);
     return $state;
 }
+
+$method = $_SERVER['REQUEST_METHOD'];
+$body = $method === 'POST' ? (json_decode(file_get_contents('php://input'), true) ?: []) : [];
+$sessionId = (int)($_GET['session_id'] ?? $body['session_id'] ?? 0);
+if ($sessionId <= 0) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Missing session_id.']);
+    exit;
+}
+
+$stateFile = __DIR__ . "/bell_session_{$sessionId}.json";
+$lockFile  = __DIR__ . "/bell_session_{$sessionId}.lock";
 
 $fp = fopen($lockFile, 'c');
 flock($fp, LOCK_EX);
@@ -43,17 +59,13 @@ flock($fp, LOCK_EX);
 $state = loadState($stateFile);
 $now = time();
 
-// Full reset once cooldown fully expires (also clears per-user initiation counts)
 if ($state['cooldown_until'] !== null && $now >= $state['cooldown_until']) {
     $state = defaultState();
 }
-// Ack timeout — nobody responded in time, end the cycle and start cooldown anyway
 if ($state['active'] && $state['ring_started_at'] !== null && ($now - $state['ring_started_at']) > ACK_TIMEOUT_SECONDS) {
     $state['active'] = false;
     $state['cooldown_until'] = $now + COOLDOWN_SECONDS;
 }
-
-$method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     $state = saveState($stateFile, $state);
@@ -63,10 +75,9 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
-    $input    = json_decode(file_get_contents('php://input'), true) ?: [];
-    $action   = $input['action'] ?? '';
-    $role     = $input['role'] ?? '';
-    $clientId = $input['client_id'] ?? '';
+    $action   = $body['action'] ?? '';
+    $role     = $body['role'] ?? '';
+    $clientId = $body['client_id'] ?? '';
 
     if ($action === 'ring') {
         if (!in_array($role, ['host', 'cohost'], true)) {
@@ -94,7 +105,7 @@ if ($method === 'POST') {
         $state['initiator_role']   = $role;
         $state['initiator_client'] = $clientId;
         $state['acks']             = ['host' => false, 'cohost' => false, 'assistant' => false];
-        $state['acks'][$role]      = true; // initiator's own slot is implicitly "acked" (it's ringing, not waiting)
+        $state['acks'][$role]      = true;
         $state['ring_started_at']  = $now;
         $state['initiation_counts'][$clientId] = $count + 1;
         $state = saveState($stateFile, $state);
@@ -115,7 +126,6 @@ if ($method === 'POST') {
             exit;
         }
         $state['acks'][$role] = true;
-
         $requiredRoles = array_diff(['host', 'cohost', 'assistant'], [$state['initiator_role']]);
         $allAcked = true;
         foreach ($requiredRoles as $r) {
@@ -138,4 +148,3 @@ if ($method === 'POST') {
 
 http_response_code(405);
 echo json_encode(['error' => 'Method not allowed.']);
-fclose($fp);
