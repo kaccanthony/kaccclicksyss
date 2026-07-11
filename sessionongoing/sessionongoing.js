@@ -199,7 +199,7 @@ function applyOverrides(){
 
 
   // Host Discord ID — always locked, only "Allow Override for Everyone" unlocks it
-  setLocked(document.getElementById('session-host-discordid'), !allowAll);
+  setLocked(document.getElementById('session-host-discordid'), true);
   updateStatusLockState();
 }
 
@@ -424,7 +424,7 @@ function addTraineeRow(unallocated){
     </td>
     <td style="text-align:center;"><input type="checkbox" class="chk"/></td>
     <td>
-      <select class="cell-input trainer-detail-field trainer-name-select" data-lock-msg="Trainer assignment is locked. Ask the host to enable Override Trainer Assignment.">
+        <select class="cell-input trainer-detail-field trainer-name-select" data-lock-msg="Trainer assignment is locked. Ask the host to enable Override Trainer Assignment."></select>
         <option value="">— None —</option>
         ${Object.keys(STAFF_DIRECTORY).map(n=>`<option value="${n}">${n}</option>`).join('')}
       </select>
@@ -454,6 +454,7 @@ function addTraineeRow(unallocated){
     </td>
   `;
   document.getElementById('trainee-rows').appendChild(tr);
+  refreshTrainerDropdowns();
   timers[idx] = { remainingSeconds: COUNTDOWN_START, running: false, syncedAt: Date.now(), totalMinutes: COUNTDOWN_START/60, setupSeconds: undefined };
   applyOverrides();
   renderAnnouncementPreview(idx);
@@ -496,6 +497,7 @@ document.getElementById('trainee-rows').addEventListener('click', (e)=>{
       ? 'Done'
       : 'Mark done';
       updateStatusLockState();
+      queueLiveStateSync();
     return;
   }
 
@@ -517,14 +519,21 @@ document.getElementById('trainee-rows').addEventListener('click', (e)=>{
   }
 
   const delBtn = e.target.closest('.trainee-del-btn');
-    if(delBtn){
+  if(delBtn){
       if(delBtn.classList.contains('is-locked')) return;
+      const idx = parseInt(delBtn.dataset.row, 10) + 1;
       delete timers[delBtn.dataset.row];
       delBtn.closest('tr').remove();
       updateStatusLockState();
-      queueLiveStateSync();
+      fetch('sync_session.php', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ session_id: SESSION_DATA.session_id, updates: {
+              [`trainee_${idx}_name`]: '', [`trainee_${idx}_discord`]: '', [`trainee_${idx}_discord_id`]: '',
+              [`trainee_${idx}_zone`]: null, [`trainee_${idx}_note`]: '', [`trainee_${idx}_trainer_name`]: ''
+          }}),
+      });
       return;
-    }
+  }
 
 const expandBtn = e.target.closest('.notes-expand-btn');
     if(expandBtn){
@@ -611,7 +620,7 @@ function updateStaffAddState(){
   document.getElementById('add-staff-btn').disabled = document.querySelectorAll('#staff-rows tr').length >= STAFF_LIMIT;
 }
 
-document.getElementById('add-staff-btn').addEventListener('click', addStaffRow);
+document.getElementById('add-staff-btn').addEventListener('click', ()=>{ addStaffRow(); queueLiveStateSync(); });
 
 function applyRemoteStaff(staffArr) {
     if (!Array.isArray(staffArr)) return;
@@ -627,8 +636,11 @@ function applyRemoteStaff(staffArr) {
         const tr = document.querySelector('#staff-rows tr:last-child');
         if (s.role) tr.querySelector('.staff-role-select').value = s.role;
         tr.querySelector('.staff-username').value = s.discord || '';
-        const notesInput = tr.querySelectorAll('.cell-input')[1];
+        const notesInput = tr.querySelectorAll('.cell-input')[2];
         if (notesInput) notesInput.value = s.notes || '';
+        if (notesInput) notesInput.value = s.notes || '';
+        const chk = tr.querySelector('.chk');
+        if (chk) chk.checked = !!s.attended;
     });
     updateStaffAddState();
 }
@@ -717,7 +729,7 @@ function applyRemoteDrivers(driversArr) {
         inputs[2].checked = !!d.attended;
     });
 }
-document.getElementById('add-driver-btn').addEventListener('click', addDriverRow);
+document.getElementById('add-driver-btn').addEventListener('click', ()=>{ addDriverRow(); queueLiveStateSync(); });
 applyRemoteDrivers(LIVE_STATE.drivers);
 
 document.getElementById('driver-rows').addEventListener('click', (e)=>{
@@ -1206,42 +1218,54 @@ function checkAllAcked(){
     return bellState.acks[r];
   });
 }
-function endCycleWithCooldown(){
-  bellState.active = false;
-  bellState.globalCooldownUntil = Date.now() + BELL_GLOBAL_COOLDOWN_MS;
-  renderBellState();
-  showToast('All acknowledged — bell system entering 5 minute cooldown.');
-  setTimeout(()=>{
-    bellState = { active:false, initiatorRole:null, acks:{host:false,cohost:false,assistant:false}, globalCooldownUntil:0, initiationCount:0 };
-    renderBellState();
-    showToast('Bell system reset and ready.');
-  }, BELL_GLOBAL_COOLDOWN_MS);
-}
 
-function ringBell(role){
-  if(bellState.active){ showToast('A bell is already active.'); return; }
-  if(bellState.globalCooldownUntil > Date.now()){ showToast('Bell system is cooling down.'); return; }
-  if(bellState.initiationCount >= BELL_MAX_INITIATIONS){ showToast('You have reached the bell limit until the next reset.'); return; }
-  bellState.active = true;
-  bellState.initiatorRole = role;
-  bellState.acks = { host:false, cohost:false, assistant:false };
-  bellState.acks[role] = true;
-  bellState.initiationCount++;
+async function ringBell(role){
+  const res = await fetch('bell_session.php', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ session_id: SESSION_DATA.session_id, action:'ring', role, client_id: myClientId })
+  });
+  const data = await res.json();
+  if(!res.ok){ showToast(data.error || 'Could not ring bell.'); return; }
+  bellState = mapServerBell(data);
   renderBellState();
   bellSounds.hostRing.currentTime = 0; bellSounds.hostRing.play().catch(()=>{});
   armButtonCooldown(role);
 }
-
-function ackBell(role){
-  if(!bellState.active){ showToast('No active bell to acknowledge.'); return; }
-  if(role === bellState.initiatorRole){ showToast('Invalid acknowledgment.'); return; }
-  bellState.acks[role] = true;
+async function ackBell(role){
+  const res = await fetch('bell_session.php', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ session_id: SESSION_DATA.session_id, action:'ack', role, client_id: myClientId })
+  });
+  const data = await res.json();
+  if(!res.ok){ showToast(data.error || 'Could not acknowledge.'); return; }
+  bellState = mapServerBell(data);
+  renderBellState();
   const snd = role === 'cohost' ? bellSounds.cohostAck : bellSounds.assistantAck;
   snd.currentTime = 0; snd.play().catch(()=>{});
-  renderBellState();
   armButtonCooldown(role);
-  if(checkAllAcked()) endCycleWithCooldown();
 }
+function mapServerBell(s){
+  return { active:s.active, initiatorRole:s.initiator_role, acks:s.acks,
+           globalCooldownUntil: s.cooldown_until ? s.cooldown_until*1000 : 0, initiationCount: 0 };
+}
+async function pollBell(){
+  try{
+    const res = await fetch(`bell_session.php?session_id=${SESSION_DATA.session_id}`);
+    const data = await res.json();
+    const prevActive = bellState.active, prevAcks = {...bellState.acks};
+    bellState = mapServerBell(data);
+    if(!prevActive && bellState.active){ bellSounds.hostRing.currentTime=0; bellSounds.hostRing.play().catch(()=>{}); }
+    ['cohost','assistant'].forEach(r=>{
+      if(!prevAcks[r] && bellState.acks[r]){
+        const snd = r==='cohost' ? bellSounds.cohostAck : bellSounds.assistantAck;
+        snd.currentTime=0; snd.play().catch(()=>{});
+      }
+    });
+    renderBellState();
+  }catch(e){}
+}
+setInterval(pollBell, 3000);
+pollBell();
 
 // Local test mode: click a button to ring it (if idle) or ack it (if a bell is active) — lets you test the whole flow solo, on one page.
 bellButtons.host.addEventListener('click', ()=>{
@@ -1449,6 +1473,11 @@ function collectCoreUpdates() {
     document.querySelectorAll('#trainee-rows tr').forEach(tr => {
         const chk = tr.querySelector('td:nth-child(7) .chk');
         traineeAttendanceParts.push(chk && chk.checked ? '1' : '0');
+        const attendanceChk = tr.querySelector('td:nth-child(7) .chk');
+        if (attendanceChk && active !== attendanceChk) {
+        const parts = (session.trainee_attendance || '').split(',');
+        attendanceChk.checked = parts[idx-1] === '1';
+        }
     });
     if (traineeAttendanceParts.length) updates.trainee_attendance = traineeAttendanceParts.join(',');
 
@@ -1474,11 +1503,11 @@ function collectCoreUpdates() {
         const detailFields = tr.querySelectorAll('.trainee-detail-field');
         const trainerFields = tr.querySelectorAll('.trainer-detail-field');
         if (nameEl) updates[`trainee_${idx}_name`] = nameEl.value.trim();
-        if (detailFields[1]) updates[`trainee_${idx}_discord_id`] = detailFields[1].value.trim();
-        if (detailFields[2]) updates[`trainee_${idx}_name`] = detailFields[2].value.trim(); // roblox
         if (detailFields[0]) updates[`trainee_${idx}_discord`] = detailFields[0].value.trim();
+        if (detailFields[1]) updates[`trainee_${idx}_discord_id`] = detailFields[1].value.trim();
+        if (detailFields[2]) updates[`trainee_${idx}_name`] = detailFields[2].value.trim(); // Roblox — matches setup's convention
         const zoneSelect = tr.querySelector('select.trainee-detail-field');
-        if (zoneSelect) updates[`trainee_${idx}_zone`] = zoneSelect.value !== 'Select' ? zoneSelect.value : null;
+        if (zoneSelect) updates[`trainee_${idx}_zone`] = (zoneSelect.value && zoneSelect.value !== 'Select') ? parseInt(zoneSelect.value.replace('Zone ', ''), 10) : null;
         const notesArea = tr.querySelector('.trainee-notes-input');
         if (notesArea) updates[`trainee_${idx}_note`] = notesArea.value.trim();
         if (trainerFields[0]) updates[`trainee_${idx}_trainer_name`] = trainerFields[0].value.trim();
@@ -1508,17 +1537,26 @@ function collectLiveState() {
     const staffShift = Array.from(document.querySelectorAll('#staff-rows tr')).map(tr => {
         const role = tr.querySelector('.staff-role-select')?.value || '';
         const discord = tr.querySelector('.cell-input:not(select)')?.value.trim() || '';
-        const notesInput = tr.querySelectorAll('.cell-input')[1]?.value.trim() || '';
-        return { role, discord, notes: notesInput };
+        const notesInput = tr.querySelectorAll('.cell-input')[2]?.value.trim() || '';
+        const attended = tr.querySelector('.chk')?.checked || false;
+        return { role, discord, notes: notesInput, attended };
     });
+
+    const completedRows = {};
+    document.querySelectorAll('#trainee-rows tr').forEach(tr => {
+        completedRows[tr.dataset.row] = tr.querySelector('.complete-btn')?.classList.contains('done') || false;
+    });
+
+    const slotOrder = Array.from(document.querySelectorAll('#trainee-rows tr')).map(tr => tr.dataset.row);
 
     return {
         timers: timerState,
-        bellState: bellState,
         drivers: drivers,
         staffShift: staffShift,
         feedbackData: feedbackData,
         overrides: overrides,
+        completedRows: completedRows,
+        slotOrder: slotOrder,
     };
 }
 
@@ -1564,6 +1602,13 @@ function applyRemoteTimers(remoteTimers) {
 function applyRemoteState(session, liveState) {
     const active = document.activeElement;
 
+    const statusSelect = document.getElementById('status-select');
+    const normalizedStatus = (session.session_status || '').toLowerCase().replace(/\s+/g, '');
+    if (statusSelect.value !== normalizedStatus && [...statusSelect.options].some(o=>o.value===normalizedStatus)) {
+        statusSelect.value = normalizedStatus;
+        statusSelect.dispatchEvent(new Event('change'));
+    }
+
     if (!isEditingField(active) || active.id !== 'status-select') {
         const statusSelect = document.getElementById('status-select');
         if (statusSelect.value !== session.session_status) {
@@ -1576,6 +1621,14 @@ function applyRemoteState(session, liveState) {
     setTimeout(()=>{ window.location.href = '../dashboard/dashboard.php'; }, 2500);
   }
 
+  if (liveState.slotOrder && !document.activeElement?.closest('#trainee-rows')) {
+    const tbody = document.getElementById('trainee-rows');
+    liveState.slotOrder.forEach(rowId => {
+        const tr = tbody.querySelector(`tr[data-row="${rowId}"]`);
+        if (tr) tbody.appendChild(tr);
+    });
+}
+
     document.querySelectorAll('#trainee-rows tr').forEach(tr => {
         const idx = parseInt(tr.dataset.row, 10) + 1;
         const nameEl = tr.querySelector('.trainee-name');
@@ -1583,15 +1636,20 @@ function applyRemoteState(session, liveState) {
         const trainerFields = tr.querySelectorAll('.trainer-detail-field');
         const notesArea = tr.querySelector('.trainee-notes-input');
 
-        if (nameEl && active !== nameEl) nameEl.value = session[`trainee_${idx}_name`] || '';
         if (detailFields[0] && active !== detailFields[0]) detailFields[0].value = session[`trainee_${idx}_discord`] || '';
         if (detailFields[1] && active !== detailFields[1]) detailFields[1].value = session[`trainee_${idx}_discord_id`] || '';
+        if (detailFields[2] && active !== detailFields[2]) detailFields[2].value = session[`trainee_${idx}_name`] || '';
         const zoneSelect = tr.querySelector('select.trainee-detail-field');
         if (zoneSelect && active !== zoneSelect && session[`trainee_${idx}_zone`]) zoneSelect.value = 'Zone ' + session[`trainee_${idx}_zone`];
         if (notesArea && active !== notesArea) notesArea.value = session[`trainee_${idx}_note`] || '';
         if (trainerFields[0] && active !== trainerFields[0]) {
             trainerFields[0].value = session[`trainee_${idx}_trainer_name`] || '';
             if (trainerFields[1]) trainerFields[1].value = STAFF_DIRECTORY[trainerFields[0].value] || '';
+        if (liveState.completedRows) {
+        const done = !!liveState.completedRows[tr.dataset.row];
+        const btn = tr.querySelector('.complete-btn');
+        if (btn) { btn.classList.toggle('done', done); btn.innerHTML = done ? 'Done' : 'Mark done'; }
+}
         }
 
         renderAnnouncementPreview(tr.dataset.row);
@@ -1601,7 +1659,6 @@ function applyRemoteState(session, liveState) {
     if (liveState.drivers) applyRemoteDrivers(liveState.drivers);
     if (liveState.staffShift) applyRemoteStaff(liveState.staffShift);
     if (liveState.feedbackData) Object.assign(feedbackData, liveState.feedbackData);
-    if (liveState.bellState) bellState = liveState.bellState;
     if (liveState.overrides) {
         const changed = JSON.stringify(overrides) !== JSON.stringify(liveState.overrides);
         if (changed) {
@@ -1644,6 +1701,9 @@ document.getElementById('trainee-rows').addEventListener('change', queueLiveStat
 document.getElementById('driver-rows').addEventListener('input', queueLiveStateSync);
 document.getElementById('staff-rows').addEventListener('input', queueLiveStateSync);
 document.getElementById('staff-rows').addEventListener('change', queueLiveStateSync);
+document.getElementById('staff-rows').addEventListener('change', refreshTrainerDropdowns);
+document.getElementById('staff-rows').addEventListener('input', refreshTrainerDropdowns);
+document.getElementById('session-host-select')?.addEventListener('change', refreshTrainerDropdowns);
 document.getElementById('status-select').addEventListener('change', queueLiveStateSync);
 
 // Initial load: seed local state from SESSION_DATA / LIVE_STATE if the page provided them
@@ -1655,3 +1715,22 @@ if (typeof SESSION_DATA !== 'undefined' && SESSION_DATA) {
 document.getElementById('session-host-select')?.addEventListener('change', (e)=>{
   document.getElementById('session-host-discordid').value = STAFF_DIRECTORY[e.target.value] || '';
 });
+
+function getEligibleTrainers(){
+  const names = [document.getElementById('session-host-select')?.value].filter(Boolean);
+  document.querySelectorAll('#staff-rows tr').forEach(tr=>{
+    if(tr.querySelector('.staff-role-select')?.value === 'Co-Host'){
+      const n = tr.querySelector('.staff-username')?.value.trim();
+      if(n) names.push(n);
+    }
+  });
+  return [...new Set(names)];
+}
+function refreshTrainerDropdowns(){
+  const names = getEligibleTrainers();
+  document.querySelectorAll('.trainer-name-select').forEach(sel=>{
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— None —</option>' + names.map(n=>`<option value="${n}">${n}</option>`).join('');
+    if(names.includes(current)) sel.value = current;
+  });
+}
