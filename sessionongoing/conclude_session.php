@@ -31,6 +31,14 @@ try {
         $directory[$r['staff_display_name'] ?: $r['staff_name']] = $r['staff_id'];
     }
 
+    // Decode live_state to pull out any feedback drafts, keyed by row index (0-based)
+    $liveState = [];
+    if (!empty($s['live_state'])) {
+        $decodedLive = json_decode($s['live_state'], true);
+        if (is_array($decodedLive)) $liveState = $decodedLive;
+    }
+    $feedbackByRow = $liveState['feedbackData'] ?? [];
+
     // 1. session_staff_logs — one summary row
     $startTime = $s['started_at'] ? date('H:i:s', strtotime($s['started_at'])) : date('H:i:s');
     $endTime   = date('H:i:s');
@@ -59,14 +67,34 @@ try {
         $attendanceParts = explode(',', $s['trainee_attendance'] ?? '');
         $attended = isset($attendanceParts[$t-1]) ? (int)$attendanceParts[$t-1] : 0;
 
+        // Check if this trainee actually has any feedback written — row index is $t-1
+        $rowKey = (string)($t - 1);
+        $fb = $feedbackByRow[$rowKey] ?? null;
+        $hasFeedback = false;
+        if (is_array($fb)) {
+            foreach (['setup','conflict','priority','rbtiming','overall','notes'] as $field) {
+                if (trim($fb[$field] ?? '') !== '') { $hasFeedback = true; break; }
+            }
+        }
+
         $stmtFull = mysqli_prepare($conn, "INSERT INTO session_full_logs
             (session_id, trainee_id, trainee_roblox, trainee_zone, trainee_attendance, trainer_id, trainee_notes, staff_notes, trainee_assessed, trainee_feedback, feedback_sent)
-            VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 0, 0, 0)");
-        mysqli_stmt_bind_param($stmtFull, "issiiss",
-            $sessionId, $discordId, $name, $zone, $attended, $trainerId, $notes
+            VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 0, ?, 0)");
+        $feedbackFlag = $hasFeedback ? 1 : 0;
+        mysqli_stmt_bind_param($stmtFull, "issiissi",
+            $sessionId, $discordId, $name, $zone, $attended, $trainerId, $notes, $feedbackFlag
         );
-        // note: trainee_notes bound as string via the 's' in "issiis" placeholder position — see below
         if (!mysqli_stmt_execute($stmtFull)) throw new Exception(mysqli_error($conn));
+
+        // Only write to session_feedback_logs if feedback was actually filled in
+        if ($hasFeedback) {
+            $feedbackJson = json_encode($fb);
+            $stmtFb = mysqli_prepare($conn, "INSERT INTO session_feedback_logs
+                (session_id, trainee_id, trainer_id, feedback_json, created_at)
+                VALUES (?, ?, ?, ?, NOW())");
+            mysqli_stmt_bind_param($stmtFb, "isss", $sessionId, $discordId, $trainerId, $feedbackJson);
+            if (!mysqli_stmt_execute($stmtFb)) throw new Exception(mysqli_error($conn));
+        }
     }
 
     // 3. Remove the now-archived session from session_ongoing

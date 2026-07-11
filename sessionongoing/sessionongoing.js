@@ -669,8 +669,27 @@ function addDriverRow(){
   document.getElementById('driver-rows').appendChild(tr);
   applyOverrides();
 }
+
+function applyRemoteDrivers(driversArr) {
+    if (!Array.isArray(driversArr)) return;
+    const tbody = document.getElementById('driver-rows');
+    const activeInDrivers = document.activeElement && tbody.contains(document.activeElement);
+    if (activeInDrivers) return; // don't yank focus/values while someone's mid-edit
+
+    tbody.innerHTML = '';
+    driverCount = 0;
+    const rows = driversArr.length ? driversArr : [{discord:'',roblox:'',attended:false},{discord:'',roblox:'',attended:false},{discord:'',roblox:'',attended:false}];
+    rows.forEach(d => {
+        addDriverRow();
+        const tr = document.querySelector('#driver-rows tr:last-child');
+        const inputs = tr.querySelectorAll('.driver-field');
+        inputs[0].value = d.discord || '';
+        inputs[1].value = d.roblox || '';
+        inputs[2].checked = !!d.attended;
+    });
+}
 document.getElementById('add-driver-btn').addEventListener('click', addDriverRow);
-addDriverRow(); addDriverRow(); addDriverRow();
+applyRemoteDrivers(LIVE_STATE.drivers);
 
 document.getElementById('driver-rows').addEventListener('click', (e)=>{
   const delBtn = e.target.closest('.driver-del-btn');
@@ -863,11 +882,13 @@ function openFeedbackModal(triggerBtn){
 document.getElementById('fb-trains').addEventListener('input', (e)=>{
   if(activeFeedbackRow === null) return;
   getFeedbackData(activeFeedbackRow).trains = e.target.value;
+  queueLiveStateSync();
 });
 document.querySelectorAll('.feedback-text').forEach(ta=>{
   ta.addEventListener('input', ()=>{
     if(activeFeedbackRow === null) return;
     getFeedbackData(activeFeedbackRow)[ta.dataset.field] = ta.value;
+    queueLiveStateSync();
   });
 });
 
@@ -1535,12 +1556,16 @@ function applyRemoteState(session, liveState) {
         const zoneSelect = tr.querySelector('select.trainee-detail-field');
         if (zoneSelect && active !== zoneSelect && session[`trainee_${idx}_zone`]) zoneSelect.value = 'Zone ' + session[`trainee_${idx}_zone`];
         if (notesArea && active !== notesArea) notesArea.value = session[`trainee_${idx}_note`] || '';
-        if (trainerFields[0] && active !== trainerFields[0]) trainerFields[0].value = session[`trainee_${idx}_trainer_name`] || '';
+        if (trainerFields[0] && active !== trainerFields[0]) {
+            trainerFields[0].value = session[`trainee_${idx}_trainer_name`] || '';
+            if (trainerFields[1]) trainerFields[1].value = STAFF_DIRECTORY[trainerFields[0].value] || '';
+        }
 
         renderAnnouncementPreview(tr.dataset.row);
     });
 
     if (liveState.timers) applyRemoteTimers(liveState.timers);
+    if (liveState.drivers) applyRemoteDrivers(liveState.drivers);
     if (liveState.feedbackData) Object.assign(feedbackData, liveState.feedbackData);
     if (liveState.bellState) bellState = liveState.bellState;
 }
