@@ -593,7 +593,7 @@ function addStaffRow(){
         ${staffRoles.map(r=>`<option ${r===DEFAULT_STAFF_ROLE?'selected':''}>${r}</option>`).join('')}
       </select>
     </td>
-    <td><input class="cell-input" placeholder="username"/></td>
+    <td><input class="cell-input staff-username" placeholder="username"/></td>
     <td style="text-align:center;"><input type="checkbox" class="chk"/></td>
     <td><input class="cell-input" placeholder="—"/></td>
     <td style="text-align:center;"><button type="button" class="row-del-btn staff-del-btn" data-lock-msg="${STAFF_DEL_LOCK_MSG}" title="Host + Override Staff Deletion required"><i class="fas fa-trash"></i></button></td>
@@ -627,7 +627,7 @@ function seedStaffFromSession(){
     addStaffRow();
     const tr = document.querySelector('#staff-rows tr:last-child');
     tr.querySelector('.staff-role-select').value = s.role;
-    tr.querySelectorAll('.cell-input')[0].value = s.name; // Discord username column
+    tr.querySelector('.staff-username').value = s.name; // Discord username column
   });
 }
 seedStaffFromSession();
