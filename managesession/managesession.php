@@ -481,25 +481,25 @@ function statusBadge($status) {
         <div class="form-row">
             <div class="form-group">
                 <label>Co-Host 1</label>
-                <select name="co-host" id="f-co_host1">
+                <select name="co_host1" id="f-co_host1">
                     <?= buildOptions($staffByRank, $cohostRanks) ?>
                 </select>
             </div>
             <div class="form-group">
                 <label>Co-Host 2</label>
-                <select name="co-host" id="f-co_host2">
+                <select name="co_host2" id="f-co_host2">
                     <?= buildOptions($staffByRank, $cohostRanks) ?>
                 </select>
             </div>
             <div class="form-group">
                 <label>Co-Host 3</label>
-                <select name="co-host" id="f-co_host3">
+                <select name="co_host3" id="f-co_host3">
                     <?= buildOptions($staffByRank, $cohostRanks) ?>
                 </select>
             </div>
             <div class="form-group">
                 <label>Co-Host 4 / SV</label>
-                <select name="co-host" id="f-co_host4_supervisor">
+                <select name="co_host4_supervisor" id="f-co_host4_supervisor">
                     <?= buildOptions($staffByRank, $cohostRanks) ?>
                 </select>
             </div>
@@ -509,25 +509,25 @@ function statusBadge($status) {
         <div class="form-row">
             <div class="form-group">
                 <label>Assistant 1</label>
-                <select name="assistant" id="f-assistant1">
+                <select name="assistant_1" id="f-assistant_1">
                     <?= buildOptions($staffByRank, $assistRanks) ?>
                 </select>
             </div>
             <div class="form-group">
                 <label>Assistant 2</label>
-                <select name="assistant" id="f-assistant2">
+                <select name="assistant_2" id="f-assistant_2">
                     <?= buildOptions($staffByRank, $assistRanks) ?>
                 </select>
             </div>
             <div class="form-group">
                 <label>Assistant 3</label>
-                <select name="assistant" id="f-assistant3">
+                <select name="assistant_3" id="f-assistant_3">
                     <?= buildOptions($staffByRank, $assistRanks) ?>
                 </select>
             </div>
             <div class="form-group">
                 <label>Assistant 4</label>
-                <select name="assistant" id="f-assistant4">
+                <select name="assistant_4" id="f-assistant_4">
                     <?= buildOptions($staffByRank, $assistRanks) ?>
                 </select>
             </div>
