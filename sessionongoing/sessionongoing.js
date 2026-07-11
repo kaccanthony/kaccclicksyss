@@ -392,10 +392,11 @@ setInterval(() => {
     Object.keys(timers).forEach(row => { if (timers[row].running) updateTimerDisplay(row); });
 }, 1000);
 
-function addTraineeRow(unallocated){
+function addTraineeRow(unallocated, uid){
   const idx = traineeCount++;
   const tr = document.createElement('tr');
   tr.dataset.row = idx;
+  if (unallocated) tr.dataset.uid = uid || ('u_' + Math.random().toString(36).slice(2) + Date.now());
   tr.innerHTML = `
     <td>
       <div class="slot-cell" style="display:flex;align-items:center;justify-content:center;">
@@ -463,6 +464,7 @@ document.getElementById('add-trainee-btn').addEventListener('click', (e)=> {
   if(e.currentTarget.classList.contains('is-locked')) return;
   addTraineeRow(true);
   queueLiveStateSync();
+  pushState();
 });
 const initialTraineeCount = parseInt(SESSION_DATA.num_slots, 10) || 10;
 for(let i=0;i<initialTraineeCount;i++) addTraineeRow(false);
@@ -482,6 +484,7 @@ document.getElementById('trainee-rows').addEventListener('click', (e)=>{
           timerBtn.classList.add('done');
           recordSetupDone(row);
           syncModalSetupDoneBtn(row, true);
+          pushState();
         }
     if(action === 'override'){
           const input = prompt('Override timer to MM:SS (e.g. 05:30):', fmt(computeCurrentRemaining(timers[row])));
@@ -1236,37 +1239,49 @@ function checkAllAcked(){
 }
 
 async function ringBell(role){
-  const res = await fetch('bell_session.php', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ session_id: SESSION_DATA.session_id, action:'ring', role, client_id: myClientId })
-  });
-  const data = await res.json();
-  if(!res.ok){ showToast(data.error || 'Could not ring bell.'); return; }
-  bellState = mapServerBell(data);
-  renderBellState();
-  bellSounds.hostRing.currentTime = 0; bellSounds.hostRing.play().catch(()=>{});
-  armButtonCooldown(role);
+  try {
+    const res = await fetch('bell_state.php', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ session_id: SESSION_DATA.session_id, action:'ring', role, client_id: myClientId })
+    });
+    const data = await res.json();
+    if(!res.ok){ showToast(data.error || 'Could not ring bell.'); return; }
+    bellState = mapServerBell(data);
+    renderBellState();
+    bellSounds.hostRing.currentTime = 0; bellSounds.hostRing.play().catch(()=>{});
+    armButtonCooldown(role);
+  } catch (err) {
+    console.error('Bell ring failed:', err);
+    showToast('Could not reach the bell system — is bell_state.php deployed alongside sessionongoing.php?');
+  }
 }
 async function ackBell(role){
-  const res = await fetch('bell_session.php', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ session_id: SESSION_DATA.session_id, action:'ack', role, client_id: myClientId })
-  });
-  const data = await res.json();
-  if(!res.ok){ showToast(data.error || 'Could not acknowledge.'); return; }
-  bellState = mapServerBell(data);
-  renderBellState();
-  const snd = role === 'cohost' ? bellSounds.cohostAck : bellSounds.assistantAck;
-  snd.currentTime = 0; snd.play().catch(()=>{});
-  armButtonCooldown(role);
+  try {
+    const res = await fetch('bell_state.php', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ session_id: SESSION_DATA.session_id, action:'ack', role, client_id: myClientId })
+    });
+    const data = await res.json();
+    if(!res.ok){ showToast(data.error || 'Could not acknowledge.'); return; }
+    bellState = mapServerBell(data);
+    renderBellState();
+    const snd = role === 'cohost' ? bellSounds.cohostAck : bellSounds.assistantAck;
+    snd.currentTime = 0; snd.play().catch(()=>{});
+    armButtonCooldown(role);
+  } catch (err) {
+    console.error('Bell ack failed:', err);
+    showToast('Could not reach the bell system — is bell_state.php deployed alongside sessionongoing.php?');
+  }
 }
+
 function mapServerBell(s){
   return { active:s.active, initiatorRole:s.initiator_role, acks:s.acks,
           globalCooldownUntil: s.cooldown_until ? s.cooldown_until*1000 : 0, initiationCount: 0 };
 }
 async function pollBell(){
   try{
-    const res = await fetch(`bell_session.php?session_id=${SESSION_DATA.session_id}`);
+    const res = await fetch(`bell_state.php?session_id=${SESSION_DATA.session_id}`);
+    if (!res.ok) throw new Error(`bell_state.php returned ${res.status}`);
     const data = await res.json();
     const prevActive = bellState.active, prevAcks = {...bellState.acks};
     bellState = mapServerBell(data);
@@ -1278,7 +1293,7 @@ async function pollBell(){
       }
     });
     renderBellState();
-  }catch(e){}
+  }catch(e){ console.error('Bell poll failed:', e); }
 }
 setInterval(pollBell, 3000);
 pollBell();
@@ -1502,7 +1517,10 @@ function collectCoreUpdates() {
         const role = tr.querySelector('.staff-role-select')?.value;
         const discord = tr.querySelector('.staff-username-select')?.value.trim();
         if (!discord) return;
-        if ((role === 'Co-Host' || role === 'Main AST') && cohostIdx < cohostCols.length) {
+        // Only "Co-Host" belongs in the co_host1-4 columns. Main AST / Assistant / Internal
+        // Helper are all assistant-tier — Main AST was wrongly landing in a co-host slot
+        // before, silently overwriting whoever the real co-host was.
+        if (role === 'Co-Host' && cohostIdx < cohostCols.length) {
             updates[cohostCols[cohostIdx++]] = discord;
         } else if (assistantIdx < assistantCols.length) {
             updates[assistantCols[assistantIdx++]] = discord;
@@ -1572,6 +1590,7 @@ function collectLiveState() {
             const zoneSelect = tr.querySelector('select.trainee-detail-field');
             const notesArea = tr.querySelector('.trainee-notes-input');
             return {
+                uid: tr.dataset.uid,
                 discord: detailFields[0]?.value.trim() || '',
                 discordId: detailFields[1]?.value.trim() || '',
                 roblox: detailFields[2]?.value.trim() || '',
@@ -1632,21 +1651,32 @@ function applyRemoteTimers(remoteTimers) {
     });
 }
 
+// Diffs by stable uid instead of destroying/rebuilding every unalloc row on every poll.
+// Previously idx came from an ever-incrementing local counter, so rows never matched up
+// between clients (or even between polls on the same client), wiping out anything typed.
 function applyRemoteUnallocated(arr) {
     if (!Array.isArray(arr)) return;
     const tbody = document.getElementById('trainee-rows');
-    if (document.activeElement && tbody.contains(document.activeElement)) return;
+    const active = document.activeElement;
 
+    const incomingUids = new Set(arr.map(u => u.uid).filter(Boolean));
     tbody.querySelectorAll('tr').forEach(tr => {
-        if (tr.querySelector('.slot-num')?.textContent.trim() === 'Unalloc.') {
+        if (tr.querySelector('.slot-num')?.textContent.trim() === 'Unalloc.' && !incomingUids.has(tr.dataset.uid)) {
+            if (active && tr.contains(active)) return; // don't remove a row someone's mid-editing
             delete timers[tr.dataset.row];
             tr.remove();
         }
     });
 
     arr.forEach(u => {
-        addTraineeRow(true);
-        const tr = document.querySelector('#trainee-rows tr:last-child');
+        if (!u.uid) return;
+        let tr = tbody.querySelector(`tr[data-uid="${u.uid}"]`);
+        if (!tr) {
+            addTraineeRow(true, u.uid);
+            tr = document.querySelector('#trainee-rows tr:last-child');
+        }
+        if (active && tr.contains(active)) return; // don't yank focus from whoever's typing in it
+
         const detailFields = tr.querySelectorAll('.trainee-detail-field');
         const trainerFields = tr.querySelectorAll('.trainer-detail-field');
         const zoneSelect = tr.querySelector('select.trainee-detail-field');

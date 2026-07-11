@@ -1,5 +1,5 @@
 <?php
-// bell_session.php — per-session shared bell state (Host/Co-host/Assistant), scoped by session_id.
+// bell.php — per-session shared bell state (Host/Co-host/Assistant), scoped by session_id.
 // GET  ?session_id=123           -> returns current state for that session
 // POST { session_id, action: 'ring'|'ack', role: 'host'|'cohost'|'assistant', client_id }
 session_start();

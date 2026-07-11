@@ -55,12 +55,24 @@ mysqli_stmt_execute($stmt);
 $sessionRow = mysqli_stmt_get_result($stmt)->fetch_assoc();
 $staffDirectory = [];
 $eligibleCohost = [];
+foreach ([$sessionRow['co_host1'], $sessionRow['co_host2'], $sessionRow['co_host3'], $sessionRow['co_host4/supervisor']] as $assignedCohost) {
+    if ($assignedCohost && !in_array($assignedCohost, $eligibleCohost, true)) $eligibleCohost[] = $assignedCohost;
+}
 $eligibleAssistant = [];
-$resRankStaff = mysqli_query($conn, "SELECT staff_display_name, staff_name, staff_rank FROM staff_list WHERE staff_rank IN ('Co-Host Authorized','Assistant Authorized')");
+$resAllStaff = mysqli_query($conn, "SELECT staff_id, staff_display_name, staff_name FROM staff_list");
+while ($r = mysqli_fetch_assoc($resAllStaff)) {
+    $staffDirectory[$r['staff_display_name'] ?: $r['staff_name']] = $r['staff_id'];
+}
+// Match the same tiers setupsesh.php uses for its dropdowns — higher ranks are also
+// eligible to serve as Co-Host/Assistant, so the old exact-rank match missed anyone
+// above "Co-Host Authorized"/"Assistant Authorized", including whoever's actually on this session.
+$cohostEligibleRanks    = ['Community Manager','Operations Manager','Head Staff','Co-Host Authorized'];
+$assistantEligibleRanks = ['Community Manager','Operations Manager','Head Staff','Co-Host Authorized','Assistant Authorized'];
+$resRankStaff = mysqli_query($conn, "SELECT staff_display_name, staff_name, staff_rank FROM staff_list WHERE staff_rank IN ('Community Manager','Operations Manager','Head Staff','Co-Host Authorized','Assistant Authorized')");
 while ($r = mysqli_fetch_assoc($resRankStaff)) {
     $nm = $r['staff_display_name'] ?: $r['staff_name'];
-    if ($r['staff_rank'] === 'Co-Host Authorized') $eligibleCohost[] = $nm;
-    if ($r['staff_rank'] === 'Assistant Authorized') $eligibleAssistant[] = $nm;
+    if (in_array($r['staff_rank'], $cohostEligibleRanks, true)) $eligibleCohost[] = $nm;
+    if (in_array($r['staff_rank'], $assistantEligibleRanks, true)) $eligibleAssistant[] = $nm;
 }
 
 if (!$sessionRow) {
@@ -538,7 +550,7 @@ const ELIGIBLE_STAFF = {
   'Assistant': <?= json_encode($eligibleAssistant) ?>
 };
 </script>
-<script src="sessionongoing.js"></script>
+<script src="sessionongoing.js?v=<?= filemtime(__DIR__ . '/sessionongoing.js') ?>"></script>
 
 <?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
 <script src="../public/assets/js/avatar-cache.js"></script>

@@ -100,14 +100,34 @@ if ($method === 'POST') {
 
         // 2. Shallow-merge live_state on top of what's already stored, so one tab
         //    updating timers doesn't wipe out another tab's bell-state update sent moments apart
-        if (isset($data['live_state']) && is_array($data['live_state'])) {
-            $stmtGet = mysqli_prepare($conn, "SELECT live_state FROM session_ongoing WHERE session_id = ? FOR UPDATE");
-            mysqli_stmt_bind_param($stmtGet, "i", $sessionId);
-            mysqli_stmt_execute($stmtGet);
-            $existingRow = mysqli_stmt_get_result($stmtGet)->fetch_assoc();
-            $existing = $existingRow ? decodeLiveState($existingRow) : [];
-            $merged = array_replace($existing, $data['live_state']);
-            $mergedJson = json_encode($merged);
+if (isset($data['live_state']) && is_array($data['live_state'])) {
+    $stmtGet = mysqli_prepare($conn, "SELECT live_state FROM session_ongoing WHERE session_id = ? FOR UPDATE");
+    mysqli_stmt_bind_param($stmtGet, "i", $sessionId);
+    mysqli_stmt_execute($stmtGet);
+    $existingRow = mysqli_stmt_get_result($stmtGet)->fetch_assoc();
+    $existing = $existingRow ? decodeLiveState($existingRow) : [];
+    $incoming = $data['live_state'];
+
+    // Top-level replace for everything EXCEPT the keyed sub-objects below, which get
+    // deep-merged per-entry instead — otherwise one client's stale full snapshot of
+    // "timers" or "unallocatedTrainees" wipes out another client's concurrent edit
+    // to a different row/uid inside that same object.
+    $merged = array_replace($existing, $incoming);
+    foreach (['timers', 'completedRows'] as $keyedObjectField) {
+        if (isset($incoming[$keyedObjectField]) && is_array($incoming[$keyedObjectField])) {
+            $merged[$keyedObjectField] = array_replace($existing[$keyedObjectField] ?? [], $incoming[$keyedObjectField]);
+        }
+    }
+    if (isset($incoming['unallocatedTrainees']) && is_array($incoming['unallocatedTrainees'])) {
+        $existingByUid = [];
+        foreach (($existing['unallocatedTrainees'] ?? []) as $u) if (!empty($u['uid'])) $existingByUid[$u['uid']] = $u;
+        foreach ($incoming['unallocatedTrainees'] as $u) if (!empty($u['uid'])) $existingByUid[$u['uid']] = $u;
+        // Any uid present in $existing but missing from $incoming was deleted client-side —
+        // trust the incoming list's membership, just merge field-values per uid.
+        $incomingUids = array_column($incoming['unallocatedTrainees'], 'uid');
+        $merged['unallocatedTrainees'] = array_values(array_filter($existingByUid, fn($u) => in_array($u['uid'], $incomingUids, true)));
+    }
+    $mergedJson = json_encode($merged);
 
             $stmtUpd = mysqli_prepare($conn, "UPDATE session_ongoing SET live_state = ?, last_updated = NOW() WHERE session_id = ?");
             mysqli_stmt_bind_param($stmtUpd, "si", $mergedJson, $sessionId);
