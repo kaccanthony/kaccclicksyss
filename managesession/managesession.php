@@ -305,7 +305,7 @@ function statusBadge($status) {
             <?php if ($search): ?>
                 <button type="button" class="search-clear"
                     onclick="this.closest('form').search.value='';this.closest('form').submit()">
-                    <i class="fas fa-xmark"></i>
+                    <i class="fas fa-times"></i>
                 </button>
             <?php endif; ?>
         </div>
@@ -327,7 +327,7 @@ function statusBadge($status) {
     <div class="table-wrap">
         <?php if (empty($sessions)): ?>
         <div class="empty-state">
-            <i class="fas fa-calendar-xmark"></i>
+            <i class="fas fa-calendar-times"></i>
             <p>No sessions found.</p>
             <?php if ($search||$filter_status||$filter_host): ?>
                 <a href="managesession.php" class="btn-clear-link">Clear filters</a>
@@ -400,7 +400,7 @@ function statusBadge($status) {
 <div class="modal-box" id="modal-box">
     <div class="modal-header">
         <h2 class="modal-title" id="modal-title">Add Session</h2>
-        <button class="modal-close-btn" onclick="closeModal()"><i class="fas fa-xmark"></i></button>
+        <button class="modal-close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
     </div>
     <form method="POST" action="" id="session-form" class="modal-form">
         <input type="hidden" name="action" id="form-action" value="add"/>
@@ -452,7 +452,7 @@ function statusBadge($status) {
                 <span id="time-error" style="color:red; font-size:12px; display:none;"></span>
             </div>
             <div class="form-group">
-                <label>EXP. DUR* (minutes)</label>
+                <label>EXP. DUR* (min)</label>
                 <input type="number" name="session_duration" id="f-session_duration" min="60" max="180" placeholder="60" step="5"/>
             </div>
             <div class="form-group">
@@ -564,7 +564,7 @@ function statusBadge($status) {
 <div class="modal-box modal-sm">
     <div class="modal-header">
         <h2 class="modal-title">Delete Session</h2>
-        <button class="modal-close-btn" onclick="closeDelete()"><i class="fas fa-xmark"></i></button>
+        <button class="modal-close-btn" onclick="closeDelete()"><i class="fas fa-times"></i></button>
     </div>
     <p class="delete-msg" id="delete-msg">Are you sure you want to delete this session?</p>
     <form method="POST" action="">
@@ -577,7 +577,7 @@ function statusBadge($status) {
     </form>
 </div>
 </div>
-
+<?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
 <script src="script.js"></script>
 </body>
 </html>
