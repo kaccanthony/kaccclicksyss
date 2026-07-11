@@ -54,10 +54,13 @@ mysqli_stmt_bind_param($stmt, "i", $sessionId);
 mysqli_stmt_execute($stmt);
 $sessionRow = mysqli_stmt_get_result($stmt)->fetch_assoc();
 $staffDirectory = [];
-$resStaff = mysqli_query($conn, "SELECT staff_id, staff_display_name, staff_name, staff_roblox_name FROM staff_list");
-while ($r = mysqli_fetch_assoc($resStaff)) {
-    $label = $r['staff_display_name'] ?: $r['staff_name'];
-    $staffDirectory[$label] = $r['staff_id']; // staff_id = Discord ID per schema comment
+$eligibleCohost = [];
+$eligibleAssistant = [];
+$resRankStaff = mysqli_query($conn, "SELECT staff_display_name, staff_name, staff_rank FROM staff_list WHERE staff_rank IN ('Co-Host Authorized','Assistant Authorized')");
+while ($r = mysqli_fetch_assoc($resRankStaff)) {
+    $nm = $r['staff_display_name'] ?: $r['staff_name'];
+    if ($r['staff_rank'] === 'Co-Host Authorized') $eligibleCohost[] = $nm;
+    if ($r['staff_rank'] === 'Assistant Authorized') $eligibleAssistant[] = $nm;
 }
 
 if (!$sessionRow) {
@@ -530,6 +533,10 @@ const LIVE_STATE = <?= json_encode($liveState, JSON_HEX_TAG | JSON_HEX_APOS | JS
 const STAFF_DIRECTORY = <?= json_encode($staffDirectory, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) ?>;
 const SESSION_STARTED_AT = <?= json_encode($sessionRow['started_at']) ?>; // e.g. "2026-07-10 14:32:00"
 const MY_ROLE = <?= json_encode(strtolower(str_replace('-', '', $viewerRole))) ?>; // 'host' | 'cohost' | 'assistant'
+const ELIGIBLE_STAFF = {
+  'Co-Host': <?= json_encode($eligibleCohost) ?>,
+  'Assistant': <?= json_encode($eligibleAssistant) ?>
+};
 </script>
 <script src="sessionongoing.js"></script>
 

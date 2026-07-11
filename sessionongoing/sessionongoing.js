@@ -253,7 +253,7 @@ const statusMap = {
 document.getElementById('status-select').addEventListener('change', (e)=>{
   const s = statusMap[e.target.value];
   const badge = document.getElementById('status-badge');
-  badge.className = 'status-badge ' + s.cls;
+  badge.className = 'status-badge status-badge-large ' + s.cls;
   badge.innerHTML = `<span class="status-dot"></span> ${s.label}`;
 });
 
@@ -462,6 +462,7 @@ function addTraineeRow(unallocated){
 document.getElementById('add-trainee-btn').addEventListener('click', (e)=> {
   if(e.currentTarget.classList.contains('is-locked')) return;
   addTraineeRow(true);
+  queueLiveStateSync();
 });
 const initialTraineeCount = parseInt(SESSION_DATA.num_slots, 10) || 10;
 for(let i=0;i<initialTraineeCount;i++) addTraineeRow(false);
@@ -605,14 +606,29 @@ function addStaffRow(){
         ${staffRoles.map(r=>`<option ${r===DEFAULT_STAFF_ROLE?'selected':''}>${r}</option>`).join('')}
       </select>
     </td>
-    <td><input class="cell-input staff-username" placeholder="username"/></td>
+    <td><select class="cell-input staff-username-select"><option value="">— Select —</option></select></td>
     <td style="text-align:center;"><input type="checkbox" class="chk"/></td>
     <td><input class="cell-input" placeholder="—"/></td>
     <td style="text-align:center;"><button type="button" class="row-del-btn staff-del-btn" data-lock-msg="${STAFF_DEL_LOCK_MSG}" title="Host + Override Staff Deletion required"><i class="fas fa-trash"></i></button></td>
   `;
   document.getElementById('staff-rows').appendChild(tr);
+  populateStaffNameOptions(tr);
   applyOverrides();
   updateStaffAddState();
+}
+
+function populateStaffNameOptions(tr, preserveValue){
+  const roleSel = tr.querySelector('.staff-role-select');
+  const nameSel = tr.querySelector('.staff-username-select');
+  if(!roleSel || !nameSel) return;
+  const current = preserveValue !== undefined ? preserveValue : nameSel.value;
+  const role = roleSel.value;
+  let names;
+  if(role === 'Co-Host') names = ELIGIBLE_STAFF['Co-Host'];
+  else if(role === 'Assistant') names = ELIGIBLE_STAFF['Assistant'];
+  else names = Object.keys(STAFF_DIRECTORY); // Main AST / Internal Helper — unrestricted for now
+  nameSel.innerHTML = '<option value="">— Select —</option>' + names.map(n=>`<option value="${n}">${n}</option>`).join('');
+  if(names.includes(current)) nameSel.value = current;
 }
 
 function updateStaffAddState(){
@@ -634,7 +650,7 @@ function applyRemoteStaff(staffArr) {
         addStaffRow();
         const tr = document.querySelector('#staff-rows tr:last-child');
         if (s.role) tr.querySelector('.staff-role-select').value = s.role;
-        tr.querySelector('.staff-username').value = s.discord || '';
+        populateStaffNameOptions(tr, s.discord || '');
         const notesInput = tr.querySelectorAll('.cell-input')[2];
         if (notesInput) notesInput.value = s.notes || '';
         if (notesInput) notesInput.value = s.notes || '';
@@ -662,7 +678,7 @@ function seedStaffFromSession(){
     addStaffRow();
     const tr = document.querySelector('#staff-rows tr:last-child');
     tr.querySelector('.staff-role-select').value = s.role;
-    tr.querySelector('.staff-username').value = s.name; // Discord username column
+    populateStaffNameOptions(tr, s.name);// Discord username column
   });
 }
 if (LIVE_STATE.staffShift && LIVE_STATE.staffShift.length) {
@@ -685,6 +701,7 @@ document.getElementById('staff-rows').addEventListener('click', (e)=>{
 document.getElementById('staff-rows').addEventListener('change', (e)=>{
   const select = e.target.closest('.staff-role-select');
   if(!select) return;
+  populateStaffNameOptions(select.closest('tr'));
   if(select.value === 'Main AST'){
     document.querySelectorAll('#staff-rows .staff-role-select').forEach(other=>{
       if(other !== select && other.value === 'Main AST'){
@@ -1268,16 +1285,19 @@ pollBell();
 
 // Local test mode: click a button to ring it (if idle) or ack it (if a bell is active) — lets you test the whole flow solo, on one page.
 bellButtons.host.addEventListener('click', ()=>{
+  if(myRole !== 'host'){ showToast('Only the Host can use this bell.'); return; }
   if(bellButtons.host.disabled) return;
   bellState.active ? ackBell('host') : ringBell('host');
 });
 bellButtons.cohost.addEventListener('click', ()=>{
+  if(myRole !== 'cohost'){ showToast('Only a Co-Host can use this bell.'); return; }
   if(bellButtons.cohost.disabled) return;
   bellState.active ? ackBell('cohost') : ringBell('cohost');
 });
 bellButtons.assistant.addEventListener('click', ()=>{
+  if(myRole !== 'assistant'){ showToast('Only an Assistant can use this bell.'); return; }
   if(bellButtons.assistant.disabled) return;
-  if(!bellState.active){ showToast('Assistants can only acknowledge an active bell — ring Host or Co-host first to test.'); return; }
+  if(!bellState.active){ showToast('Assistants can only acknowledge an active bell.'); return; }
   ackBell('assistant');
 });
 
@@ -1474,13 +1494,13 @@ function collectCoreUpdates() {
         traineeAttendanceParts.push(chk && chk.checked ? '1' : '0');
     });
     if (traineeAttendanceParts.length) updates.trainee_attendance = traineeAttendanceParts.join(',');
-    // Persist staff rows into their real DB columns, by role
+
     const cohostCols = ['co_host1', 'co_host2', 'co_host3', 'co_host4/supervisor'];
     const assistantCols = ['assistant_1', 'assistant_2', 'assistant_3', 'assistant_4'];
     let cohostIdx = 0, assistantIdx = 0;
     document.querySelectorAll('#staff-rows tr').forEach(tr => {
         const role = tr.querySelector('.staff-role-select')?.value;
-        const discord = tr.querySelector('.cell-input:not(select)')?.value.trim();
+        const discord = tr.querySelector('.staff-username-select')?.value.trim();
         if (!discord) return;
         if ((role === 'Co-Host' || role === 'Main AST') && cohostIdx < cohostCols.length) {
             updates[cohostCols[cohostIdx++]] = discord;
@@ -1491,14 +1511,14 @@ function collectCoreUpdates() {
 
     document.querySelectorAll('#trainee-rows tr').forEach(tr => {
         const row = tr.dataset.row;
-        const idx = parseInt(row, 10) + 1; // DB columns are 1-indexed
+        const idx = parseInt(row, 10) + 1;
         const nameEl = tr.querySelector('.trainee-name');
         const detailFields = tr.querySelectorAll('.trainee-detail-field');
         const trainerFields = tr.querySelectorAll('.trainer-detail-field');
         if (nameEl) updates[`trainee_${idx}_name`] = nameEl.value.trim();
         if (detailFields[0]) updates[`trainee_${idx}_discord`] = detailFields[0].value.trim();
         if (detailFields[1]) updates[`trainee_${idx}_discord_id`] = detailFields[1].value.trim();
-        if (detailFields[2]) updates[`trainee_${idx}_name`] = detailFields[2].value.trim(); // Roblox — matches setup's convention
+        if (detailFields[2]) updates[`trainee_${idx}_name`] = detailFields[2].value.trim();
         const zoneSelect = tr.querySelector('select.trainee-detail-field');
         if (zoneSelect) updates[`trainee_${idx}_zone`] = (zoneSelect.value && zoneSelect.value !== 'Select') ? parseInt(zoneSelect.value.replace('Zone ', ''), 10) : null;
         const notesArea = tr.querySelector('.trainee-notes-input');
@@ -1529,7 +1549,7 @@ function collectLiveState() {
 
     const staffShift = Array.from(document.querySelectorAll('#staff-rows tr')).map(tr => {
         const role = tr.querySelector('.staff-role-select')?.value || '';
-        const discord = tr.querySelector('.cell-input:not(select)')?.value.trim() || '';
+        const discord = tr.querySelector('.staff-username-select')?.value.trim() || '';
         const notesInput = tr.querySelectorAll('.cell-input')[2]?.value.trim() || '';
         const attended = tr.querySelector('.chk')?.checked || false;
         return { role, discord, notes: notesInput, attended };
@@ -1540,7 +1560,26 @@ function collectLiveState() {
         completedRows[tr.dataset.row] = tr.querySelector('.complete-btn')?.classList.contains('done') || false;
     });
 
-    const slotOrder = Array.from(document.querySelectorAll('#trainee-rows tr')).map(tr => tr.dataset.row);
+    const slotOrder = Array.from(document.querySelectorAll('#trainee-rows tr'))
+        .filter(tr => tr.querySelector('.slot-num')?.textContent.trim() !== 'Unalloc.')
+        .map(tr => tr.dataset.row);
+
+    const unallocatedTrainees = Array.from(document.querySelectorAll('#trainee-rows tr'))
+        .filter(tr => tr.querySelector('.slot-num')?.textContent.trim() === 'Unalloc.')
+        .map(tr => {
+            const detailFields = tr.querySelectorAll('.trainee-detail-field');
+            const trainerFields = tr.querySelectorAll('.trainer-detail-field');
+            const zoneSelect = tr.querySelector('select.trainee-detail-field');
+            const notesArea = tr.querySelector('.trainee-notes-input');
+            return {
+                discord: detailFields[0]?.value.trim() || '',
+                discordId: detailFields[1]?.value.trim() || '',
+                roblox: detailFields[2]?.value.trim() || '',
+                zone: (zoneSelect && zoneSelect.value !== 'Select') ? zoneSelect.value : '',
+                notes: notesArea?.value.trim() || '',
+                trainerName: trainerFields[0]?.value.trim() || '',
+            };
+        });
 
     return {
         timers: timerState,
@@ -1550,6 +1589,7 @@ function collectLiveState() {
         overrides: overrides,
         completedRows: completedRows,
         slotOrder: slotOrder,
+        unallocatedTrainees: unallocatedTrainees,
     };
 }
 
@@ -1576,9 +1616,6 @@ function applyRemoteTimers(remoteTimers) {
     Object.keys(remoteTimers).forEach(row => {
         if (!timers[row]) return;
         const remote = remoteTimers[row];
-        // Only adopt remote timer state if it's actually newer/different — a running
-        // timer's syncedAt keeps moving forward locally each tick via display only,
-        // not via mutation, so comparing raw values here is safe.
         timers[row].remainingSeconds = remote.remainingSeconds;
         timers[row].running = remote.running;
         timers[row].syncedAt = remote.syncedAt;
@@ -1589,6 +1626,41 @@ function applyRemoteTimers(remoteTimers) {
             rowPlayBtn.innerHTML = remote.running ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
             rowPlayBtn.classList.toggle('active', remote.running);
         }
+        const rowSetupBtn = document.querySelector(`.timer-btn.setup-done[data-row="${row}"]`);
+        if (rowSetupBtn) rowSetupBtn.classList.toggle('done', remote.setupSeconds !== undefined && remote.setupSeconds !== null);
+        syncModalSetupDoneBtn(row, remote.setupSeconds !== undefined && remote.setupSeconds !== null);
+    });
+}
+
+function applyRemoteUnallocated(arr) {
+    if (!Array.isArray(arr)) return;
+    const tbody = document.getElementById('trainee-rows');
+    if (document.activeElement && tbody.contains(document.activeElement)) return;
+
+    tbody.querySelectorAll('tr').forEach(tr => {
+        if (tr.querySelector('.slot-num')?.textContent.trim() === 'Unalloc.') {
+            delete timers[tr.dataset.row];
+            tr.remove();
+        }
+    });
+
+    arr.forEach(u => {
+        addTraineeRow(true);
+        const tr = document.querySelector('#trainee-rows tr:last-child');
+        const detailFields = tr.querySelectorAll('.trainee-detail-field');
+        const trainerFields = tr.querySelectorAll('.trainer-detail-field');
+        const zoneSelect = tr.querySelector('select.trainee-detail-field');
+        const notesArea = tr.querySelector('.trainee-notes-input');
+        if (detailFields[0]) detailFields[0].value = u.discord || '';
+        if (detailFields[1]) detailFields[1].value = u.discordId || '';
+        if (detailFields[2]) detailFields[2].value = u.roblox || '';
+        if (zoneSelect && u.zone) zoneSelect.value = u.zone;
+        if (notesArea) notesArea.value = u.notes || '';
+        if (trainerFields[0]) {
+            trainerFields[0].value = u.trainerName || '';
+            if (trainerFields[1]) trainerFields[1].value = STAFF_DIRECTORY[u.trainerName] || '';
+        }
+        renderAnnouncementPreview(tr.dataset.row);
     });
 }
 
@@ -1656,6 +1728,7 @@ const attendanceParts = (session.trainee_attendance || '').split(',');
     if (liveState.timers) applyRemoteTimers(liveState.timers);
     if (liveState.drivers) applyRemoteDrivers(liveState.drivers);
     if (liveState.staffShift) applyRemoteStaff(liveState.staffShift);
+    if (liveState.unallocatedTrainees) applyRemoteUnallocated(liveState.unallocatedTrainees);
     if (liveState.feedbackData) Object.assign(feedbackData, liveState.feedbackData);
     if (liveState.overrides) {
         const changed = JSON.stringify(overrides) !== JSON.stringify(liveState.overrides);
@@ -1718,7 +1791,7 @@ function getEligibleTrainers(){
   const names = [document.getElementById('session-host-select')?.value].filter(Boolean);
   document.querySelectorAll('#staff-rows tr').forEach(tr=>{
     if(tr.querySelector('.staff-role-select')?.value === 'Co-Host'){
-      const n = tr.querySelector('.staff-username')?.value.trim();
+      const n = tr.querySelector('.staff-username-select')?.value.trim();
       if(n) names.push(n);
     }
   });
