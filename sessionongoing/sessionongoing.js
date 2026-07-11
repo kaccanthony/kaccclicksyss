@@ -1668,7 +1668,7 @@ function applyRemoteState(session, liveState) {
     }
 }
 
-function pullState() {
+async function pullState() {
     if (syncInFlight) return;
     syncInFlight = true;
     try {
