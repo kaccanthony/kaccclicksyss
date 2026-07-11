@@ -173,7 +173,7 @@ if (!empty($sessionRow['live_state'])) {
   </div>
 
   <!-- Override controls -->
-  <section class="panel">
+  <section class="panel host-only" id="session-controls-panel">
     <div class="panel-title">Session Controls <span style="font-weight:400;color:var(--text-faint);text-transform:none;letter-spacing:0;">— overrides prevent accidental edits until switched on</span></div>
     <div class="override-columns">
       <div class="override-col">
@@ -257,7 +257,7 @@ if (!empty($sessionRow['live_state'])) {
   </section>
 
   <!-- Trainees table -->
-  <section class="panel host-only" id="session-controls-panel">
+  <section class="panel">
   <div class="panel-title">
       Trainees Panel
       <span style="font-weight:400;color:var(--text-faint);text-transform:none;letter-spacing:0;font-size:.68rem;">scroll wheel over the table scrolls sideways · ctrl+scroll still zooms the page</span>
