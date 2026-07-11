@@ -1473,14 +1473,8 @@ function collectCoreUpdates() {
     document.querySelectorAll('#trainee-rows tr').forEach(tr => {
         const chk = tr.querySelector('td:nth-child(7) .chk');
         traineeAttendanceParts.push(chk && chk.checked ? '1' : '0');
-        const attendanceChk = tr.querySelector('td:nth-child(7) .chk');
-        if (attendanceChk && active !== attendanceChk) {
-        const parts = (session.trainee_attendance || '').split(',');
-        attendanceChk.checked = parts[idx-1] === '1';
-        }
     });
     if (traineeAttendanceParts.length) updates.trainee_attendance = traineeAttendanceParts.join(',');
-
     // Persist staff rows into their real DB columns, by role
     const cohostCols = ['co_host1', 'co_host2', 'co_host3', 'co_host4/supervisor'];
     const assistantCols = ['assistant_1', 'assistant_2', 'assistant_3', 'assistant_4'];
@@ -1629,12 +1623,17 @@ function applyRemoteState(session, liveState) {
     });
 }
 
+const attendanceParts = (session.trainee_attendance || '').split(',');
     document.querySelectorAll('#trainee-rows tr').forEach(tr => {
         const idx = parseInt(tr.dataset.row, 10) + 1;
         const nameEl = tr.querySelector('.trainee-name');
         const detailFields = tr.querySelectorAll('.trainee-detail-field');
         const trainerFields = tr.querySelectorAll('.trainer-detail-field');
         const notesArea = tr.querySelector('.trainee-notes-input');
+        const attendanceChk = tr.querySelector('td:nth-child(7) .chk');
+        if (attendanceChk && active !== attendanceChk) {
+            attendanceChk.checked = attendanceParts[idx - 1] === '1';
+        }
 
         if (detailFields[0] && active !== detailFields[0]) detailFields[0].value = session[`trainee_${idx}_discord`] || '';
         if (detailFields[1] && active !== detailFields[1]) detailFields[1].value = session[`trainee_${idx}_discord_id`] || '';
