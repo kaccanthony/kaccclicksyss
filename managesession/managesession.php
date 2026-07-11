@@ -447,20 +447,20 @@ function statusBadge($status) {
                 <input type="date" name="session_date" id="f-session_date" required/>
             </div>
             <div class="form-group">
-                <label>Time* (in BST)</label>
+                <label>TIME* (in BST)</label>
                 <input type="text" name="session_time" id="f-session_time" maxlength="5" placeholder="HH:MM" required/>
                 <span id="time-error" style="color:red; font-size:12px; display:none;"></span>
             </div>
             <div class="form-group">
-                <label>Expected Duration* (minutes)</label>
+                <label>EXP. DUR* (minutes)</label>
                 <input type="number" name="session_duration" id="f-session_duration" min="60" max="180" placeholder="60" step="5"/>
             </div>
             <div class="form-group">
-                <label>Slots*</label>
+                <label>SLOTS*</label>
                 <input type="number" name="num_slots" id="f-num_slots" min="4" max="10" placeholder="4"/>
             </div>
             <div class="form-group">
-                <label>Trainee Timer* (min)</label>
+                <label>TR. Timer* (min)</label>
                 <input type="number" name="trainee_timer" id="f-trainee_timer" min="8" max="20" placeholder="15"/>
             </div>
         </div>
@@ -498,7 +498,7 @@ function statusBadge($status) {
                 </select>
             </div>
             <div class="form-group">
-                <label>Co-Host 4 / Supervisor</label>
+                <label>Co-Host 4 / SV</label>
                 <select name="co-host" id="f-co_host4_supervisor">
                     <?= buildOptions($staffByRank, $cohostRanks) ?>
                 </select>

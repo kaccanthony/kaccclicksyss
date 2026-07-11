@@ -35,23 +35,23 @@ function renderTraineeFields(numSlots, data = {}) {
         html += `
             <div class="form-row">
                 <div class="form-group">
-                    <label>Trainee ${i} Discord</label>
+                    <label>TR. ${i} Discord</label>
                     <input type="text" name="trainee_${i}_discord" id="f-trainee_${i}_discord" placeholder="Discord username" value="${data[`trainee_${i}_discord`] ?? ''}"/>
                 </div>
                 <div class="form-group">
-                    <label>Trainee ${i} Discord ID</label>
+                    <label>TR. ${i} Discord ID</label>
                     <input type="text" name="trainee_${i}_discord_id" id="f-trainee_${i}_discord_id" placeholder="Discord ID" value="${data[`trainee_${i}_discord_id`] ?? ''}"/>
                 </div>
                 <div class="form-group">
-                    <label>Trainee ${i} Roblox</label>
+                    <label>TR. ${i} Roblox</label>
                     <input type="text" name="trainee_${i}_name" id="f-trainee_${i}_name" placeholder="Roblox username" value="${data[`trainee_${i}_name`] ?? ''}"/>
                 </div>
                 <div class="form-group">
-                    <label>Trainee ${i} Zone</label>
+                    <label>TR. ${i} Zone</label>
                     <input type="number" name="trainee_${i}_zone" id="f-trainee_${i}_zone" min="1" max="10" placeholder="Zone ID" value="${data[`trainee_${i}_zone`] ?? ''}"/>
                 </div>
                 <div class="form-group">
-                    <label>Trainee ${i} Notes</label>
+                    <label>TR. ${i} Notes</label>
                     <input type="text" name="trainee_${i}_note" id="f-trainee_${i}_note" placeholder="Optional" value="${data[`trainee_${i}_note`] ?? ''}"/>
                 </div>
             </div>
