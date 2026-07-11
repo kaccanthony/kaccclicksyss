@@ -71,6 +71,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
         $as4  = $_POST['assistant_4']         ?? '';
         $add  = $_POST['additional_staff']    ?? '';
 
+        $traineeFields = [];
+        for ($t = 1; $t <= 10; $t++) {
+            $traineeFields["trainee_{$t}_discord"]    = $t <= $ns ? ($_POST["trainee_{$t}_discord"] ?? null) : null;
+            $traineeFields["trainee_{$t}_discord_id"] = $t <= $ns ? ($_POST["trainee_{$t}_discord_id"] ?? null) : null;
+            $traineeFields["trainee_{$t}_name"]       = $t <= $ns ? ($_POST["trainee_{$t}_name"] ?? null) : null;
+            $traineeFields["trainee_{$t}_zone"]       = ($t <= $ns && !empty($_POST["trainee_{$t}_zone"])) ? (int)$_POST["trainee_{$t}_zone"] : null;
+            $traineeFields["trainee_{$t}_note"]       = $t <= $ns ? ($_POST["trainee_{$t}_note"] ?? null) : null;
+        }
+
         if (empty($sdate) || !strtotime($sdate)) {
             $_SESSION['error'] = 'Invalid or missing session date.';
             header('Location: managesession.php');
@@ -85,17 +94,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
         $stime .= ':00';
 
         if ($action === 'add') {
-            $sql = "INSERT INTO session_upcoming
-                (session_name, session_desc, session_status, session_booked,
-                session_duration, num_slots, session_date, session_time, trainee_timer,
-                host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
-                assistant_1, assistant_2, assistant_3, assistant_4, additional_staff)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-            $stmt = mysqli_prepare($conn, $sql);
-            $types = 'sssisissi' . 'ssssssssss';
-            mysqli_stmt_bind_param($stmt, $types,
-                $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
-                $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add);
+            $customId = (int)($_POST['custom_session_id'] ?? 0);
+            if ($customId > 0) {
+                $stmtCheck = mysqli_prepare($conn, "SELECT 1 FROM session_upcoming WHERE session_id = ?
+                    UNION SELECT 1 FROM session_ongoing WHERE session_id = ?");
+                mysqli_stmt_bind_param($stmtCheck, "ii", $customId, $customId);
+                mysqli_stmt_execute($stmtCheck);
+                mysqli_stmt_store_result($stmtCheck);
+                if (mysqli_stmt_num_rows($stmtCheck) > 0) {
+                    $_SESSION['error'] = "Session ID #$customId is already in use — pick a different one or leave it blank to auto-assign.";
+                    header('Location: managesession.php');
+                    exit;
+                }
+                $sql = "INSERT INTO session_upcoming
+                    (session_id, session_name, session_desc, session_status, session_booked,
+                    session_duration, num_slots, session_date, session_time, trainee_timer,
+                    host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
+                    assistant_1, assistant_2, assistant_3, assistant_4, additional_staff)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                $stmt = mysqli_prepare($conn, $sql);
+                $types = 'i' . 'sssisissi' . 'ssssssssss';
+                mysqli_stmt_bind_param($stmt, $types,
+                    $customId, $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
+                    $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add);
+            } else {
+                $sql = "INSERT INTO session_upcoming
+                    (session_name, session_desc, session_status, session_booked,
+                    session_duration, num_slots, session_date, session_time, trainee_timer,
+                    host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
+                    assistant_1, assistant_2, assistant_3, assistant_4, additional_staff)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                $stmt = mysqli_prepare($conn, $sql);
+                $types = 'sssisissi' . 'ssssssssss';
+                mysqli_stmt_bind_param($stmt, $types,
+                    $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
+                    $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add);
+            }
         } else {
             $eid = (int)$_POST['session_id'];
             $sql = "UPDATE session_upcoming SET
@@ -139,9 +173,41 @@ if ($params) mysqli_stmt_bind_param($stmt, $types, ...$params);
 mysqli_stmt_execute($stmt);
 $sessions = mysqli_fetch_all(mysqli_stmt_get_result($stmt), MYSQLI_ASSOC);
 
-// ── Staff list for autocomplete ──
-$staff_result = mysqli_query($conn,"SELECT staff_roblox_name,staff_rank FROM staff_list ORDER BY staff_rank,staff_roblox_name");
-$staff_list   = mysqli_fetch_all($staff_result, MYSQLI_ASSOC);
+// ── Staff, grouped by rank, keyed on Discord display name (matches setupsesh.php / sessionongoing.php) ──
+function buildOptions(array $staffByRank, array $allowedRanks, string $selected = ''): string {
+    $html = '<option value="">— None —</option>';
+    foreach ($allowedRanks as $rank) {
+        if (empty($staffByRank[$rank])) continue;
+        $html .= '<optgroup label="' . htmlspecialchars($rank) . '">';
+        foreach ($staffByRank[$rank] as $s) {
+            $name = htmlspecialchars($s['staff_display_name'] ?: $s['staff_name']);
+            $sel  = ($selected === $name) ? ' selected' : '';
+            $html .= '<option value="' . $name . '"' . $sel . '>' . $name . '</option>';
+        }
+        $html .= '</optgroup>';
+    }
+    return $html;
+}
+
+$hostRanks   = ['Community Manager', 'Operations Manager', 'Head Staff'];
+$cohostRanks = ['Community Manager', 'Operations Manager', 'Head Staff', 'Co-Host Authorized'];
+$assistRanks = ['Community Manager', 'Operations Manager', 'Head Staff', 'Co-Host Authorized', 'Assistant Authorized'];
+
+$staffByRank = [];
+$resRank = mysqli_query($conn, "SELECT staff_id, staff_display_name, staff_name, staff_rank FROM staff_list
+    WHERE staff_rank IN ('Community Manager','Operations Manager','Head Staff','Co-Host Authorized','Assistant Authorized')
+    ORDER BY FIELD(staff_rank,'Community Manager','Operations Manager','Head Staff','Co-Host Authorized','Assistant Authorized'), staff_display_name ASC");
+while ($r = mysqli_fetch_assoc($resRank)) {
+    $staffByRank[$r['staff_rank']][] = $r;
+}
+
+// Additional Staff is still free text — datalist of Discord names for autocomplete only
+$staff_list = [];
+foreach ($staffByRank as $rankGroup) {
+    foreach ($rankGroup as $r) {
+        $staff_list[] = ['staff_display_name' => $r['staff_display_name'] ?: $r['staff_name']];
+    }
+}
 
 function statusBadge($status) {
     $map=['Scheduled'=>'badge-scheduled','Booked'=>'badge-booked','Cancelled'=>'badge-cancelled','Postponed'=>'badge-postponed'];
@@ -339,6 +405,10 @@ function statusBadge($status) {
     <form method="POST" action="" id="session-form" class="modal-form">
         <input type="hidden" name="action" id="form-action" value="add"/>
         <input type="hidden" name="session_id" id="form-session-id" value=""/>
+        <div class="form-group" id="custom-session-id-group">
+            <label>Custom Session ID <span class="label-hint">(optional — leave blank to auto-assign)</span></label>
+            <input type="number" name="custom_session_id" id="f-custom_session_id" min="1" placeholder="Auto-assign"/>
+        </div>
 
         <!-- Name + Status + Booked toggle -->
         <div class="form-row">
@@ -401,7 +471,9 @@ function statusBadge($status) {
         <div class="form-row">
             <div class="form-group flex2">
                 <label><i class="fas fa-crown" style="color:rgba(255,210,80,.7);font-size:.7rem;margin-right:4px;"></i> Host*</label>
-                <input type="text" name="host" id="f-host" list="staff-datalist" placeholder="Roblox username" required/>
+                <select name="host" id="f-host" required>
+                    <?= buildOptions($staffByRank, $hostRanks) ?>
+                </select>
             </div>
         </div>
 
@@ -409,19 +481,27 @@ function statusBadge($status) {
         <div class="form-row">
             <div class="form-group">
                 <label>Co-Host 1</label>
-                <input type="text" name="co_host1" id="f-co_host1" list="staff-datalist" placeholder="Optional"/>
+                <select name="co-host" id="f-co_host1">
+                    <?= buildOptions($staffByRank, $cohostRanks) ?>
+                </select>
             </div>
             <div class="form-group">
                 <label>Co-Host 2</label>
-                <input type="text" name="co_host2" id="f-co_host2" list="staff-datalist" placeholder="Optional"/>
+                <select name="co-host" id="f-co_host2">
+                    <?= buildOptions($staffByRank, $cohostRanks) ?>
+                </select>
             </div>
             <div class="form-group">
                 <label>Co-Host 3</label>
-                <input type="text" name="co_host3" id="f-co_host3" list="staff-datalist" placeholder="Optional"/>
+                <select name="co-host" id="f-co_host3">
+                    <?= buildOptions($staffByRank, $cohostRanks) ?>
+                </select>
             </div>
             <div class="form-group">
                 <label>Co-Host 4 / Supervisor</label>
-                <input type="text" name="co_host4_supervisor" id="f-co_host4_supervisor" list="staff-datalist" placeholder="Optional"/>
+                <select name="co-host" id="f-co_host4_supervisor">
+                    <?= buildOptions($staffByRank, $cohostRanks) ?>
+                </select>
             </div>
         </div>
 
@@ -429,19 +509,27 @@ function statusBadge($status) {
         <div class="form-row">
             <div class="form-group">
                 <label>Assistant 1</label>
-                <input type="text" name="assistant_1" id="f-assistant_1" list="staff-datalist" placeholder="Optional"/>
+                <select name="assistant" id="f-assistant1">
+                    <?= buildOptions($staffByRank, $assistRanks) ?>
+                </select>
             </div>
             <div class="form-group">
                 <label>Assistant 2</label>
-                <input type="text" name="assistant_2" id="f-assistant_2" list="staff-datalist" placeholder="Optional"/>
+                <select name="assistant" id="f-assistant2">
+                    <?= buildOptions($staffByRank, $assistRanks) ?>
+                </select>
             </div>
             <div class="form-group">
                 <label>Assistant 3</label>
-                <input type="text" name="assistant_3" id="f-assistant_3" list="staff-datalist" placeholder="Optional"/>
+                <select name="assistant" id="f-assistant3">
+                    <?= buildOptions($staffByRank, $assistRanks) ?>
+                </select>
             </div>
             <div class="form-group">
                 <label>Assistant 4</label>
-                <input type="text" name="assistant_4" id="f-assistant_4" list="staff-datalist" placeholder="Optional"/>
+                <select name="assistant" id="f-assistant4">
+                    <?= buildOptions($staffByRank, $assistRanks) ?>
+                </select>
             </div>
         </div>
 
@@ -453,33 +541,13 @@ function statusBadge($status) {
 
         <div class="form-divider"><span>Trainee Assignment</span></div>
 
-        <!-- Trainees -->
-        <?php
-            $num_slots = $s['num_slots'];
-            for ($i = 1; $i < $num_slots; $i++){
-                echo '
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Trainee '.$i.'</label>
-                        <input type="text" name="trainee_'.$i.'_name" id="f-trainee_'.$i.'_name" placeholder="Roblox username"/>
-                    </div>
-                    <div class="form-group">
-                        <label>Trainee '.$i.' Zone</label>
-                        <input type="number" name="trainee_'.$i.'_zone" id="f-trainee_'.$i.'_zone" min="1" max="10" placeholder="Zone ID"/>
-                    </div>
-                    <div class="form-group">
-                        <label>Trainee '.$i.' Notes</label>
-                        <input type="text" name="trainee_'.$i.'_notes" id="f-trainee_'.$i.'_notes" placeholder="Optional"/>
-                    </div>
-                </div>
-            ';
-            }
-        ?>
+        <!-- Trainees — rebuilt dynamically by JS whenever Slots changes, see script.js -->
+        <div id="modal-trainee-fields"></div>
 
         <!-- Staff datalist autocomplete -->
         <datalist id="staff-datalist">
             <?php foreach ($staff_list as $sl): ?>
-                <option value="<?= htmlspecialchars($sl['staff_roblox_name']) ?>">
+                <option value="<?= htmlspecialchars($sl['staff_display_name']) ?>">
             <?php endforeach; ?>
         </datalist>
 

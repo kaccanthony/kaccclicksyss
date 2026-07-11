@@ -28,15 +28,60 @@ const formAction    = document.getElementById('form-action');
 const formSessionId = document.getElementById('form-session-id');
 const submitBtn     = document.getElementById('form-submit-btn');
 
+function renderTraineeFields(numSlots, data = {}) {
+    const container = document.getElementById('modal-trainee-fields');
+    let html = '';
+    for (let i = 1; i <= numSlots; i++) {
+        html += `
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Trainee ${i} Discord</label>
+                    <input type="text" name="trainee_${i}_discord" id="f-trainee_${i}_discord" placeholder="Discord username" value="${data[`trainee_${i}_discord`] ?? ''}"/>
+                </div>
+                <div class="form-group">
+                    <label>Trainee ${i} Discord ID</label>
+                    <input type="text" name="trainee_${i}_discord_id" id="f-trainee_${i}_discord_id" placeholder="Discord ID" value="${data[`trainee_${i}_discord_id`] ?? ''}"/>
+                </div>
+                <div class="form-group">
+                    <label>Trainee ${i} Roblox</label>
+                    <input type="text" name="trainee_${i}_name" id="f-trainee_${i}_name" placeholder="Roblox username" value="${data[`trainee_${i}_name`] ?? ''}"/>
+                </div>
+                <div class="form-group">
+                    <label>Trainee ${i} Zone</label>
+                    <input type="number" name="trainee_${i}_zone" id="f-trainee_${i}_zone" min="1" max="10" placeholder="Zone ID" value="${data[`trainee_${i}_zone`] ?? ''}"/>
+                </div>
+                <div class="form-group">
+                    <label>Trainee ${i} Notes</label>
+                    <input type="text" name="trainee_${i}_note" id="f-trainee_${i}_note" placeholder="Optional" value="${data[`trainee_${i}_note`] ?? ''}"/>
+                </div>
+            </div>
+        `;
+    }
+    container.innerHTML = html;
+}
+
+// Rebuild trainee rows live whenever the Slots field changes
+document.getElementById('f-num_slots').addEventListener('input', (e) => {
+    const n = Math.max(0, Math.min(10, parseInt(e.target.value, 10) || 0));
+    // Preserve whatever's already been typed before wiping the container
+    const preserved = {};
+    document.querySelectorAll('#modal-trainee-fields input').forEach(inp => { preserved[inp.name] = inp.value; });
+    renderTraineeFields(n, preserved);
+});
+
 function openModal(mode, data = null) {
     formAction.value = mode;
 
+    const customIdGroup = document.getElementById('custom-session-id-group');
     if (mode === 'add') {
         modalTitle.textContent = 'Add Session';
         submitBtn.textContent  = 'Add Session';
         formSessionId.value    = '';
         document.getElementById('session-form').reset();
+        if (customIdGroup) customIdGroup.style.display = '';
+        renderTraineeFields(0, {});
     } else {
+        if (customIdGroup) customIdGroup.style.display = 'none';
         modalTitle.textContent      = 'Edit Session';
         submitBtn.textContent       = 'Save Changes';
         formSessionId.value         = data.session_id ?? '';
@@ -49,6 +94,7 @@ function openModal(mode, data = null) {
         document.getElementById('f-session_date').value     = data.session_date     ?? '';
         document.getElementById('f-session_duration').value = data.session_duration ?? '';
         document.getElementById('f-num_slots').value        = data.num_slots        ?? '';
+        renderTraineeFields(parseInt(data.num_slots, 10) || 0, data);
         document.getElementById('f-trainee_timer').value    = data.trainee_timer    ?? '';
 
         // Time — strip seconds if present (HH:MM:SS → HH:MM)
