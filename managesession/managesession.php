@@ -419,6 +419,7 @@ function statusBadge($status) {
             <div class="form-group">
                 <label>Status*</label>
                 <select name="session_status" id="f-session_status">
+                    <option value="Requested">Requested</option>
                     <option value="Scheduled">Scheduled</option>
                     <option value="Booked">Booked</option>
                     <option value="Cancelled">Cancelled</option>
