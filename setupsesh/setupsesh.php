@@ -410,6 +410,14 @@ $hostRanks   = ['Community Manager','Operations Manager','Head Staff'];
                         </div>
                     </div>
 
+                    <div class="staff-field" style="grid-column: span 2;">
+                        <label class="staff-label">Additional Staff <span style="text-transform:none;font-weight:400;color:rgba(255,255,255,.3);">(include role after name)</span></label>
+                        <div class="staff-input-wrap">
+                            <i class="fas fa-user-plus staff-icon"></i>
+                            <input type="text" class="staff-select" id="m-additional-staff" name="additional_staff" style="padding-left:32px;" placeholder="e.g. Yoshi5336 [Observer]"/>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

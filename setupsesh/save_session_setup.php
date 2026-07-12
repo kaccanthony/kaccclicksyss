@@ -37,6 +37,7 @@ $sharedFields = [
     'assistant_4'         => $data['assistant_4'] ?: null,
     'session_desc'        => $data['session_desc'] ?: null,
     'additional_notes'    => $data['additional_notes'] ?: null,
+    'additional_staff'    => $data['additional_staff'] ?: null,
     'trainer_assignment_mode' => in_array($data['trainer_assignment_mode'] ?? '', ['auto','manual'], true) ? $data['trainer_assignment_mode'] : 'auto',
 ];
 

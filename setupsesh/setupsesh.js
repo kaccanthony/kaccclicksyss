@@ -244,6 +244,7 @@ function openSetupModal(sessionId) {
     document.getElementById('m-asst2').value = session.assistant_2 || '';
     document.getElementById('m-asst3').value = session.assistant_3 || '';
     document.getElementById('m-asst4').value = session.assistant_4 || '';
+    document.getElementById('m-additional-staff').value = session.additional_staff || '';
     // 3. Render 10 Trainee Input rows
     currentNumSlots = parseInt(session.num_slots, 10) || 10;
     const traineeListEl = document.getElementById('modal-trainee-list');
@@ -449,6 +450,7 @@ async function confirmSetup() {
         assistant_2: document.getElementById('m-asst2').value,
         assistant_3: document.getElementById('m-asst3').value,
         assistant_4: document.getElementById('m-asst4').value,
+        additional_staff: document.getElementById('m-additional-staff').value,
         session_desc: document.getElementById('m-desc').value,
         additional_notes: document.getElementById('m-notes').value
     };
