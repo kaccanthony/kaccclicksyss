@@ -289,12 +289,14 @@ if (!empty($sessionRow['live_state'])) {
       <table>
         <thead>
           <tr>
+            <th style="width:40px;">Pop-out</th>
             <th>Slot</th>
             <th>Trainee Discord</th>
             <th>Discord ID</th>
             <th>Roblox</th>
             <th>Zone</th>
             <th>Timer</th>
+            <th style="width:40px;">Timer Pop-out</th>
             <th>Attendance</th>
             <th>Trainer</th>
             <th>Trainer Discord ID</th>

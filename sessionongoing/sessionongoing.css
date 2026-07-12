@@ -468,6 +468,14 @@ table.resizable-cols{table-layout:fixed;}
 #trainee-scroll table.col-hide-12 th:nth-child(12), #trainee-scroll table.col-hide-12 td:nth-child(12){display:none;}
 #trainee-scroll table.col-hide-13 th:nth-child(13), #trainee-scroll table.col-hide-13 td:nth-child(13){display:none;}
 #trainee-scroll table.col-hide-14 th:nth-child(14), #trainee-scroll table.col-hide-14 td:nth-child(14){display:none;}
+#trainee-scroll table.col-hide-15 th:nth-child(15), #trainee-scroll table.col-hide-15 td:nth-child(15){display:none;}
+#trainee-scroll table.col-hide-16 th:nth-child(16), #trainee-scroll table.col-hide-16 td:nth-child(16){display:none;}
+
+.pip-btn,.timer-pip-btn{width:26px;height:26px;border-radius:7px;border:1px solid var(--border-strong);background:rgba(255,255,255,.05);color:rgba(255,255,255,.7);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:.7rem;}
+.pip-btn:hover,.timer-pip-btn:hover{background:rgba(124,196,255,.14);border-color:var(--accent);color:var(--accent);}
+.timer-display.running{color:var(--live);}
+.timer-display.low{color:var(--warn);}
+.timer-display.expired{color:var(--danger);}
 
 /* Conclude Button styles*/
 .conclude-panel-body{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}

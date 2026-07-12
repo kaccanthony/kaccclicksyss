@@ -319,7 +319,10 @@ function updateTimerDisplay(row) {
         rowDisplay.classList.toggle('expired', live <= 0);
     }
     updateModalTimerIfOpen(row);
-    if (String(traineePipRow) === String(row)) refreshTraineePip();
+    if (pipWin && !pipWin.closed && String(pipRow) === String(row)) {
+        if (pipKind === 'trainee') refreshTraineePipContent();
+        if (pipKind === 'timer') refreshTimerPipContent();
+    }
 }
 
 function toggleTimer(row) {
@@ -432,13 +435,15 @@ function addTraineeRow(unallocated, uid){
   tr.dataset.row = idx;
   if (unallocated) tr.dataset.uid = uid || ('u_' + Math.random().toString(36).slice(2) + Date.now());
   tr.innerHTML = `
+    <td style="text-align:center;">
+      <button type="button" class="pip-btn" data-row="${idx}" title="Pop out this trainee (Picture-in-Picture)"><i class="fas fa-clone"></i></button>
+    </td>
     <td>
       <div class="slot-cell" style="display:flex;align-items:center;justify-content:center;">
         <button class="order-btn" data-dir="up" data-row="${idx}" data-lock-msg="Slot ordering is locked. Ask the host to enable Override Slot Ordering."><i class="fas fa-caret-up"></i></button>
         <span class="slot-num">${unallocated ? 'Unalloc.' : ' '+(idx+1)}</span>
         <button class="order-btn" data-dir="down" data-row="${idx}" data-lock-msg="Slot ordering is locked. Ask the host to enable Override Slot Ordering."><i class="fas fa-caret-down"></i></button>
       </div>
-      <button type="button" class="pip-btn" data-row="${idx}" title="Pop out this trainee"><i class="fas fa-clone"></i></button>
     </td>
         <td><input class="cell-input trainee-name trainee-detail-field" placeholder="username" data-lock-msg="Trainee details are locked. Ask the host to enable Override Trainee Details."/></td>
         <td><input class="cell-input trainee-detail-field" placeholder="Discord ID" data-lock-msg="Trainee details are locked. Ask the host to enable Override Trainee Details."/></td>
@@ -457,6 +462,9 @@ function addTraineeRow(unallocated, uid){
         <button class="timer-btn setup-done" style="width:24px" data-action="setup-done" data-row="${idx}" title="Mark setup done (stops timer)"><i class="fas fa-check"></i></button>
         <button class="timer-btn override" data-action="override" data-row="${idx}" title="Override timer value"><i class="fas fa-exclamation-triangle"></i></button>
       </div>
+    </td>
+    <td style="text-align:center;">
+      <button type="button" class="timer-pip-btn" data-row="${idx}" title="Pop out just this timer (Picture-in-Picture)"><i class="fas fa-stopwatch"></i></button>
     </td>
     <td style="text-align:center;"><input type="checkbox" class="chk"/></td>
     <td>
@@ -579,6 +587,12 @@ document.getElementById('trainee-rows').addEventListener('click', (e)=>{
 const pipBtn = e.target.closest('.pip-btn');
     if(pipBtn){
       openTraineePip(pipBtn.dataset.row);
+      return;
+    }
+
+const timerPipBtn = e.target.closest('.timer-pip-btn');
+    if(timerPipBtn){
+      openTimerPip(timerPipBtn.dataset.row);
       return;
     }
 
@@ -1143,117 +1157,275 @@ document.getElementById('notes-float-close').addEventListener('click', ()=>{
   document.addEventListener('mouseup', ()=>{ dragging = false; });
 })();
 
-/* ================= FLOATING TRAINEE PIP ================= */
-let traineePipRow = null;
-const traineePip = document.getElementById('trainee-pip');
-const traineePipGrid = document.getElementById('trainee-pip-grid');
+/* ================= REAL PICTURE-IN-PICTURE (Document PiP) =================
+   These open genuine always-on-top OS windows (window.documentPictureInPicture),
+   the same API YouTube's own pop-out player uses — so they float over Roblox,
+   Discord, or anything else, not just this browser tab. Browsers only allow ONE
+   Document PiP window per tab at a time, so opening a new one (any kind) swaps
+   out whichever is currently open, exactly like YouTube's own PiP behavior.
+   Only Chrome/Edge support this API today; other browsers get a toast. */
+let pipWin = null;
+let pipKind = null;   // 'trainee' | 'timer' | 'feedback'
+let pipRow  = null;
+let pipRefreshInterval = null;
 
-function refreshTraineePip(){
-  if (traineePipRow === null) return;
-  const rowEl = document.querySelector(`tr[data-row="${traineePipRow}"]`);
-  if (!rowEl) return;
-  const name = rowEl.querySelector('.trainee-name')?.value || '—';
-  const discordId = rowEl.querySelectorAll('.trainee-detail-field')[1]?.value || '—';
-  const roblox = rowEl.querySelectorAll('.trainee-detail-field')[2]?.value || '—';
-  const zone = rowEl.querySelector('select.trainee-detail-field')?.value || '—';
-  const trainer = rowEl.querySelector('.trainer-name-select')?.value || '—';
-  const timerText = rowEl.querySelector('.timer-display')?.textContent.trim() || '—';
-  const done = rowEl.querySelector('.complete-btn')?.classList.contains('done');
-
-  document.getElementById('trainee-pip-title').textContent = name;
-  traineePipGrid.innerHTML = `
-    <div class="pip-row"><span class="pip-label">Discord ID</span><span class="pip-value">${discordId}</span></div>
-    <div class="pip-row"><span class="pip-label">Roblox</span><span class="pip-value">${roblox}</span></div>
-    <div class="pip-row"><span class="pip-label">Zone</span><span class="pip-value">${zone}</span></div>
-    <div class="pip-row"><span class="pip-label">Trainer</span><span class="pip-value">${trainer}</span></div>
-    <div class="pip-row"><span class="pip-label">Timer</span><span class="pip-value">${timerText}</span></div>
-    <div class="pip-row"><span class="pip-label">Status</span><span class="pip-value">${done ? 'Done ✅' : 'In progress'}</span></div>
-  `;
-}
-
-function openTraineePip(row){
-  traineePipRow = row;
-  refreshTraineePip();
-  traineePip.style.display = 'flex';
-}
-
-document.getElementById('trainee-pip-close').addEventListener('click', ()=>{
-  traineePip.style.display = 'none';
-  traineePipRow = null;
-});
-
-(function enableTraineePipDrag(){
-  const header = document.getElementById('trainee-pip-header');
-  let dragging = false, offsetX = 0, offsetY = 0;
-  header.addEventListener('mousedown', (e)=>{
-    dragging = true;
-    const rect = traineePip.getBoundingClientRect();
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
-  });
-  document.addEventListener('mousemove', (e)=>{
-    if(!dragging) return;
-    traineePip.style.left = (e.clientX - offsetX) + 'px';
-    traineePip.style.top = (e.clientY - offsetY) + 'px';
-  });
-  document.addEventListener('mouseup', ()=>{ dragging = false; });
-})();
-
-/* ================= FLOATING FEEDBACK PIP ================= */
-const feedbackPip = document.getElementById('feedback-pip');
 const FEEDBACK_FIELDS = [
   { key:'setup', label:'Setup' }, { key:'conflict', label:'Conflict Handling' },
   { key:'priority', label:'Priority' }, { key:'rbtiming', label:'RB & Timing' },
   { key:'overall', label:'Overall' }, { key:'notes', label:'Notes / Advice' },
 ];
 
-function renderFeedbackPip(row){
-  const rowEl = document.querySelector(`tr[data-row="${row}"]`);
+function pipSupported(){ return 'documentPictureInPicture' in window; }
+
+function copyStylesIntoPip(win){
+  [...document.styleSheets].forEach(sheet=>{
+    try{
+      const rules = [...sheet.cssRules].map(r=>r.cssText).join('');
+      const style = win.document.createElement('style');
+      style.textContent = rules;
+      win.document.head.appendChild(style);
+    }catch(e){
+      if(!sheet.href) return;
+      const link = win.document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = sheet.href;
+      win.document.head.appendChild(link);
+    }
+  });
+}
+
+async function openPip(kind, row, buildFn, opts){
+  if(!pipSupported()){
+    showToast('Real pop-out windows need Chrome or Edge (Document Picture-in-Picture). This browser doesn\'t support it.');
+    return;
+  }
+  if(pipWin && !pipWin.closed && pipKind === kind && String(pipRow) === String(row)){
+    pipWin.focus();
+    return;
+  }
+  try{
+    const win = await window.documentPictureInPicture.requestWindow({
+      width: opts?.width || 300,
+      height: opts?.height || 260,
+    });
+    pipWin = win; pipKind = kind; pipRow = row;
+    copyStylesIntoPip(win);
+    win.document.title = opts?.title || 'Pop-out';
+    buildFn(win);
+    clearInterval(pipRefreshInterval);
+    pipRefreshInterval = setInterval(()=>{ if(pipWin && !pipWin.closed) refreshActivePip(); }, 1000);
+    win.addEventListener('pagehide', ()=>{
+      if(pipWin === win){ pipWin = null; pipKind = null; pipRow = null; clearInterval(pipRefreshInterval); }
+    }, { once:true });
+  }catch(err){
+    showToast('Could not open pop-out window.');
+  }
+}
+
+function refreshActivePip(){
+  if(!pipWin || pipWin.closed) return;
+  if(pipKind === 'trainee') refreshTraineePipContent();
+  else if(pipKind === 'timer') refreshTimerPipContent();
+  else if(pipKind === 'feedback') refreshFeedbackPipContent();
+}
+
+/* ---- Trainee pop-out: full details + interactive controls ---- */
+function buildTraineePip(win){
+  win.document.body.innerHTML = `
+    <div style="padding:14px;">
+      <div class="trainee-pip-grid" id="tpip-grid"></div>
+      <div class="timer-cell" id="tpip-timer" style="margin-top:12px;justify-content:center;"></div>
+      <div class="pip-row" style="margin-top:10px;"><span class="pip-label">Attendance</span><input type="checkbox" id="tpip-attendance"/></div>
+      <div style="margin-top:10px;">
+        <textarea id="tpip-note" rows="3" style="width:100%;" class="cell-input" placeholder="Notes for this trainee..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="feedback-btn" id="tpip-feedback-btn" style="flex:1;"><i class="fas fa-comment-dots"></i> Feedback</button>
+        <button class="complete-btn" id="tpip-complete-btn" style="flex:1;">Mark done</button>
+      </div>
+    </div>
+  `;
+  win.document.getElementById('tpip-note').addEventListener('input', (e)=>{
+    const rowTextarea = document.querySelector(`tr[data-row="${pipRow}"] .trainee-notes-input`);
+    if(rowTextarea) rowTextarea.value = e.target.value;
+    queueLiveStateSync();
+  });
+  win.document.getElementById('tpip-attendance').addEventListener('change', (e)=>{
+    const rowChk = document.querySelector(`tr[data-row="${pipRow}"] .chk`);
+    if(rowChk) rowChk.checked = e.target.checked;
+    queueLiveStateSync();
+  });
+  win.document.getElementById('tpip-feedback-btn').addEventListener('click', ()=>{
+    const rowBtn = document.querySelector(`tr[data-row="${pipRow}"] .feedback-btn`);
+    if(rowBtn) openFeedbackModal(rowBtn);
+  });
+  win.document.getElementById('tpip-complete-btn').addEventListener('click', ()=>{
+    const rowBtn = document.querySelector(`tr[data-row="${pipRow}"] .complete-btn`);
+    if(!rowBtn) return;
+    const done = rowBtn.classList.toggle('done');
+    rowBtn.innerHTML = done ? 'Done' : 'Mark done';
+    updateStatusLockState();
+    queueLiveStateSync();
+    refreshTraineePipContent();
+  });
+  refreshTraineePipContent();
+}
+
+function refreshTraineePipContent(){
+  if(pipKind !== 'trainee' || !pipWin || pipWin.closed) return;
+  const rowEl = document.querySelector(`tr[data-row="${pipRow}"]`);
+  if(!rowEl) return;
+  const name = rowEl.querySelector('.trainee-name')?.value || 'Trainee';
+  const discordId = rowEl.querySelectorAll('.trainee-detail-field')[1]?.value || '—';
+  const roblox = rowEl.querySelectorAll('.trainee-detail-field')[2]?.value || '—';
+  const zone = rowEl.querySelector('select.trainee-detail-field')?.value || '—';
+  const trainer = rowEl.querySelector('.trainer-name-select')?.value || '—';
+  const done = rowEl.querySelector('.complete-btn')?.classList.contains('done');
+
+  pipWin.document.title = name + ' — Pop-out';
+  const grid = pipWin.document.getElementById('tpip-grid');
+  if(grid) grid.innerHTML = `
+    <div class="pip-row"><span class="pip-label">Name</span><span class="pip-value">${name}</span></div>
+    <div class="pip-row"><span class="pip-label">Discord ID</span><span class="pip-value">${discordId}</span></div>
+    <div class="pip-row"><span class="pip-label">Roblox</span><span class="pip-value">${roblox}</span></div>
+    <div class="pip-row"><span class="pip-label">Zone</span><span class="pip-value">${zone}</span></div>
+    <div class="pip-row"><span class="pip-label">Trainer</span><span class="pip-value">${trainer}</span></div>
+  `;
+  const timerHost = pipWin.document.getElementById('tpip-timer');
+  if(timerHost && !timerHost.dataset.built){
+    timerHost.dataset.built = '1';
+    timerHost.innerHTML = `
+      <span class="timer-display" id="tpip-timer-display"></span>
+      <button class="timer-btn play" id="tpip-play" title="Start/pause"><i class="fas fa-play"></i></button>
+      <button class="timer-btn" id="tpip-reset" title="Reset"><i class="fas fa-redo"></i></button>
+      <button class="timer-btn override" id="tpip-override" title="Override timer"><i class="fas fa-exclamation-triangle"></i></button>
+    `;
+    win_bindTraineeTimerButtons();
+  }
+  const t = timers[pipRow];
+  const disp = pipWin.document.getElementById('tpip-timer-display');
+  if(disp && t){
+    const live = computeCurrentRemaining(t);
+    disp.textContent = fmt(live);
+    disp.classList.toggle('running', live > 60 && t.running);
+    disp.classList.toggle('low', live <= 60 && live > 0);
+    disp.classList.toggle('expired', live <= 0);
+  }
+  const playBtn = pipWin.document.getElementById('tpip-play');
+  if(playBtn && t){ playBtn.innerHTML = t.running ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>'; playBtn.classList.toggle('active', t.running); }
+
+  const attendance = pipWin.document.getElementById('tpip-attendance');
+  const rowChk = rowEl.querySelector('.chk');
+  if(attendance && pipWin.document.activeElement !== attendance) attendance.checked = !!(rowChk && rowChk.checked);
+
+  const note = pipWin.document.getElementById('tpip-note');
+  const rowNote = rowEl.querySelector('.trainee-notes-input');
+  if(note && pipWin.document.activeElement !== note) note.value = rowNote ? rowNote.value : '';
+
+  const completeBtn = pipWin.document.getElementById('tpip-complete-btn');
+  if(completeBtn){ completeBtn.textContent = done ? 'Done' : 'Mark done'; completeBtn.classList.toggle('done', !!done); }
+}
+
+function win_bindTraineeTimerButtons(){
+  pipWin.document.getElementById('tpip-play').addEventListener('click', ()=> toggleTimer(pipRow));
+  pipWin.document.getElementById('tpip-reset').addEventListener('click', ()=> resetTimer(pipRow));
+  pipWin.document.getElementById('tpip-override').addEventListener('click', ()=>{
+    const input = pipWin.prompt('Set timer to MM:SS:', fmt(computeCurrentRemaining(timers[pipRow])));
+    if(input !== null) setTimerValue(pipRow, input);
+  });
+}
+
+function openTraineePip(row){
+  openPip('trainee', row, buildTraineePip, { width: 300, height: 420, title: 'Trainee pop-out' });
+}
+
+/* ---- Timer-only pop-out: just the running clock + controls ---- */
+function buildTimerPip(win){
+  const canControl = myRole !== 'assistant';
+  win.document.body.innerHTML = `
+    <div style="padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+      <div id="tmpip-name" style="font-size:.8rem;color:var(--text-faint);"></div>
+      <span class="timer-display" id="tmpip-display" style="font-size:2rem;"></span>
+      <div class="timer-cell" id="tmpip-controls" style="justify-content:center;"></div>
+      ${canControl ? '' : '<div style="font-size:.68rem;color:var(--text-faint);text-align:center;">View only — Assistants can\'t control the timer.</div>'}
+    </div>
+  `;
+  if(canControl){
+    const controls = win.document.getElementById('tmpip-controls');
+    controls.innerHTML = `
+      <button class="timer-btn play" id="tmpip-play" title="Start/pause"><i class="fas fa-play"></i></button>
+      <button class="timer-btn" id="tmpip-reset" title="Reset"><i class="fas fa-redo"></i></button>
+      <button class="timer-btn override" id="tmpip-override" title="Override timer"><i class="fas fa-exclamation-triangle"></i></button>
+    `;
+    win.document.getElementById('tmpip-play').addEventListener('click', ()=> toggleTimer(pipRow));
+    win.document.getElementById('tmpip-reset').addEventListener('click', ()=> resetTimer(pipRow));
+    win.document.getElementById('tmpip-override').addEventListener('click', ()=>{
+      const input = win.prompt('Set timer to MM:SS:', fmt(computeCurrentRemaining(timers[pipRow])));
+      if(input !== null) setTimerValue(pipRow, input);
+    });
+  }
+  refreshTimerPipContent();
+}
+
+function refreshTimerPipContent(){
+  if(pipKind !== 'timer' || !pipWin || pipWin.closed) return;
+  const rowEl = document.querySelector(`tr[data-row="${pipRow}"]`);
+  const name = rowEl?.querySelector('.trainee-name')?.value || ('Trainee ' + (parseInt(pipRow,10)+1));
+  const nameEl = pipWin.document.getElementById('tmpip-name');
+  if(nameEl) nameEl.textContent = name;
+  pipWin.document.title = name + ' — Timer';
+  const t = timers[pipRow];
+  const disp = pipWin.document.getElementById('tmpip-display');
+  if(disp && t){
+    const live = computeCurrentRemaining(t);
+    disp.textContent = fmt(live);
+    disp.classList.toggle('running', live > 60 && t.running);
+    disp.classList.toggle('low', live <= 60 && live > 0);
+    disp.classList.toggle('expired', live <= 0);
+  }
+  const playBtn = pipWin.document.getElementById('tmpip-play');
+  if(playBtn && t){ playBtn.innerHTML = t.running ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>'; playBtn.classList.toggle('active', t.running); }
+}
+
+function openTimerPip(row){
+  openPip('timer', row, buildTimerPip, { width: 220, height: 210, title: 'Timer pop-out' });
+}
+
+/* ---- Feedback pop-out: one per trainee, opened from the feedback modal ---- */
+function buildFeedbackPip(win){
+  const rowEl = document.querySelector(`tr[data-row="${pipRow}"]`);
   const name = rowEl?.querySelector('.trainee-name')?.value || 'Trainee';
-  document.getElementById('feedback-pip-title').textContent = 'Feedback — ' + name;
-  const data = getFeedbackData(row);
-  const fieldsEl = document.getElementById('feedback-pip-fields');
-  fieldsEl.innerHTML = FEEDBACK_FIELDS.map(f => `
-    <div><label>${f.label}</label><textarea data-field="${f.key}">${data[f.key] || ''}</textarea></div>
-  `).join('');
-  fieldsEl.querySelectorAll('textarea').forEach(ta=>{
+  win.document.title = 'Feedback — ' + name;
+  const data = getFeedbackData(pipRow);
+  win.document.body.innerHTML = `<div class="feedback-pip-fields" style="padding:14px;">
+    ${FEEDBACK_FIELDS.map(f=>`<div><label>${f.label}</label><textarea data-field="${f.key}">${data[f.key] || ''}</textarea></div>`).join('')}
+  </div>`;
+  win.document.querySelectorAll('textarea').forEach(ta=>{
     ta.addEventListener('input', ()=>{
-      getFeedbackData(row)[ta.dataset.field] = ta.value;
+      getFeedbackData(pipRow)[ta.dataset.field] = ta.value;
       queueLiveStateSync();
-      // keep the full modal's fields in sync too, in case it gets reopened later
       const modalTa = document.querySelector(`.feedback-text[data-field="${ta.dataset.field}"]`);
-      if (modalTa && String(activeFeedbackRow) === String(row)) modalTa.value = ta.value;
+      if(modalTa && String(activeFeedbackRow) === String(pipRow)) modalTa.value = ta.value;
     });
   });
 }
 
+function refreshFeedbackPipContent(){
+  if(pipKind !== 'feedback' || !pipWin || pipWin.closed) return;
+  const rowEl = document.querySelector(`tr[data-row="${pipRow}"]`);
+  const name = rowEl?.querySelector('.trainee-name')?.value || 'Trainee';
+  pipWin.document.title = 'Feedback — ' + name;
+}
+
+function openFeedbackPip(row){
+  openPip('feedback', row, buildFeedbackPip, { width: 320, height: 460, title: 'Feedback pop-out' });
+}
+
 document.getElementById('fb-popout').addEventListener('click', ()=>{
   if (activeFeedbackRow === null) return;
-  renderFeedbackPip(activeFeedbackRow);
-  feedbackPip.style.display = 'flex';
+  openFeedbackPip(activeFeedbackRow);
   closeFeedbackModal();
 });
-
-document.getElementById('feedback-pip-close').addEventListener('click', ()=>{
-  feedbackPip.style.display = 'none';
-});
-
-(function enableFeedbackPipDrag(){
-  const header = document.getElementById('feedback-pip-header');
-  let dragging = false, offsetX = 0, offsetY = 0;
-  header.addEventListener('mousedown', (e)=>{
-    dragging = true;
-    const rect = feedbackPip.getBoundingClientRect();
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
-  });
-  document.addEventListener('mousemove', (e)=>{
-    if(!dragging) return;
-    feedbackPip.style.left = (e.clientX - offsetX) + 'px';
-    feedbackPip.style.top = (e.clientY - offsetY) + 'px';
-  });
-  document.addEventListener('mouseup', ()=>{ dragging = false; });
-})();
 
 /* ================= FLOATING ANNOUNCEMENT PREVIEW (read-only) ================= */
 const announcementFloat = document.getElementById('announcement-float');
@@ -1567,22 +1739,25 @@ function makeColumnsResizableContained(table){
 
 /* ================= COLUMN VISIBILITY (Trainees panel only) ================= */
 const TRAINEE_COLUMNS = [
-  {n:1, label:'Slot'},
-  {n:2, label:'Trainee Discord'},
-  {n:3, label:'Discord ID'},
-  {n:4, label:'Roblox'},
-  {n:5, label:'Zone'},
-  {n:6, label:'Timer'},
-  {n:7, label:'Attendance'},
-  {n:8, label:'Trainer'},
-  {n:9, label:'Trainer Discord ID'},
-  {n:10, label:'Feedback'},
-  {n:11, label:'Announcements'},
-  {n:12, label:'Trainee Notes'},
-  {n:13, label:'Completed'},
-  {n:14, label:'Remove'},
+  {n:1, label:'Pop-out'},
+  {n:2, label:'Slot'},
+  {n:3, label:'Trainee Discord'},
+  {n:4, label:'Discord ID'},
+  {n:5, label:'Roblox'},
+  {n:6, label:'Zone'},
+  {n:7, label:'Timer'},
+  {n:8, label:'Timer Pop-out'},
+  {n:9, label:'Attendance'},
+  {n:10, label:'Trainer'},
+  {n:11, label:'Trainer Discord ID'},
+  {n:12, label:'Feedback'},
+  {n:13, label:'Announcements'},
+  {n:14, label:'Trainee Notes'},
+  {n:15, label:'Completed'},
+  {n:16, label:'Remove'},
 ];
-const EXTRA_COLUMNS = [1,3,7,9,12,14];
+// Pop-out columns (1, 8) are deliberately excluded — "Hide extras" never touches them.
+const EXTRA_COLUMNS = [2,4,9,11,14,16];
 const traineeTable = document.querySelector('#trainee-scroll table');
 const colPickerMenu = document.getElementById('col-picker-menu');
 
