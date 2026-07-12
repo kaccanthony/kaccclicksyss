@@ -59,11 +59,11 @@ if ($myDisplayName) {
             assistant_1, assistant_2, assistant_3, assistant_4, additional_staff
         FROM session_upcoming
         WHERE session_status IN ('Booked','Scheduled')
-          AND session_booked = 1
-          AND (session_date > ? OR (session_date = ? AND session_time >= ?))
-          AND (host = ? OR co_host1 = ? OR co_host2 = ? OR co_host3 = ? OR `co_host4/supervisor` = ?
-               OR assistant_1 = ? OR assistant_2 = ? OR assistant_3 = ? OR assistant_4 = ?
-               OR additional_staff LIKE ?)
+        AND session_booked = 1
+        AND (session_date > ? OR (session_date = ? AND session_time >= ?))
+        AND (host = ? OR co_host1 = ? OR co_host2 = ? OR co_host3 = ? OR `co_host4/supervisor` = ?
+        OR assistant_1 = ? OR assistant_2 = ? OR assistant_3 = ? OR assistant_4 = ?
+        OR additional_staff LIKE ?)
         ORDER BY session_date ASC, session_time ASC
         LIMIT 8");
     $todayBST = $nowBST->format('Y-m-d');
@@ -79,14 +79,14 @@ if ($myDisplayName) {
     while ($row = mysqli_fetch_assoc($resAssigned)) {
         $roleLabel = 'Additional Staff';
         if ($row['host'] === $myDisplayName)                         $roleLabel = 'Host';
-        elseif ($row['co_host1'] === $myDisplayName)                 $roleLabel = 'Co-Host 1';
-        elseif ($row['co_host2'] === $myDisplayName)                 $roleLabel = 'Co-Host 2';
-        elseif ($row['co_host3'] === $myDisplayName)                 $roleLabel = 'Co-Host 3';
-        elseif ($row['co_host4/supervisor'] === $myDisplayName)      $roleLabel = 'Co-Host 4 / SV';
-        elseif ($row['assistant_1'] === $myDisplayName)              $roleLabel = 'Assistant 1';
-        elseif ($row['assistant_2'] === $myDisplayName)              $roleLabel = 'Assistant 2';
-        elseif ($row['assistant_3'] === $myDisplayName)              $roleLabel = 'Assistant 3';
-        elseif ($row['assistant_4'] === $myDisplayName)              $roleLabel = 'Assistant 4';
+        elseif ($row['co_host1'] === $myDisplayName)                 $roleLabel = 'CH 1';
+        elseif ($row['co_host2'] === $myDisplayName)                 $roleLabel = 'CH 2';
+        elseif ($row['co_host3'] === $myDisplayName)                 $roleLabel = 'CH 3';
+        elseif ($row['co_host4/supervisor'] === $myDisplayName)      $roleLabel = 'CH 4 / SV';
+        elseif ($row['assistant_1'] === $myDisplayName)              $roleLabel = 'AST 1';
+        elseif ($row['assistant_2'] === $myDisplayName)              $roleLabel = 'AST 2';
+        elseif ($row['assistant_3'] === $myDisplayName)              $roleLabel = 'AST 3';
+        elseif ($row['assistant_4'] === $myDisplayName)              $roleLabel = 'AST 4';
 
         $row['role_label'] = $roleLabel;
         $assignedSessions[] = $row;
@@ -99,28 +99,46 @@ if (empty($user['role'])) {
     exit;
 }
 
+// ── Find a currently-live session this user is actually part of, if any ──
+$myLiveSessionId = null;
+if ($myDisplayName) {
+    $stmtLive = mysqli_prepare($conn, "SELECT session_id FROM session_ongoing
+        WHERE host = ? OR co_host1 = ? OR co_host2 = ? OR co_host3 = ? OR `co_host4/supervisor` = ?
+           OR assistant_1 = ? OR assistant_2 = ? OR assistant_3 = ? OR assistant_4 = ?
+           OR additional_staff LIKE ?
+        LIMIT 1");
+    $likeMeLive = '%' . $myDisplayName . '%';
+    mysqli_stmt_bind_param($stmtLive, "ssssssssss",
+        $myDisplayName, $myDisplayName, $myDisplayName, $myDisplayName, $myDisplayName,
+        $myDisplayName, $myDisplayName, $myDisplayName, $myDisplayName, $likeMeLive
+    );
+    mysqli_stmt_execute($stmtLive);
+    if ($rowLive = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtLive))) {
+        $myLiveSessionId = $rowLive['session_id'];
+    }
+}
+
 $allCards = [
-    'booking'      => ['label' => 'Manage Session(s)',   'sub' => 'Manager & Head Staff',               'icon' => '/public/assets/images/icons/OM.png',          'href' => '../managesession/managesession.php'],
-    'setup'        => ['label' => 'Session Setup',       'sub' => 'Head-Staff',             'icon' => '/public/assets/images/icons/HS.png',          'href' => '../setupsesh/setupsesh.php'],
-    'panel_host'   => ['label' => 'Session Panel',       'sub' => 'Host Authorized',        'icon' => '/public/assets/images/icons/HS.png',          'href' => 'panel_host.php'],
-    'panel_cohost' => ['label' => 'Session Panel',       'sub' => 'Co-Host Authorized',     'icon' => '/public/assets/images/icons/ST.png',          'href' => 'panel_cohost.php'],
-    'panel_asst'   => ['label' => 'Session Panel',       'sub' => 'Assistant Authorized',   'icon' => '/public/assets/images/icons/ST.png',          'href' => 'panel_asst.php'],
-    'active'       => ['label' => 'Active Session',      'sub' => '',                       'icon' => '/public/assets/images/icons/Inprogress.png',  'href' => 'active.php'],
-    'upcoming'     => ['label' => 'Upcoming Sessions',   'sub' => '',                       'icon' => 'fa-clock',                                    'href' => 'upcoming.php'],
-    'past'         => ['label' => 'Past Sessions',       'sub' => '',                       'icon' => 'fa-rectangle-list',                           'href' => 'past.php'],
-    'staff'        => ['label' => 'Staff Overview',      'sub' => '',                       'icon' => 'fa-users',                                    'href' => 'staff.php'],
+    'booking'      => ['label' => 'Manage Session(s)', 'sub' => 'Manager & Head Staff', 'icon' => '/public/assets/images/icons/OM.png', 'href' => '../managesession/managesession.php'],
+    'setup'        => ['label' => 'Session Setup',     'sub' => 'Head-Staff',           'icon' => '/public/assets/images/icons/HS.png', 'href' => '../setupsesh/setupsesh.php'],
+    'my_session'   => ['label' => 'Session Panel', 'sub' => 'All Staff (Manager, HS, ST) (Depending on your role)', 'icon' => '/public/assets/images/icons/ST.png', 'href' => '../sessionongoing/sessionongoing.php?session_id=' . $myLiveSessionId],
+    'active'       => ['label' => 'Active Session',    'sub' => '', 'icon' => '/public/assets/images/icons/Inprogress.png', 'href' => '../publicview/active.php'],
+    'upcoming'     => ['label' => 'Upcoming Sessions', 'sub' => '', 'icon' => 'fa-clock', 'href' => 'upcoming.php'],
+    'past'         => ['label' => 'Past Sessions',     'sub' => '', 'icon' => 'fa-fast-backward', 'href' => 'past.php'],
+    'staff'        => ['label' => 'Staff Overview',    'sub' => '', 'icon' => 'fa-users', 'href' => 'staff.php'],
 ];
 
 $roleCards = [
-    'Operations Manager'   => ['booking','setup','panel_host','panel_cohost','panel_asst','active','upcoming','past','staff'],
-    'Community Manager'    => ['booking','setup','panel_host','panel_cohost','panel_asst','active','upcoming','past','staff'],
-    'Head Staff'           => ['booking', 'setup','panel_host','panel_cohost','panel_asst','active','upcoming','past','staff'],
-    'Co-Host Authorized'   => ['panel_cohost','panel_asst','active','upcoming','past','staff'],
-    'Assistant Authorized' => ['panel_asst','active','upcoming','past','staff'],
+    'Operations Manager'   => ['booking','setup','my_session','active','upcoming','past','staff'],
+    'Community Manager'    => ['booking','setup','my_session','active','upcoming','past','staff'],
+    'Head Staff'           => ['booking','setup','my_session','active','upcoming','past','staff'],
+    'Co-Host Authorized'   => ['my_session','active','upcoming','past','staff'],
+    'Assistant Authorized' => ['my_session','active','upcoming','past','staff'],
 ];
 
 $cards = [];
 foreach (($roleCards[$role] ?? []) as $key) {
+    if ($key === 'my_session' && !$myLiveSessionId) continue; // hide entirely when nothing to jump to
     if (isset($allCards[$key])) $cards[] = $allCards[$key];
 }
 ?>
