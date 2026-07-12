@@ -251,8 +251,9 @@ html, body {
     display: inline-block; padding: 4px 10px; border-radius: 20px;
     font-size: .72rem; font-weight: 600; letter-spacing: .04em; white-space: nowrap;
 }
-.badge-scheduled { background: rgba(80,160,255,.15); border: 1px solid rgba(80,160,255,.30); color: #80c0ff; }
+.badge-request {background: rgba(255, 165, 0, 0.18); border: 1px solid rgba(255, 165, 0, 0.45); color: #ffb347;}
 .badge-booked    { background: rgba(80,220,120,.15); border: 1px solid rgba(80,220,120,.30); color: #80ffb0; }
+.badge-scheduled { background: rgba(80,160,255,.15); border: 1px solid rgba(80,160,255,.30); color: #80c0ff; }
 .badge-cancelled { background: rgba(255,80,80,.12);  border: 1px solid rgba(255,80,80,.28);  color: #ff9090; }
 .badge-postponed { background: rgba(255,180,50,.12);  border: 1px solid rgba(255,180,50,.28); color: #ffcc70; }
 

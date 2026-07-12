@@ -210,7 +210,7 @@ foreach ($staffByRank as $rankGroup) {
 }
 
 function statusBadge($status) {
-    $map=['Scheduled'=>'badge-scheduled','Booked'=>'badge-booked','Cancelled'=>'badge-cancelled','Postponed'=>'badge-postponed'];
+    $map=['Requested'=>'badge-request','Scheduled'=>'badge-scheduled','Booked'=>'badge-booked','Cancelled'=>'badge-cancelled','Postponed'=>'badge-postponed'];
     $cls=$map[$status]??'badge-scheduled';
     return "<span class='badge $cls'>".htmlspecialchars($status)."</span>";
 }
