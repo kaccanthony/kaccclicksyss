@@ -77,7 +77,7 @@ const ANNOUNCEMENT_TEMPLATE = `# May I have everyone drive in [ZONE]!
 [DEPOT & SIDING (WITHIN ZONE)]
 **Nearby Depot**:
 [DEPOT & SIDING NEARBY ZONE]
-[TRAINEE] please wait for further instructions from [TRAINER], as you will be signalling next!
+@[TRAINEE] please wait for further instructions from @[TRAINER], as you will be signalling next!
 ## Zone Map
 ${ZONE_MAP_IMG_URL}`;
 
