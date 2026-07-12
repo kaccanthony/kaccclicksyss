@@ -19,7 +19,7 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{min-height:100vh;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
-#bg{position:fixed;inset:0;background:linear-gradient(rgba(0,0,0,0.82),rgba(0,0,0,0.82)),url("https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1600") center/cover no-repeat;filter:blur(3px);scale:1.05;z-index:0;}
+#bg{position:fixed;inset:0;background:linear-gradient(rgba(0,0,0,0.82),rgba(0,0,0,0.82)),url("../public/assets/images/YSSbgweb.png") center/cover no-repeat;filter:blur(3px);scale:1.05;z-index:0;}
 
 /* ── topbar ── */
 .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--header-h);display:flex;align-items:center;gap:14px;padding:0 28px;background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}

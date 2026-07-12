@@ -1,8 +1,46 @@
-body{background:#080808;color:#fff;font-family:'Inter',sans-serif;margin:0;}
-.topbar{padding:16px 24px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between;}
-main{padding:24px;max-width:900px;margin:0 auto;}
-.public-table{width:100%;border-collapse:collapse;}
-.public-table th, .public-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;}
-.chk-cell i{color:rgba(255,255,255,.25);}
-.chk-cell i.done{color:#4ade80;}
-.empty-state{text-align:center;padding:60px 0;color:rgba(255,255,255,.4);}
+:root{
+  --bg:#080808;
+  --panel:rgba(255,255,255,0.05);
+  --border:rgba(255,255,255,0.10);
+  --border-strong:rgba(255,255,255,0.18);
+  --text-dim:rgba(255,255,255,0.55);
+  --text-faint:rgba(255,255,255,0.32);
+  --live:#4ade80;
+  --header-h:64px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100vh;font-family:'Inter',sans-serif;background:var(--bg);color:#fff;}
+#bg{position:fixed;inset:0;background:linear-gradient(rgba(0,0,0,0.82),rgba(0,0,0,0.82)),url("../public/assets/images/YSSbgweb.png") center/cover no-repeat;filter:blur(3px);scale:1.05;z-index:0;}
+
+.topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--header-h);display:flex;align-items:center;gap:14px;padding:0 28px;background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.logo-wrap{position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo-img{width:36px;height:36px;border-radius:50%;background:#222;}
+.pulse-ring{position:absolute;inset:-4px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.35);animation:breathe 3s ease-in-out infinite;}
+.pulse-ring.ring2{inset:-10px;border-color:rgba(255,255,255,0.12);animation-delay:.6s;}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.6;}50%{transform:scale(1.12);opacity:1;}}
+.app-name{font-family:'Libre Baskerville',serif;font-size:1rem;font-weight:600;color:rgba(255,255,255,.9);flex:1;}
+.live-pill{display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:20px;background:rgba(74,222,128,0.10);border:1px solid rgba(74,222,128,0.30);font-size:.72rem;color:var(--live);font-weight:600;letter-spacing:.03em;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--live);animation:livepulse 1.8s infinite;}
+@keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(74,222,128,.5);}70%{box-shadow:0 0 0 6px rgba(74,222,128,0);}100%{box-shadow:0 0 0 0 rgba(74,222,128,0);}}
+.sync-note{font-size:.68rem;color:var(--text-faint);margin-left:2px;}
+.back-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:.82rem;text-decoration:none;white-space:nowrap;}
+.back-btn:hover{background:rgba(255,255,255,.14);color:#fff;}
+
+main{position:relative;z-index:1;padding:calc(var(--header-h) + 26px) 28px 60px;max-width:1200px;margin:0 auto;}
+.session-head{margin-bottom:18px;}
+.session-title{font-family:'Libre Baskerville',serif;font-size:1.5rem;font-weight:600;}
+.session-sub{font-size:.78rem;color:var(--text-dim);margin-top:4px;}
+
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);overflow:hidden;}
+.panel-title{padding:12px 20px;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(255,255,255,.04);border-bottom:1px solid var(--border);}
+
+.table-wrap{overflow-x:auto;}
+.public-table{width:100%;border-collapse:collapse;font-size:.85rem;}
+.public-table thead th{background:#141414;color:rgba(255,255,255,.55);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600;padding:12px 14px;border-bottom:1px solid var(--border-strong);text-align:left;}
+.public-table tbody td{padding:11px 14px;border-bottom:1px solid var(--border);color:rgba(255,255,255,.85);}
+.public-table tbody tr:hover{background:rgba(255,255,255,.03);}
+.public-table tbody tr:nth-child(even){background:rgba(255,255,255,.015);}
+.chk-cell i{color:var(--text-faint);}
+.chk-cell i.done{color:var(--live);}
+
+.empty-state{text-align:center;padding:60px 0;color:var(--text-faint);font-size:.9rem;display:flex;align-items:center;justify-content:center;gap:10px;}
