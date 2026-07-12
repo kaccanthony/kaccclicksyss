@@ -358,6 +358,18 @@ if (!empty($sessionRow['live_state'])) {
     </section>
   </div>
 
+  <section class="panel station-gen-panel">
+    <div class="panel-title" style="font-size:.85rem;">
+      <i class="fas fa-camera-retro"></i> Screenshot Station
+      <span style="font-weight:400;color:var(--text-faint);text-transform:none;letter-spacing:0;font-size:.68rem;margin-left:8px;">visible to all staff</span>
+    </div>
+    <div class="station-gen-row">
+      <select id="station-select" class="cell-input"></select>
+      <button type="button" class="mini-override-btn" id="station-shuffle-btn" title="Pick a random station"><i class="fas fa-shuffle"></i></button>
+      <button type="button" class="announcement-copy-btn" id="station-copy-btn" title="Copy station announcement"><i class="fas fa-copy"></i></button>
+    </div>
+  </section>
+
 <section class="panel conclude-panel host-only" id="conclude-panel">
   <div class="panel-title">Session Wrap-Up</div>
   <div class="conclude-panel-body">

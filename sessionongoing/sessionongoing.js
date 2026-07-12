@@ -933,20 +933,20 @@ function buildFeedbackMessage(){
   return activeFeedbackRow !== null ? buildFeedbackMessageForRow(activeFeedbackRow) : '';
 }
 
-function renderScriptPreview(minutes){
+function renderScriptPreview(minutes, targetContainer){
   const displayMinutes = minutes || Math.round(COUNTDOWN_START/60);
-  const container = document.getElementById('script-preview');
+  const container = targetContainer || document.getElementById('script-preview');
+  if(!container) return;
   container.innerHTML = '';
-  SCRIPT_LINES.forEach(
-
-    lineText=>{
+  SCRIPT_LINES.forEach(lineText=>{
     const resolvedText = lineText.replace(/XX/g, displayMinutes);
-    const line = document.createElement('div');
+    const doc = container.ownerDocument;
+    const line = doc.createElement('div');
     line.className = 'script-line';
-    const textEl = document.createElement('div');
+    const textEl = doc.createElement('div');
     textEl.className = 'script-line-text';
     textEl.innerHTML = escapeForPreview(resolvedText);
-    const copyBtn = document.createElement('button');
+    const copyBtn = doc.createElement('button');
     copyBtn.type = 'button';
     copyBtn.className = 'script-copy-btn';
     copyBtn.title = 'Copy this line';
@@ -1260,6 +1260,13 @@ function buildTraineePip(win){
         <textarea id="tpip-note" rows="2" style="width:100%;" class="cell-input" placeholder="Notes for this trainee..."></textarea>
       </div>
       <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span class="pip-label" style="font-weight:600;">Script</span>
+          <button type="button" class="script-toggle-btn" id="tpip-script-toggle" title="Show script"><i class="fas fa-eye"></i></button>
+        </div>
+        <div class="script-preview" id="tpip-script-preview" style="display:none;"></div>
+      </div>
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <span class="pip-label" style="font-weight:600;">Feedback</span>
           <button type="button" class="copy-feedback-btn" id="tpip-copy-fb" title="Copy full feedback message"><i class="fas fa-copy"></i></button>
@@ -1322,6 +1329,17 @@ function buildTraineePip(win){
     queueLiveStateSync();
     refreshTraineePipContent();
   });
+  const tpipScriptToggle = win.document.getElementById('tpip-script-toggle');
+  const tpipScriptPreview = win.document.getElementById('tpip-script-preview');
+  if(tpipScriptToggle && tpipScriptPreview){
+    tpipScriptToggle.addEventListener('click', ()=>{
+      const hidden = tpipScriptPreview.style.display === 'none';
+      tpipScriptPreview.style.display = hidden ? 'flex' : 'none';
+      tpipScriptToggle.innerHTML = hidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+      tpipScriptToggle.classList.toggle('active', hidden);
+      if(hidden) renderScriptPreview(timers[pipRow] ? timers[pipRow].totalMinutes : undefined, tpipScriptPreview);
+    });
+  }
   refreshTraineePipContent();
 }
 
@@ -1391,7 +1409,7 @@ function refreshTraineePipContent(){
   if(setupDoneBtn) setupDoneBtn.classList.toggle('done', isSetupDone);
   const setupRow = pipWin.document.getElementById('tpip-setup-row');
   if(setupRow){
-    setupRow.innerHTML = `<span class="pip-label">Setup time</span><span class="pip-value">${t && t.setupSeconds !== undefined ? fmt(t.setupSeconds) : '—'}${isSetupDone ? ' <button type="button" class="timer-btn override" id="tpip-setup-override" style="width:auto;padding:0 8px;margin-left:6px;" title="Override setup time">Edit</button>' : ''}</span>`;
+    setupRow.innerHTML = `<span class="pip-label">Setup time</span><span class="pip-setup-time-row"><span class="pip-setup-badge">${t && t.setupSeconds !== undefined ? fmt(t.setupSeconds) : '—'}</span>${isSetupDone ? '<button type="button" class="pip-setup-edit-btn" id="tpip-setup-override" title="Override setup time"><i class="fas fa-pen"></i></button>' : ''}</span>`;
     const overrideBtn = pipWin.document.getElementById('tpip-setup-override');
     if(overrideBtn) overrideBtn.addEventListener('click', ()=>{
       const current = t.setupSeconds !== undefined ? fmt(t.setupSeconds) : '00:00';
@@ -2368,4 +2386,52 @@ function displayIncomingAnnouncement(ann){
   if (ANNOUNCEMENT_DISPLAY_PREF === 'fullscreen') showAnnouncementFullscreen(text);
   else if (ANNOUNCEMENT_DISPLAY_PREF === 'banner') showAnnouncementBanner(text);
   else showToast(text);
+}
+
+/* ================= STATION SCREENSHOT GENERATOR (visible to all staff) ================= */
+// Pulled from your existing ZONE_DATA coverage codes — a starting list, not an
+// authoritative SCR station roster. Edit/expand freely.
+const STATION_LIST = [
+  {code:'WFD', name:'Willowfield'}, {code:'STV', name:'Stepford Victoria'},
+  {code:'STB', name:'Stepford Bay'}, {code:'CHP', name:'City Hospital'},
+  {code:'SCN', name:'Stepford Central'}, {code:'WHF', name:'Whitefield'},
+  {code:'SCE', name:'Stepford East'}, {code:'SHS', name:'Stepford High Street'},
+  {code:'SHB', name:'St. Helens Bridge'}, {code:'COX', name:'Coxly'},
+  {code:'EBR', name:'East Berrily'}, {code:'WNG', name:'Whitney Green'},
+  {code:'NRH', name:'Newry Harbour'}, {code:'WBN', name:'West Benton'},
+  {code:'BEN', name:'Benton'}, {code:'CON', name:'Connolly'},
+  {code:'PBE', name:'Port Benton'}, {code:'MGT', name:'Morganstown'},
+  {code:'MGD', name:'Morganstown Docks'}, {code:'BBG', name:'Benton Bridge'},
+  {code:'USP', name:'Upper Staploe'}, {code:'SAP', name:'Stepford Airport Parkway'},
+  {code:'SAZ', name:'Airport Terminal 3'}, {code:'SAX', name:'Airport Terminal 2'},
+  {code:'SAW', name:'Airport West'}, {code:'EFD', name:'Esterfield'},
+  {code:'WTN', name:'Water Newton'}, {code:'MRC', name:'Millcastle Racecourse'},
+  {code:'LTW', name:'Leighton West'}, {code:'RLB', name:'Rayleigh Bay'},
+  {code:'LYN', name:'Llyn-By-The-Sea'}, {code:'MLC', name:'Millcastle'},
+];
+
+// You didn't give exact wording for this one like you did the other templates —
+// this is a placeholder, edit freely.
+function buildStationAnnouncement(station){
+  return `📸 Taking a screenshot at **${station.name}** (${station.code})!\nFeel free to stop by if you're nearby.`;
+}
+
+const stationSelect = document.getElementById('station-select');
+if(stationSelect){
+  stationSelect.innerHTML = STATION_LIST.map(s=>`<option value="${s.code}">${s.code} — ${s.name}</option>`).join('');
+
+  document.getElementById('station-shuffle-btn').addEventListener('click', ()=>{
+    const random = STATION_LIST[Math.floor(Math.random() * STATION_LIST.length)];
+    stationSelect.value = random.code;
+  });
+
+  document.getElementById('station-copy-btn').addEventListener('click', ()=>{
+    const station = STATION_LIST.find(s => s.code === stationSelect.value) || STATION_LIST[0];
+    const btn = document.getElementById('station-copy-btn');
+    navigator.clipboard.writeText(buildStationAnnouncement(station)).then(()=>{
+      btn.classList.add('copied');
+      btn.innerHTML = '<i class="fas fa-check"></i>';
+      setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 1200);
+    });
+  });
 }
