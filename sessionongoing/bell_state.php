@@ -53,6 +53,18 @@ if ($sessionId <= 0) {
 $stateFile = __DIR__ . "/bell_session_{$sessionId}.json";
 $lockFile  = __DIR__ . "/bell_session_{$sessionId}.lock";
 
+// Determine which roles actually exist in this session, so the ack requirement never
+// waits on a role that has nobody in it (e.g. host-only sessions with no co-host/assistant).
+$stmtSess = mysqli_prepare($conn, "SELECT co_host1, co_host2, co_host3, `co_host4/supervisor`, assistant_1, assistant_2, assistant_3, assistant_4 FROM session_ongoing WHERE session_id = ?");
+mysqli_stmt_bind_param($stmtSess, "i", $sessionId);
+mysqli_stmt_execute($stmtSess);
+$sessRow = mysqli_stmt_get_result($stmtSess)->fetch_assoc();
+$hasCohost = $sessRow && (!empty($sessRow['co_host1']) || !empty($sessRow['co_host2']) || !empty($sessRow['co_host3']) || !empty($sessRow['co_host4/supervisor']));
+$hasAssistant = $sessRow && (!empty($sessRow['assistant_1']) || !empty($sessRow['assistant_2']) || !empty($sessRow['assistant_3']) || !empty($sessRow['assistant_4']));
+$rolesInSession = ['host'];
+if ($hasCohost) $rolesInSession[] = 'cohost';
+if ($hasAssistant) $rolesInSession[] = 'assistant';
+
 $fp = fopen($lockFile, 'c');
 flock($fp, LOCK_EX);
 
@@ -108,6 +120,15 @@ if ($method === 'POST') {
         $state['acks'][$role]      = true;
         $state['ring_started_at']  = $now;
         $state['initiation_counts'][$clientId] = $count + 1;
+
+        // If nobody else needs to ack (e.g. host rings in a session with no co-host and no
+        // assistant at all), close the cycle immediately instead of leaving it hanging.
+        $requiredNow = array_diff($rolesInSession, [$role]);
+        if (empty($requiredNow)) {
+            $state['active']         = false;
+            $state['cooldown_until'] = $now + COOLDOWN_SECONDS;
+        }
+
         $state = saveState($stateFile, $state);
         flock($fp, LOCK_UN);
         echo json_encode($state);
@@ -126,7 +147,7 @@ if ($method === 'POST') {
             exit;
         }
         $state['acks'][$role] = true;
-        $requiredRoles = array_diff(['host', 'cohost', 'assistant'], [$state['initiator_role']]);
+        $requiredRoles = array_diff($rolesInSession, [$state['initiator_role']]);
         $allAcked = true;
         foreach ($requiredRoles as $r) {
             if (!$state['acks'][$r]) { $allAcked = false; break; }

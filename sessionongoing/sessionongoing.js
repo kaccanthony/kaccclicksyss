@@ -3,6 +3,8 @@
 const staffRoles = ['Main AST','Assistant','Co-Host','Internal Helper'];
 let staffCount = 0;
 let driverCount = 0;
+let driversEverSynced = false;
+let staffEverSynced = false;
 let traineeCount = 0;
 const timers = {};
 const overrides = { 'session-details':false, 'trainees':false, 'staff-roles':false, 'drivers-disable':false, 'slot-order':false, 'staff-delete':false, 'trainee-details':false, 'trainer-details':false, 'allow-all':false };
@@ -513,6 +515,7 @@ document.getElementById('trainee-rows').addEventListener('click', (e)=>{
     } else if(orderBtn.dataset.dir === 'down' && tr.nextElementSibling){
       tr.parentNode.insertBefore(tr.nextElementSibling, tr);
     }
+    queueLiveStateSync();
     return;
   }
 
@@ -638,7 +641,7 @@ function updateStaffAddState(){
   document.getElementById('add-staff-btn').disabled = document.querySelectorAll('#staff-rows tr').length >= STAFF_LIMIT;
 }
 
-document.getElementById('add-staff-btn').addEventListener('click', ()=>{ addStaffRow(); queueLiveStateSync(); });
+document.getElementById('add-staff-btn').addEventListener('click', ()=>{ addStaffRow(); staffCoreDirty = true; queueLiveStateSync(); });
 
 function applyRemoteStaff(staffArr) {
     if (!Array.isArray(staffArr)) return;
@@ -646,9 +649,16 @@ function applyRemoteStaff(staffArr) {
     const activeInStaff = document.activeElement && tbody.contains(document.activeElement);
     if (activeInStaff) return; // don't yank focus/values while someone's mid-edit
 
+    // Same rule as drivers — only reseed from session defaults on the very first load.
+    if (!staffEverSynced && !staffArr.length) {
+        staffEverSynced = true;
+        seedStaffFromSession();
+        return;
+    }
+    staffEverSynced = true;
+
     tbody.innerHTML = '';
     staffCount = 0;
-    if (!staffArr.length) { seedStaffFromSession(); return; }
     staffArr.forEach(s => {
         addStaffRow();
         const tr = document.querySelector('#staff-rows tr:last-child');
@@ -689,6 +699,7 @@ if (LIVE_STATE.staffShift && LIVE_STATE.staffShift.length) {
 } else {
   seedStaffFromSession();
 }
+staffEverSynced = true;
 
 document.getElementById('staff-rows').addEventListener('click', (e)=>{
   const delBtn = e.target.closest('.staff-del-btn');
@@ -696,6 +707,7 @@ document.getElementById('staff-rows').addEventListener('click', (e)=>{
     if(delBtn.classList.contains('is-locked')) return;
     delBtn.closest('tr').remove();
     updateStaffAddState();
+    staffCoreDirty = true;
     queueLiveStateSync();
   }
 });
@@ -736,9 +748,16 @@ function applyRemoteDrivers(driversArr) {
     const activeInDrivers = document.activeElement && tbody.contains(document.activeElement);
     if (activeInDrivers) return; // don't yank focus/values while someone's mid-edit
 
+    // Only seed 3 blank defaults the very first time this session is ever loaded.
+    // After that, an empty array means someone deliberately deleted everything — respect it.
+    let rows = driversArr;
+    if (!driversEverSynced && !driversArr.length) {
+        rows = [{discord:'',roblox:'',attended:false},{discord:'',roblox:'',attended:false},{discord:'',roblox:'',attended:false}];
+    }
+    driversEverSynced = true;
+
     tbody.innerHTML = '';
     driverCount = 0;
-    const rows = driversArr.length ? driversArr : [{discord:'',roblox:'',attended:false},{discord:'',roblox:'',attended:false},{discord:'',roblox:'',attended:false}];
     rows.forEach(d => {
         addDriverRow();
         const tr = document.querySelector('#driver-rows tr:last-child');
@@ -1485,6 +1504,7 @@ document.getElementById('conclude-session-btn').addEventListener('click', async 
 const SYNC_INTERVAL_MS = 5000;
 let syncInFlight = false;
 let pendingLiveStateFlush = false;
+let staffCoreDirty = false;
 
 function queueLiveStateSync() { pendingLiveStateFlush = true; }
 
@@ -1497,7 +1517,13 @@ function isEditingField(el) {
 // Core columns: real DB fields, safe to push straight through
 function collectCoreUpdates() {
     const updates = {};
-    updates.session_status = document.getElementById('status-select').value;
+    const statusVal = document.getElementById('status-select').value;
+    // 'concluded' is only ever committed via the confirmed Conclude Session flow
+    // (conclude_session.php). Pushing it here the instant it's merely *selected* in the
+    // dropdown broadcasts an unconfirmed conclusion to every connected client immediately.
+    if (statusVal !== 'concluded') {
+        updates.session_status = statusVal;
+    }
 
     let staffAttendance = '';
     document.querySelectorAll('#staff-rows .chk').forEach(cb => { staffAttendance += cb.checked ? '1' : '0'; });
@@ -1510,22 +1536,26 @@ function collectCoreUpdates() {
     });
     if (traineeAttendanceParts.length) updates.trainee_attendance = traineeAttendanceParts.join(',');
 
-    const cohostCols = ['co_host1', 'co_host2', 'co_host3', 'co_host4/supervisor'];
-    const assistantCols = ['assistant_1', 'assistant_2', 'assistant_3', 'assistant_4'];
-    let cohostIdx = 0, assistantIdx = 0;
-    document.querySelectorAll('#staff-rows tr').forEach(tr => {
-        const role = tr.querySelector('.staff-role-select')?.value;
-        const discord = tr.querySelector('.staff-username-select')?.value.trim();
-        if (!discord) return;
-        // Only "Co-Host" belongs in the co_host1-4 columns. Main AST / Assistant / Internal
-        // Helper are all assistant-tier — Main AST was wrongly landing in a co-host slot
-        // before, silently overwriting whoever the real co-host was.
-        if (role === 'Co-Host' && cohostIdx < cohostCols.length) {
-            updates[cohostCols[cohostIdx++]] = discord;
-        } else if (assistantIdx < assistantCols.length) {
-            updates[assistantCols[assistantIdx++]] = discord;
-        }
-    });
+    // Only recompute + push co_host1-4/assistant_1-4 when THIS client actually edited the
+    // Staff panel (staffCoreDirty). Pushing it unconditionally on every sync tick — even
+    // for unrelated changes like a trainee note — let any client's stale local staff-rows
+    // view silently overwrite the real assignment for everyone else.
+    if (staffCoreDirty) {
+        const cohostCols = ['co_host1', 'co_host2', 'co_host3', 'co_host4/supervisor'];
+        const assistantCols = ['assistant_1', 'assistant_2', 'assistant_3', 'assistant_4'];
+        let cohostIdx = 0, assistantIdx = 0;
+        document.querySelectorAll('#staff-rows tr').forEach(tr => {
+            const role = tr.querySelector('.staff-role-select')?.value;
+            const discord = tr.querySelector('.staff-username-select')?.value.trim();
+            if (!discord) return;
+            if (role === 'Co-Host' && cohostIdx < cohostCols.length) {
+                updates[cohostCols[cohostIdx++]] = discord;
+            } else if (assistantIdx < assistantCols.length) {
+                updates[assistantCols[assistantIdx++]] = discord;
+            }
+        });
+        staffCoreDirty = false;
+    }
 
     document.querySelectorAll('#trainee-rows tr').forEach(tr => {
         const row = tr.dataset.row;
@@ -1704,6 +1734,7 @@ function applyRemoteState(session, liveState) {
         statusSelect.dispatchEvent(new Event('change'));
     }
 
+    refreshTrainerDropdowns();
     if (!isEditingField(active) || active.id !== 'status-select') {
         const statusSelect = document.getElementById('status-select');
         if (statusSelect.value !== session.session_status) {
@@ -1718,10 +1749,14 @@ function applyRemoteState(session, liveState) {
 
   if (liveState.slotOrder && !document.activeElement?.closest('#trainee-rows')) {
     const tbody = document.getElementById('trainee-rows');
-    liveState.slotOrder.forEach(rowId => {
-        const tr = tbody.querySelector(`tr[data-row="${rowId}"]`);
-        if (tr) tbody.appendChild(tr);
-    });
+    // Reorder allocated rows per slotOrder, THEN append unallocated rows after them —
+    // otherwise appending only the allocated ones pushes unallocated rows upward each poll.
+    const orderedAllocated = liveState.slotOrder
+        .map(rowId => tbody.querySelector(`tr[data-row="${rowId}"]`))
+        .filter(Boolean);
+    const unallocatedRows = Array.from(tbody.querySelectorAll('tr'))
+        .filter(tr => tr.querySelector('.slot-num')?.textContent.trim() === 'Unalloc.');
+    [...orderedAllocated, ...unallocatedRows].forEach(tr => tbody.appendChild(tr));
 }
 
 const attendanceParts = (session.trainee_attendance || '').split(',');
@@ -1745,11 +1780,11 @@ const attendanceParts = (session.trainee_attendance || '').split(',');
         if (trainerFields[0] && active !== trainerFields[0]) {
             trainerFields[0].value = session[`trainee_${idx}_trainer_name`] || '';
             if (trainerFields[1]) trainerFields[1].value = STAFF_DIRECTORY[trainerFields[0].value] || '';
+        }
         if (liveState.completedRows) {
-        const done = !!liveState.completedRows[tr.dataset.row];
-        const btn = tr.querySelector('.complete-btn');
-        if (btn) { btn.classList.toggle('done', done); btn.innerHTML = done ? 'Done' : 'Mark done'; }
-}
+            const done = !!liveState.completedRows[tr.dataset.row];
+            const btn = tr.querySelector('.complete-btn');
+            if (btn) { btn.classList.toggle('done', done); btn.innerHTML = done ? 'Done' : 'Mark done'; }
         }
 
         renderAnnouncementPreview(tr.dataset.row);
@@ -1800,8 +1835,8 @@ setInterval(async () => {
 document.getElementById('trainee-rows').addEventListener('input', queueLiveStateSync);
 document.getElementById('trainee-rows').addEventListener('change', queueLiveStateSync);
 document.getElementById('driver-rows').addEventListener('input', queueLiveStateSync);
-document.getElementById('staff-rows').addEventListener('input', queueLiveStateSync);
-document.getElementById('staff-rows').addEventListener('change', queueLiveStateSync);
+document.getElementById('staff-rows').addEventListener('input', ()=>{ staffCoreDirty = true; queueLiveStateSync(); });
+document.getElementById('staff-rows').addEventListener('change', ()=>{ staffCoreDirty = true; queueLiveStateSync(); });
 document.getElementById('staff-rows').addEventListener('change', refreshTrainerDropdowns);
 document.getElementById('staff-rows').addEventListener('input', refreshTrainerDropdowns);
 document.getElementById('session-host-select')?.addEventListener('change', refreshTrainerDropdowns);
@@ -1809,6 +1844,7 @@ document.getElementById('status-select').addEventListener('change', queueLiveSta
 
 // Initial load: seed local state from SESSION_DATA / LIVE_STATE if the page provided them
 if (typeof SESSION_DATA !== 'undefined' && SESSION_DATA) {
+    refreshTrainerDropdowns();
     applyRemoteState(SESSION_DATA, typeof LIVE_STATE !== 'undefined' ? LIVE_STATE : {});
 }
 
