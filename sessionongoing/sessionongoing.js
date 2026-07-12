@@ -1555,12 +1555,7 @@ function isEditingField(el) {
 function collectCoreUpdates() {
     const updates = {};
     const statusVal = document.getElementById('status-select').value;
-    // 'concluded' is only ever committed via the confirmed Conclude Session flow
-    // (conclude_session.php). Pushing it here the instant it's merely *selected* in the
-    // dropdown broadcasts an unconfirmed conclusion to every connected client immediately.
-    if (statusVal !== 'concluded') {
-        updates.session_status = statusVal;
-    }
+    updates.session_status = statusVal;
 
     let staffAttendance = '';
     document.querySelectorAll('#staff-rows .chk').forEach(cb => { staffAttendance += cb.checked ? '1' : '0'; });
@@ -1766,7 +1761,7 @@ function applyRemoteState(session, liveState) {
 
     const statusSelect = document.getElementById('status-select');
     const normalizedStatus = (session.session_status || '').toLowerCase().replace(/\s+/g, '');
-    if (statusSelect.value !== 'concluded' && statusSelect.value !== normalizedStatus && [...statusSelect.options].some(o=>o.value===normalizedStatus)) {
+    if (statusSelect.value !== normalizedStatus && [...statusSelect.options].some(o=>o.value===normalizedStatus)) {
         statusSelect.value = normalizedStatus;
         statusSelect.dispatchEvent(new Event('change'));
     }
