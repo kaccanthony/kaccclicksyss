@@ -264,8 +264,8 @@ function openSetupModal(sessionId) {
                 <input type="text" class="trainee-input trainee-discord-field" id="m-trainee-${t}-discord" value="${escapeHtml(discord)}" placeholder="Trainee Discord username">
                 <input type="text" class="trainee-input trainee-discordid-field" id="m-trainee-${t}-discordid" value="${escapeHtml(discordId)}" placeholder="Discord ID">
                 <input type="text" class="trainee-input trainee-name-field" id="m-trainee-${t}-name" value="${escapeHtml(name)}" placeholder="Trainee Roblox username">
-                <input type="number" class="trainee-input trainee-zone-field" id="m-trainee-${t}-zone" value="${zone}" placeholder="Zone" min="1" max="99">
-                <select class="trainee-input trainee-trainer-field" id="m-trainee-${t}-trainer" disabled></select>
+                <input type="number" class="trainee-input trainee-zone-field" id="m-trainee-${t}-zone" value="${zone}" placeholder="Zone" min="1" max="10">
+                <select class="trainee-input trainee-trainer-field" id="m-trainee-${t}-trainer" style="width:200px;" disabled></select>
                 <input type="text" class="trainee-input trainee-note-field" id="m-trainee-${t}-note" value="${escapeHtml(note)}" placeholder="Note (e.g. Fast learner)">
             </div>
         `;
