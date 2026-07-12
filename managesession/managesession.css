@@ -443,3 +443,14 @@ html, body {
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 3px; }
+
+/* ── toasts ── */
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column-reverse;gap:10px;align-items:flex-end;pointer-events:none;}
+.toast{pointer-events:auto;width:300px;max-width:80vw;background:rgba(18,18,20,.96);border:1px solid rgba(255,107,107,.4);border-radius:12px;padding:12px 14px 0 14px;box-shadow:0 16px 40px rgba(0,0,0,.55);opacity:0;transform:translateX(24px);transition:opacity .22s ease, transform .22s ease;overflow:hidden;cursor:pointer;}
+.toast.show{opacity:1;transform:translateX(0);}
+.toast.hide{opacity:0;transform:translateX(24px);}
+.toast-msg{display:flex;align-items:flex-start;gap:8px;font-size:.8rem;line-height:1.4;color:#ffdede;padding-bottom:12px;}
+.toast-msg i{color:#ff8080;margin-top:2px;flex-shrink:0;}
+.toast-bar{height:3px;margin:0 -14px;background:rgba(255,255,255,.08);position:relative;}
+.toast-bar-fill{height:100%;width:100%;background:#ff6b6b;animation:toastCountdown 3s linear forwards;}
+@keyframes toastCountdown{from{width:100%;}to{width:0%;}}

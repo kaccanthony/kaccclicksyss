@@ -9,6 +9,27 @@ profileBtn.addEventListener('click', (e) => {
     chev.classList.toggle('open', open);
 });
 
+function showToast(message){
+    const container = document.getElementById('toast-container');
+    if(!container) return;
+    const el = document.createElement('div');
+    el.className = 'toast';
+    const msgEl = document.createElement('div');
+    msgEl.className = 'toast-msg';
+    msgEl.innerHTML = '<i class="fas fa-circle-info"></i> ';
+    msgEl.appendChild(document.createTextNode(message));
+    const barWrap = document.createElement('div');
+    barWrap.className = 'toast-bar';
+    barWrap.innerHTML = '<div class="toast-bar-fill"></div>';
+    el.appendChild(msgEl);
+    el.appendChild(barWrap);
+    container.appendChild(el);
+    requestAnimationFrame(()=> el.classList.add('show'));
+    const t = setTimeout(()=>{ el.classList.add('hide'); setTimeout(()=>el.remove(),250); }, 3000);
+    el.addEventListener('click', ()=>{ clearTimeout(t); el.classList.add('hide'); setTimeout(()=>el.remove(),250); });
+}
+if (typeof TOAST_FLASH !== 'undefined' && TOAST_FLASH) showToast(TOAST_FLASH);
+
 document.addEventListener('click', (e) => {
     if (!profilePopup.contains(e.target) && !profileBtn.contains(e.target)) {
         profilePopup.classList.remove('open');
@@ -60,6 +81,19 @@ function renderTraineeFields(numSlots, data = {}) {
     container.innerHTML = html;
 }
 
+function updateBookedToggleState() {
+    const statusVal = document.getElementById('f-session_status').value;
+    const bookedChk = document.getElementById('f-session_booked');
+    bookedChk.disabled = (statusVal === 'Requested');
+}
+document.getElementById('f-session_status').addEventListener('change', updateBookedToggleState);
+document.querySelector('.toggle-wrap').addEventListener('mousedown', (e) => {
+    if (document.getElementById('f-session_booked').disabled) {
+        e.preventDefault();
+        showToast('Booked can only be set once the status is no longer "Requested".');
+    }
+});
+
 // Rebuild trainee rows live whenever the Slots field changes
 document.getElementById('f-num_slots').addEventListener('input', (e) => {
     const n = Math.max(0, Math.min(10, parseInt(e.target.value, 10) || 0));
@@ -69,13 +103,33 @@ document.getElementById('f-num_slots').addEventListener('input', (e) => {
     renderTraineeFields(n, preserved);
 });
 
+function applyRoleRestrictions() {
+    const statusEl = document.getElementById('f-session_status');
+    const bookedEl = document.getElementById('f-session_booked');
+    statusEl.disabled = IS_HEAD_STAFF;
+    if (IS_HEAD_STAFF) bookedEl.disabled = true;
+    else updateBookedToggleState(); // re-apply the Requested-based gating for managers
+}
+document.getElementById('f-session_status').addEventListener('mousedown', (e) => {
+    if (IS_HEAD_STAFF) { e.preventDefault(); showToast('Managers only — wait for a manager to update the status.'); }
+});
+document.querySelector('.toggle-wrap').addEventListener('mousedown', (e) => {
+    if (IS_HEAD_STAFF) { e.preventDefault(); showToast('Managers only — wait for a manager to book this session.'); return; }
+    if (document.getElementById('f-session_booked').disabled) {
+        e.preventDefault();
+        showToast('Booked can only be set once the status is no longer "Requested".');
+    }
+}, true);
+
 function openModal(mode, data = null) {
     formAction.value = mode;
 
     const customIdGroup = document.getElementById('custom-session-id-group');
     if (mode === 'add') {
-        modalTitle.textContent = 'Add Session';
-        submitBtn.textContent  = 'Add Session';
+        modalTitle.textContent = IS_HEAD_STAFF ? 'Request Session' : 'Add Session';
+        submitBtn.innerHTML = IS_HEAD_STAFF
+            ? '<i class="fas fa-envelope-open-text"></i> Request Session'
+            : 'Add Session';
         formSessionId.value    = '';
         document.getElementById('session-form').reset();
         if (customIdGroup) customIdGroup.style.display = '';
@@ -114,6 +168,8 @@ function openModal(mode, data = null) {
         document.getElementById('f-additional_staff').value    = data.additional_staff       ?? '';
     }
 
+    updateBookedToggleState();
+    applyRoleRestrictions();
     modalBackdrop.classList.add('open');
     document.body.style.overflow = 'hidden';
 }
@@ -129,11 +185,25 @@ modalBackdrop.addEventListener('click', (e) => {
 });
 
 // ── Form submit validation ───────────────────────────
-document.getElementById('session-form').addEventListener('submit', (e) => {
+    document.getElementById('session-form').addEventListener('submit', (e) => {
     const timeVal   = document.getElementById('f-session_time').value.trim();
     const dateVal   = document.getElementById('f-session_date').value.trim();
     const timeError = document.getElementById('time-error');
     const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+    // ── Duplicate staff check (host + co_host1-3 + assistant_1-4) ──
+    const dupFieldIds = ['f-host','f-co_host1','f-co_host2','f-co_host3','f-assistant_1','f-assistant_2','f-assistant_3','f-assistant_4'];
+    const seen = new Set();
+    for (const id of dupFieldIds) {
+        const val = document.getElementById(id).value.trim();
+        if (!val) continue;
+        if (seen.has(val)) {
+            e.preventDefault();
+            showToast(`Duplicate staff entry: "${val}" is assigned to more than one role.`);
+            return;
+        }
+        seen.add(val);
+    }
 
     // Validate date
     if (!dateVal) {
@@ -192,6 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         timeInput.value = value.length > 2 ? hours + ':' + minutes : hours;
     });
+
+    
 });
 
 // ── Delete confirm modal ─────────────────────────────
@@ -220,51 +292,4 @@ document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (modalBackdrop.classList.contains('open'))  closeModal();
     if (deleteBackdrop.classList.contains('open')) closeDelete();
-});
-document.addEventListener("DOMContentLoaded", () => {
-    const timeInput = document.getElementById("f-session_time");
-    const timeError = document.getElementById("time-error");
-
-    timeInput.addEventListener("input", () => {
-        let value = timeInput.value.replace(/\D/g, ""); // remove non-numbers
-        value = value.slice(0, 4); // max HHMM
-
-        let hours = value.slice(0, 2);
-        let minutes = value.slice(2, 4);
-
-        // Clear error by default
-        timeError.style.display = "none";
-        timeError.textContent = "";
-
-        // Validate hours
-        if (hours.length === 2) {
-            let hourNum = parseInt(hours);
-
-            if (hourNum === 24) {
-                hours = "00"; // convert 24 -> 00
-            } else if (hourNum > 24) {
-                timeError.textContent = "Invalid hour. Please enter 00-23.";
-                timeError.style.display = "inline";
-                hours = "";
-            }
-        }
-
-        // Validate minutes
-        if (minutes.length === 2) {
-            let minuteNum = parseInt(minutes);
-
-            if (minuteNum >= 60) {
-                timeError.textContent = "Invalid minutes. Please enter 00-59.";
-                timeError.style.display = "inline";
-                minutes = "";
-            }
-        }
-
-        // Rebuild value
-        if (value.length > 2) {
-            timeInput.value = hours + ":" + minutes;
-        } else {
-            timeInput.value = hours;
-        }
-    });
 });

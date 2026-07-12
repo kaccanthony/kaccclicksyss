@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
         $stmt = mysqli_prepare($conn, "DELETE FROM session_upcoming WHERE session_id = ?");
         mysqli_stmt_bind_param($stmt, "i", $del_id);
         mysqli_stmt_execute($stmt);
+        $_SESSION['success'] = 'Session deleted.';
         header('Location: managesession.php');
         exit;
     }
@@ -70,6 +71,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
         $as3  = $_POST['assistant_3']         ?? '';
         $as4  = $_POST['assistant_4']         ?? '';
         $add  = $_POST['additional_staff']    ?? '';
+
+        $dupCheck = array_filter([$host, $ch1, $ch2, $ch3, $as1, $as2, $as3, $as4]);
+        if (count($dupCheck) !== count(array_unique($dupCheck))) {
+            $_SESSION['error'] = 'Duplicate staff entry detected — the same person can\'t hold two roles at once.';
+            header('Location: managesession.php');
+            exit;
+        }
 
         $traineeFields = [];
         for ($t = 1; $t <= 10; $t++) {
@@ -249,6 +257,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
     );
         }
         mysqli_stmt_execute($stmt);
+        if ($action === 'add') {
+            $_SESSION['success'] = ($role === 'Head Staff')
+                ? 'Session request submitted — a manager will review it.'
+                : 'Session added.';
+        } else {
+            $_SESSION['success'] = ($ss === 'Booked') ? 'Session booked!' : 'Session saved.';
+        }
         header('Location: managesession.php');
         exit;
     }
@@ -385,7 +400,11 @@ function statusBadge($status) {
         </div>
         <?php if ($permLevel >= 10): ?>
         <button class="btn-primary" onclick="openModal('add')">
-            <i class="fas fa-plus"></i> Add Session
+            <?php if ($role === 'Head Staff'): ?>
+                <i class="fas fa-envelope-open-text"></i> Request Session
+            <?php else: ?>
+                <i class="fas fa-plus"></i> Add Session
+            <?php endif; ?>
         </button>
         <?php endif; ?>
     </div>
@@ -585,25 +604,25 @@ function statusBadge($status) {
         <div class="form-row">
             <div class="form-group">
                 <label>Co-Host 1</label>
-                <select name="co_host1" id="f-co_host1">
+                <select class="staff-select" name="co_host1" id="f-co_host1">
                     <?= buildOptions($staffByRank, $cohostRanks) ?>
                 </select>
             </div>
             <div class="form-group">
                 <label>Co-Host 2</label>
-                <select name="co_host2" id="f-co_host2">
+                <select class="staff-select" name="co_host2" id="f-co_host2">
                     <?= buildOptions($staffByRank, $cohostRanks) ?>
                 </select>
             </div>
             <div class="form-group">
                 <label>Co-Host 3</label>
-                <select name="co_host3" id="f-co_host3">
+                <select class="staff-select" name="co_host3" id="f-co_host3">
                     <?= buildOptions($staffByRank, $cohostRanks) ?>
                 </select>
             </div>
             <div class="form-group">
                 <label>Co-Host 4 / SV</label>
-                <select name="co_host4_supervisor" id="f-co_host4_supervisor">
+                <select class="staff-select" name="co_host4_supervisor" id="f-co_host4_supervisor">
                     <?= buildOptions($staffByRank, $cohostRanks) ?>
                 </select>
             </div>
@@ -613,25 +632,25 @@ function statusBadge($status) {
         <div class="form-row">
             <div class="form-group">
                 <label>Assistant 1</label>
-                <select name="assistant_1" id="f-assistant_1">
+                <select class="staff-select" name="assistant_1" id="f-assistant_1">
                     <?= buildOptions($staffByRank, $assistRanks) ?>
                 </select>
             </div>
             <div class="form-group">
                 <label>Assistant 2</label>
-                <select name="assistant_2" id="f-assistant_2">
+                <select class="staff-select" name="assistant_2" id="f-assistant_2">
                     <?= buildOptions($staffByRank, $assistRanks) ?>
                 </select>
             </div>
             <div class="form-group">
                 <label>Assistant 3</label>
-                <select name="assistant_3" id="f-assistant_3">
+                <select class="staff-select" name="assistant_3" id="f-assistant_3">
                     <?= buildOptions($staffByRank, $assistRanks) ?>
                 </select>
             </div>
             <div class="form-group">
                 <label>Assistant 4</label>
-                <select name="assistant_4" id="f-assistant_4">
+                <select class="staff-select" name="assistant_4" id="f-assistant_4">
                     <?= buildOptions($staffByRank, $assistRanks) ?>
                 </select>
             </div>
@@ -682,6 +701,13 @@ function statusBadge($status) {
 </div>
 </div>
 <?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
+<div class="toast-container" id="toast-container"></div>
+<script>
+const IS_MANAGER    = <?= json_encode(in_array($role, ['Community Manager','Operations Manager'])) ?>;
+const IS_HEAD_STAFF = <?= json_encode($role === 'Head Staff') ?>;
+const TOAST_FLASH    = <?= json_encode($_SESSION['success'] ?? null) ?>;
+</script>
+<?php unset($_SESSION['success']); ?>
 <script src="script.js?v=<?= filemtime(__DIR__ . '/script.js') ?>"></script>
 </body>
 </html>
