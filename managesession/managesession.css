@@ -377,6 +377,9 @@ html, body {
 .form-group select option { background: #1a1a1a; }
 .form-group textarea { resize: vertical; min-height: 60px; }
 
+.staff-select optgroup { background: #111; color: #fff; font-weight: 600; }
+.staff-select option { background: #111; color: #fff; }
+
 /* ── Toggle ── */
 .toggle-wrap { display: inline-flex; align-items: center; cursor: pointer; margin-top: 4px; }
 .toggle-wrap input { display: none; }

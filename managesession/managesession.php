@@ -106,44 +106,147 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
                     header('Location: managesession.php');
                     exit;
                 }
-                $sql = "INSERT INTO session_upcoming
-                    (session_id, session_name, session_desc, session_status, session_booked,
-                    session_duration, num_slots, session_date, session_time, trainee_timer,
-                    host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
-                    assistant_1, assistant_2, assistant_3, assistant_4, additional_staff)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            $sql = "INSERT INTO session_upcoming
+            (session_id, session_name, session_desc, session_status, session_booked,
+            session_duration, num_slots, session_date, session_time, trainee_timer,
+            host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
+            assistant_1, assistant_2, assistant_3, assistant_4, additional_staff,
+            trainee_1_name, trainee_1_discord, trainee_1_discord_id, trainee_1_zone, trainee_1_note,
+            trainee_2_name, trainee_2_discord, trainee_2_discord_id, trainee_2_zone, trainee_2_note,
+            trainee_3_name, trainee_3_discord, trainee_3_discord_id, trainee_3_zone, trainee_3_note,
+            trainee_4_name, trainee_4_discord, trainee_4_discord_id, trainee_4_zone, trainee_4_note,
+            trainee_5_name, trainee_5_discord, trainee_5_discord_id, trainee_5_zone, trainee_5_note,
+            trainee_6_name, trainee_6_discord, trainee_6_discord_id, trainee_6_zone, trainee_6_note,
+            trainee_7_name, trainee_7_discord, trainee_7_discord_id, trainee_7_zone, trainee_7_note,
+            trainee_8_name, trainee_8_discord, trainee_8_discord_id, trainee_8_zone, trainee_8_note,
+            trainee_9_name, trainee_9_discord, trainee_9_discord_id, trainee_9_zone, trainee_9_note,
+            trainee_10_name, trainee_10_discord, trainee_10_discord_id, trainee_10_zone, trainee_10_note)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+                    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+                    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+                    ?,?,?,?,?,?,?,?,?,?)";
                 $stmt = mysqli_prepare($conn, $sql);
-                $types = 'i' . 'sssisissi' . 'ssssssssss';
+                $types = 'i' . 'sssisissi' . 'ssssssssss'. 
+                                str_repeat('sssis', 10); // 5 params (name, discord, discord_id, zone, note) × 10 trainees = 50 params;
                 mysqli_stmt_bind_param($stmt, $types,
-                    $customId, $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
-                    $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add);
+            $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
+            $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add,
+            $traineeFields['trainee_1_name'], $traineeFields['trainee_1_discord'], 
+            $traineeFields['trainee_1_discord_id'], $traineeFields['trainee_1_zone'], $traineeFields['trainee_1_note'],
+            $traineeFields['trainee_2_name'], $traineeFields['trainee_2_discord'], 
+            $traineeFields['trainee_2_discord_id'], $traineeFields['trainee_2_zone'], $traineeFields['trainee_2_note'],
+            $traineeFields['trainee_3_name'], $traineeFields['trainee_3_discord'], 
+            $traineeFields['trainee_3_discord_id'], $traineeFields['trainee_3_zone'], $traineeFields['trainee_3_note'],
+            $traineeFields['trainee_4_name'], $traineeFields['trainee_4_discord'], 
+            $traineeFields['trainee_4_discord_id'], $traineeFields['trainee_4_zone'], $traineeFields['trainee_4_note'],
+            $traineeFields['trainee_5_name'], $traineeFields['trainee_5_discord'], 
+            $traineeFields['trainee_5_discord_id'], $traineeFields['trainee_5_zone'], $traineeFields['trainee_5_note'],
+            $traineeFields['trainee_6_name'], $traineeFields['trainee_6_discord'], 
+            $traineeFields['trainee_6_discord_id'], $traineeFields['trainee_6_zone'], $traineeFields['trainee_6_note'],
+            $traineeFields['trainee_7_name'], $traineeFields['trainee_7_discord'], 
+            $traineeFields['trainee_7_discord_id'], $traineeFields['trainee_7_zone'], $traineeFields['trainee_7_note'],
+            $traineeFields['trainee_8_name'], $traineeFields['trainee_8_discord'], 
+            $traineeFields['trainee_8_discord_id'], $traineeFields['trainee_8_zone'], $traineeFields['trainee_8_note'],
+            $traineeFields['trainee_9_name'], $traineeFields['trainee_9_discord'], 
+            $traineeFields['trainee_9_discord_id'], $traineeFields['trainee_9_zone'], $traineeFields['trainee_9_note'],
+            $traineeFields['trainee_10_name'], $traineeFields['trainee_10_discord'], 
+            $traineeFields['trainee_10_discord_id'], $traineeFields['trainee_10_zone'], $traineeFields['trainee_10_note']
+        );
             } else {
-                $sql = "INSERT INTO session_upcoming
-                    (session_name, session_desc, session_status, session_booked,
-                    session_duration, num_slots, session_date, session_time, trainee_timer,
-                    host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
-                    assistant_1, assistant_2, assistant_3, assistant_4, additional_staff)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-                $stmt = mysqli_prepare($conn, $sql);
-                $types = 'sssisissi' . 'ssssssssss';
-                mysqli_stmt_bind_param($stmt, $types,
-                    $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
-                    $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add);
+        $sql = "INSERT INTO session_upcoming
+            (session_name, session_desc, session_status, session_booked,
+            session_duration, num_slots, session_date, session_time, trainee_timer,
+            host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
+            assistant_1, assistant_2, assistant_3, assistant_4, additional_staff,
+            trainee_1_name, trainee_1_discord, trainee_1_discord_id, trainee_1_zone, trainee_1_note,
+            trainee_2_name, trainee_2_discord, trainee_2_discord_id, trainee_2_zone, trainee_2_note,
+            trainee_3_name, trainee_3_discord, trainee_3_discord_id, trainee_3_zone, trainee_3_note,
+            trainee_4_name, trainee_4_discord, trainee_4_discord_id, trainee_4_zone, trainee_4_note,
+            trainee_5_name, trainee_5_discord, trainee_5_discord_id, trainee_5_zone, trainee_5_note,
+            trainee_6_name, trainee_6_discord, trainee_6_discord_id, trainee_6_zone, trainee_6_note,
+            trainee_7_name, trainee_7_discord, trainee_7_discord_id, trainee_7_zone, trainee_7_note,
+            trainee_8_name, trainee_8_discord, trainee_8_discord_id, trainee_8_zone, trainee_8_note,
+            trainee_9_name, trainee_9_discord, trainee_9_discord_id, trainee_9_zone, trainee_9_note,
+            trainee_10_name, trainee_10_discord, trainee_10_discord_id, trainee_10_zone, trainee_10_note)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+                    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+                    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+                    ?,?,?,?,?,?,?,?,?,?)";
+        $stmt = mysqli_prepare($conn, $sql);
+        $types = 'sssisissi' . 'ssssssssss' . 
+                 str_repeat('sssis', 10); // 5 params × 10 trainees = 50 params
+        mysqli_stmt_bind_param($stmt, $types,
+            $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
+            $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add,
+            $traineeFields['trainee_1_name'], $traineeFields['trainee_1_discord'], 
+            $traineeFields['trainee_1_discord_id'], $traineeFields['trainee_1_zone'], $traineeFields['trainee_1_note'],
+            $traineeFields['trainee_2_name'], $traineeFields['trainee_2_discord'], 
+            $traineeFields['trainee_2_discord_id'], $traineeFields['trainee_2_zone'], $traineeFields['trainee_2_note'],
+            $traineeFields['trainee_3_name'], $traineeFields['trainee_3_discord'], 
+            $traineeFields['trainee_3_discord_id'], $traineeFields['trainee_3_zone'], $traineeFields['trainee_3_note'],
+            $traineeFields['trainee_4_name'], $traineeFields['trainee_4_discord'], 
+            $traineeFields['trainee_4_discord_id'], $traineeFields['trainee_4_zone'], $traineeFields['trainee_4_note'],
+            $traineeFields['trainee_5_name'], $traineeFields['trainee_5_discord'], 
+            $traineeFields['trainee_5_discord_id'], $traineeFields['trainee_5_zone'], $traineeFields['trainee_5_note'],
+            $traineeFields['trainee_6_name'], $traineeFields['trainee_6_discord'], 
+            $traineeFields['trainee_6_discord_id'], $traineeFields['trainee_6_zone'], $traineeFields['trainee_6_note'],
+            $traineeFields['trainee_7_name'], $traineeFields['trainee_7_discord'], 
+            $traineeFields['trainee_7_discord_id'], $traineeFields['trainee_7_zone'], $traineeFields['trainee_7_note'],
+            $traineeFields['trainee_8_name'], $traineeFields['trainee_8_discord'], 
+            $traineeFields['trainee_8_discord_id'], $traineeFields['trainee_8_zone'], $traineeFields['trainee_8_note'],
+            $traineeFields['trainee_9_name'], $traineeFields['trainee_9_discord'], 
+            $traineeFields['trainee_9_discord_id'], $traineeFields['trainee_9_zone'], $traineeFields['trainee_9_note'],
+            $traineeFields['trainee_10_name'], $traineeFields['trainee_10_discord'], 
+            $traineeFields['trainee_10_discord_id'], $traineeFields['trainee_10_zone'], $traineeFields['trainee_10_note']
+        );
             }
         } else {
-            $eid = (int)$_POST['session_id'];
-            $sql = "UPDATE session_upcoming SET
-                session_name=?, session_desc=?, session_status=?, session_booked=?,
-                session_duration=?, num_slots=?, session_date=?, session_time=?,
-                trainee_timer=?, host=?, co_host1=?, co_host2=?, co_host3=?,
-                `co_host4/supervisor`=?, assistant_1=?, assistant_2=?,
-                assistant_3=?, assistant_4=?, additional_staff=?
-                WHERE session_id=?";
-            $stmt = mysqli_prepare($conn, $sql);
-            $types = 'sssisissi' . 'ssssssssss' . 'i';
-            mysqli_stmt_bind_param($stmt, $types,
-                $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
-                $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add, $eid);
+    $eid = (int)$_POST['session_id'];
+    $sql = "UPDATE session_upcoming SET
+        session_name=?, session_desc=?, session_status=?, session_booked=?,
+        session_duration=?, num_slots=?, session_date=?, session_time=?,
+        trainee_timer=?, host=?, co_host1=?, co_host2=?, co_host3=?,
+        `co_host4/supervisor`=?, assistant_1=?, assistant_2=?,
+        assistant_3=?, assistant_4=?, additional_staff=?,
+        trainee_1_name=?, trainee_1_discord=?, trainee_1_discord_id=?, trainee_1_zone=?, trainee_1_note=?,
+        trainee_2_name=?, trainee_2_discord=?, trainee_2_discord_id=?, trainee_2_zone=?, trainee_2_note=?,
+        trainee_3_name=?, trainee_3_discord=?, trainee_3_discord_id=?, trainee_3_zone=?, trainee_3_note=?,
+        trainee_4_name=?, trainee_4_discord=?, trainee_4_discord_id=?, trainee_4_zone=?, trainee_4_note=?,
+        trainee_5_name=?, trainee_5_discord=?, trainee_5_discord_id=?, trainee_5_zone=?, trainee_5_note=?,
+        trainee_6_name=?, trainee_6_discord=?, trainee_6_discord_id=?, trainee_6_zone=?, trainee_6_note=?,
+        trainee_7_name=?, trainee_7_discord=?, trainee_7_discord_id=?, trainee_7_zone=?, trainee_7_note=?,
+        trainee_8_name=?, trainee_8_discord=?, trainee_8_discord_id=?, trainee_8_zone=?, trainee_8_note=?,
+        trainee_9_name=?, trainee_9_discord=?, trainee_9_discord_id=?, trainee_9_zone=?, trainee_9_note=?,
+        trainee_10_name=?, trainee_10_discord=?, trainee_10_discord_id=?, trainee_10_zone=?, trainee_10_note=?
+        WHERE session_id=?";
+    $stmt = mysqli_prepare($conn, $sql);
+    $types = 'sssisissi' . 'ssssssssss' . 
+             str_repeat('sssis', 10) . 'i'; // 5 params × 10 trainees + session_id
+    mysqli_stmt_bind_param($stmt, $types,
+        $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
+        $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add,
+        $traineeFields['trainee_1_name'], $traineeFields['trainee_1_discord'], 
+        $traineeFields['trainee_1_discord_id'], $traineeFields['trainee_1_zone'], $traineeFields['trainee_1_note'],
+        $traineeFields['trainee_2_name'], $traineeFields['trainee_2_discord'], 
+        $traineeFields['trainee_2_discord_id'], $traineeFields['trainee_2_zone'], $traineeFields['trainee_2_note'],
+        $traineeFields['trainee_3_name'], $traineeFields['trainee_3_discord'], 
+        $traineeFields['trainee_3_discord_id'], $traineeFields['trainee_3_zone'], $traineeFields['trainee_3_note'],
+        $traineeFields['trainee_4_name'], $traineeFields['trainee_4_discord'], 
+        $traineeFields['trainee_4_discord_id'], $traineeFields['trainee_4_zone'], $traineeFields['trainee_4_note'],
+        $traineeFields['trainee_5_name'], $traineeFields['trainee_5_discord'], 
+        $traineeFields['trainee_5_discord_id'], $traineeFields['trainee_5_zone'], $traineeFields['trainee_5_note'],
+        $traineeFields['trainee_6_name'], $traineeFields['trainee_6_discord'], 
+        $traineeFields['trainee_6_discord_id'], $traineeFields['trainee_6_zone'], $traineeFields['trainee_6_note'],
+        $traineeFields['trainee_7_name'], $traineeFields['trainee_7_discord'], 
+        $traineeFields['trainee_7_discord_id'], $traineeFields['trainee_7_zone'], $traineeFields['trainee_7_note'],
+        $traineeFields['trainee_8_name'], $traineeFields['trainee_8_discord'], 
+        $traineeFields['trainee_8_discord_id'], $traineeFields['trainee_8_zone'], $traineeFields['trainee_8_note'],
+        $traineeFields['trainee_9_name'], $traineeFields['trainee_9_discord'], 
+        $traineeFields['trainee_9_discord_id'], $traineeFields['trainee_9_zone'], $traineeFields['trainee_9_note'],
+        $traineeFields['trainee_10_name'], $traineeFields['trainee_10_discord'], 
+        $traineeFields['trainee_10_discord_id'], $traineeFields['trainee_10_zone'], $traineeFields['trainee_10_note'],
+        $eid
+    );
         }
         mysqli_stmt_execute($stmt);
         header('Location: managesession.php');
@@ -472,7 +575,7 @@ function statusBadge($status) {
         <div class="form-row">
             <div class="form-group flex2">
                 <label><i class="fas fa-crown" style="color:rgba(255,210,80,.7);font-size:.7rem;margin-right:4px;"></i> Host*</label>
-                <select name="host" id="f-host" required>
+                <select class="staff-select" name="host" id="f-host" required>
                     <?= buildOptions($staffByRank, $hostRanks) ?>
                 </select>
             </div>

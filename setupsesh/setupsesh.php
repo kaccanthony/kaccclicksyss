@@ -286,7 +286,7 @@ $hostRanks   = ['Community Manager','Operations Manager','Head Staff'];
                 Co-Host 1: PlayerA
                 Example Trainees (Discord : Discord ID : Roblox : Zone : Note):
                 DiscordName1 : 123456789012345678 : RobloxName1 : 1
-                DiscordName2 : 987654321098765432 : RobloxName2 : 3 : Fast learner" style="margin-bottom: 10px;"></textarea>
+                DiscordName2 : 987654321098765432 : RobloxName2 : 3 : I want trains" style="margin-bottom: 10px;"></textarea>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="btn-ghost" onclick="autofillStaff()" style="flex: 1; padding: 8px; font-size: 0.8rem;"><i class="fas fa-user-shield"></i> Autofill Staff</button>
                     <button type="button" class="btn-ghost" onclick="autofillTrainees()" style="flex: 1; padding: 8px; font-size: 0.8rem;"><i class="fas fa-male"></i> Autofill Trainees</button>
