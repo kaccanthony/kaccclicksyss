@@ -53,12 +53,33 @@ const concludePanel = document.getElementById('conclude-panel');
 if(concludePanel && isHost) concludePanel.classList.add('visible');
 const sessionControlsPanel = document.getElementById('session-controls-panel');
 if(sessionControlsPanel && isHost) sessionControlsPanel.classList.add('visible');
-/* ================= ANNOUNCEMENT TEMPLATE (must exist before the first trainee rows are built below) ================= */
-const ANNOUNCEMENT_TEMPLATE = `# 📢 Zone Announcement
-**Zone:** [ZONE]
-**Trainee:** [TRAINEE]
-____
-[TRAINEE] is currently signalling at **[ZONE]**. Please give way and avoid interfering with the session.`;
+/* ================= ZONE DATA and announcement template (must exist before the first trainee rows are built below) ================= */
+const ZONE_DATA = {
+  'Zone 1':  { coverage: 'WFD <-> STV/STB/CHP', notes: 'Willowfield <-> Stepford Victoria/Stepford Bay/City Hospital', depot: 'Willowfield C.S. / Marston Hill TMD / Beechley Kingsway C.S', depotNearby: 'Trinity Way TMD' },
+  'Zone 2':  { coverage: 'SCN <-> WHF/SCE/SHS', notes: 'Stepford Central <-> Whitefield/Stepford East/Stepford High Street', depot: 'Trinity Way TMD / Whitefield Farm Park C.S. / Market Weighton TMD', depotNearby: 'Marston Hill TMD / Beechley Kingsway C.S' },
+  'Zone 3':  { coverage: 'SHB <-> COX/EBR/WNG(M)', notes: 'St. Helens Bridge <-> Coxly/East Berrily/Whitney Green (Metro)', depot: 'Bodin MOC / Manea Hill TMD / Coxly Station C.S. (Station & Bypass)', depotNearby: 'Stoke Milton C.S. (WB)' },
+  'Zone 4':  { coverage: 'NRH <-> WBN', notes: 'Newry Harbour <-> West Benton', depot: 'Meriden Grove TMD / Elmstead Park C.S', depotNearby: 'N/A' },
+  'Zone 5':  { coverage: 'BEN <-> CON/PBE', notes: 'Benton <-> Connolly/Port Benton', depot: 'Harbour City TMD / Benton Station C.S.', depotNearby: 'Coxly Station C.S. (Station & Bypass) / Stoke Milton TMD (WB)' },
+  'Zone 6':  { coverage: 'MGT <-> MGD/WNG(W)/BBG/USP', notes: 'Morganstown <-> Morganstown Docks/Whitney Green (Waterline)/Benton Bridge/Upper Staploe', depot: 'Stoke Milton C.S. (All directions) / Holbeck TMD', depotNearby: 'Manea Hill TMD (EB)' },
+  'Zone 7':  { coverage: 'SAP <-> SAZ/SAX', notes: 'Stepford Airport Parkway <-> Airport Terminal 3/Airport Terminal 2', depot: 'Melrose Depot (Road 11 & 17) / Stoke Milton C.S. (NB)', depotNearby: 'N/A' },
+  'Zone 8':  { coverage: 'SAW <-> EFD', notes: 'Airport West <-> Esterfield', depot: 'Melrose Depot (Road 2) / Esterfield TMD', depotNearby: 'N/A' },
+  'Zone 9':  { coverage: 'WTN <-> MRC/LTW/RLB', notes: 'Water Newton <-> Millcastle Racecourse/Leighton West/Rayleigh Bay', depot: 'Faymere Green TMD (All directions) / Winstree Lane TMD', depotNearby: 'Stoke Milton C.S. (EB)' },
+  'Zone 10': { coverage: 'LYN <-> MLC', notes: 'Llyn-By-The-Sea <-> Millcastle', depot: 'Laira TMD', depotNearby: 'Faymere Green TMD (SB)' },
+};
+
+const ZONE_MAP_IMG_URL = 'https://cdn.discordapp.com/attachments/1344385121075204136/1471103255022014637/attachment.gif?ex=69dc286b&is=69dad6eb&hm=328cff76bf4a3b7703ad46aebd80e999bb317d5d1b674c596b36ec9626bc4408&';
+
+const ANNOUNCEMENT_TEMPLATE = `# May I have everyone drive in [ZONE]!
+**Zone Coverage:**
+[ZONE COVERAGE]
+(*[NOTES]*)
+**Preferred Depot**:
+[DEPOT & SIDING (WITHIN ZONE)]
+**Nearby Depot**:
+[DEPOT & SIDING NEARBY ZONE]
+[TRAINEE] please wait for further instructions from [TRAINER], as you will be signalling next!
+## Zone Map
+${ZONE_MAP_IMG_URL}`;
 
 /* ================= TOASTS ================= */
 const toastContainer = document.getElementById('toast-container');
@@ -899,15 +920,31 @@ renderScriptPreview();
 function resolveAnnouncement(row){
   const rowEl = document.querySelector(`tr[data-row="${row}"]`);
   if(!rowEl) return ANNOUNCEMENT_TEMPLATE;
+
   const nameInput = rowEl.querySelector('.trainee-name');
   const zoneSelect = rowEl.querySelector('select.trainee-detail-field');
+  const trainerSelect = rowEl.querySelector('.trainer-name-select');
+
   const traineeName = (nameInput && nameInput.value.trim()) || '[TRAINEE]';
-  const zoneVal = (zoneSelect && zoneSelect.value && zoneSelect.value !== 'Select') ? zoneSelect.value : '[ZONE]';
-  return ANNOUNCEMENT_TEMPLATE.replaceAll('[TRAINEE]', traineeName).replaceAll('[ZONE]', zoneVal);
+  const trainerName = (trainerSelect && trainerSelect.value) || '[TRAINER]';
+  const zoneVal = (zoneSelect && zoneSelect.value && zoneSelect.value !== 'Select') ? zoneSelect.value : null;
+  const zoneInfo = zoneVal ? ZONE_DATA[zoneVal] : null;
+
+  return ANNOUNCEMENT_TEMPLATE
+    .replaceAll('[ZONE COVERAGE]', zoneInfo ? zoneInfo.coverage : '[ZONE COVERAGE]')
+    .replaceAll('[DEPOT & SIDING (WITHIN ZONE)]', zoneInfo ? zoneInfo.depot : '[DEPOT & SIDING (WITHIN ZONE)]')
+    .replaceAll('[DEPOT & SIDING NEARBY ZONE]', zoneInfo ? zoneInfo.depotNearby : '[DEPOT & SIDING NEARBY ZONE]')
+    .replaceAll('[NOTES]', zoneInfo ? zoneInfo.notes : '[NOTES]')
+    .replaceAll('[TRAINEE]', traineeName)
+    .replaceAll('[TRAINER]', trainerName)
+    .replaceAll('[ZONE]', zoneVal || '[ZONE]');
 }
 
 function formatAnnouncementLine(line){
   if(/^_{2,}$/.test(line.trim())) return '<hr class="announcement-hr"/>';
+  if(/^https?:\/\/\S+\.(gif|png|jpe?g|webp)(\?\S*)?$/i.test(line.trim())){
+    return `<img class="announcement-zone-img" src="${line.trim()}" alt="Zone map" loading="lazy"/>`;
+  }
   const h2Match = line.match(/^##\s+(.*)$/);
   const h1Match = line.match(/^#\s+(.*)$/);
   if(h2Match) return `<div class="announcement-h2">${escapeForPreview(h2Match[1])}</div>`;
