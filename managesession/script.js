@@ -87,12 +87,6 @@ function updateBookedToggleState() {
     bookedChk.disabled = (statusVal === 'Requested');
 }
 document.getElementById('f-session_status').addEventListener('change', updateBookedToggleState);
-document.querySelector('.toggle-wrap').addEventListener('mousedown', (e) => {
-    if (document.getElementById('f-session_booked').disabled) {
-        e.preventDefault();
-        showToast('Booked can only be set once the status is no longer "Requested".');
-    }
-});
 
 // Rebuild trainee rows live whenever the Slots field changes
 document.getElementById('f-num_slots').addEventListener('input', (e) => {
