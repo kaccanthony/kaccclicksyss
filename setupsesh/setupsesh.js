@@ -384,6 +384,7 @@ function autofillStaff() {
         'asst2': 'm-asst2',
         'asst3': 'm-asst3',
         'asst4': 'm-asst4',
+        'additional' : 'm-additional-staff',
     };
     let matchedAny = false;
     const hasRoleLabels = lines.some(line => /^(host|co\-?host|asst|assistant|supervisor)/i.test(line));

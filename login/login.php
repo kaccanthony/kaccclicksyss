@@ -178,5 +178,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 <script src="https://kit.fontawesome.com/6c33013ae6.js" crossorigin="anonymous"></script>
 <script src="login.js"></script>
+<?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
 </body>
 </html>

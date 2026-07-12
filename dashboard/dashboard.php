@@ -175,5 +175,7 @@ foreach (($roleCards[$role] ?? []) as $key) {
 </main>
 
 <script src="dashboard.js"></script>
+<?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
+<script src="../public/assets/js/avatar-cache.js"></script>
 </body>
 </html>
