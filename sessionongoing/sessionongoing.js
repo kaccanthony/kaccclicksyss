@@ -319,6 +319,7 @@ function updateTimerDisplay(row) {
         rowDisplay.classList.toggle('expired', live <= 0);
     }
     updateModalTimerIfOpen(row);
+    if (String(traineePipRow) === String(row)) refreshTraineePip();
 }
 
 function toggleTimer(row) {
@@ -415,6 +416,16 @@ setInterval(() => {
     Object.keys(timers).forEach(row => { if (timers[row].running) updateTimerDisplay(row); });
 }, 1000);
 
+function renumberSlots(){
+  let n = 1;
+  document.querySelectorAll('#trainee-rows tr').forEach(tr=>{
+    const slotEl = tr.querySelector('.slot-num');
+    if(!slotEl || slotEl.textContent.trim() === 'Unalloc.') return;
+    slotEl.textContent = ' ' + n;
+    n++;
+  });
+}
+
 function addTraineeRow(unallocated, uid){
   const idx = traineeCount++;
   const tr = document.createElement('tr');
@@ -427,6 +438,7 @@ function addTraineeRow(unallocated, uid){
         <span class="slot-num">${unallocated ? 'Unalloc.' : ' '+(idx+1)}</span>
         <button class="order-btn" data-dir="down" data-row="${idx}" data-lock-msg="Slot ordering is locked. Ask the host to enable Override Slot Ordering."><i class="fas fa-caret-down"></i></button>
       </div>
+      <button type="button" class="pip-btn" data-row="${idx}" title="Pop out this trainee"><i class="fas fa-clone"></i></button>
     </td>
         <td><input class="cell-input trainee-name trainee-detail-field" placeholder="username" data-lock-msg="Trainee details are locked. Ask the host to enable Override Trainee Details."/></td>
         <td><input class="cell-input trainee-detail-field" placeholder="Discord ID" data-lock-msg="Trainee details are locked. Ask the host to enable Override Trainee Details."/></td>
@@ -536,6 +548,7 @@ document.getElementById('trainee-rows').addEventListener('click', (e)=>{
     } else if(orderBtn.dataset.dir === 'down' && tr.nextElementSibling){
       tr.parentNode.insertBefore(tr.nextElementSibling, tr);
     }
+    renumberSlots();
     queueLiveStateSync();
     return;
   }
@@ -551,6 +564,7 @@ document.getElementById('trainee-rows').addEventListener('click', (e)=>{
       const idx = parseInt(delBtn.dataset.row, 10) + 1;
       delete timers[delBtn.dataset.row];
       delBtn.closest('tr').remove();
+      renumberSlots();
       updateStatusLockState();
       fetch('sync_session.php', {
           method: 'POST', headers: {'Content-Type':'application/json'},
@@ -561,6 +575,18 @@ document.getElementById('trainee-rows').addEventListener('click', (e)=>{
       });
       return;
   }
+
+const pipBtn = e.target.closest('.pip-btn');
+    if(pipBtn){
+      openTraineePip(pipBtn.dataset.row);
+      return;
+    }
+
+const expandBtn = e.target.closest('.notes-expand-btn');
+    if(expandBtn){
+      openNotesFloat(expandBtn.dataset.row);
+      return;
+    }
 
 const expandBtn = e.target.closest('.notes-expand-btn');
     if(expandBtn){
@@ -1119,6 +1145,118 @@ document.getElementById('notes-float-close').addEventListener('click', ()=>{
     if(!dragging) return;
     notesFloat.style.left = (e.clientX - offsetX) + 'px';
     notesFloat.style.top = (e.clientY - offsetY) + 'px';
+  });
+  document.addEventListener('mouseup', ()=>{ dragging = false; });
+})();
+
+/* ================= FLOATING TRAINEE PIP ================= */
+let traineePipRow = null;
+const traineePip = document.getElementById('trainee-pip');
+const traineePipGrid = document.getElementById('trainee-pip-grid');
+
+function refreshTraineePip(){
+  if (traineePipRow === null) return;
+  const rowEl = document.querySelector(`tr[data-row="${traineePipRow}"]`);
+  if (!rowEl) return;
+  const name = rowEl.querySelector('.trainee-name')?.value || '—';
+  const discordId = rowEl.querySelectorAll('.trainee-detail-field')[1]?.value || '—';
+  const roblox = rowEl.querySelectorAll('.trainee-detail-field')[2]?.value || '—';
+  const zone = rowEl.querySelector('select.trainee-detail-field')?.value || '—';
+  const trainer = rowEl.querySelector('.trainer-name-select')?.value || '—';
+  const timerText = rowEl.querySelector('.timer-display')?.textContent.trim() || '—';
+  const done = rowEl.querySelector('.complete-btn')?.classList.contains('done');
+
+  document.getElementById('trainee-pip-title').textContent = name;
+  traineePipGrid.innerHTML = `
+    <div class="pip-row"><span class="pip-label">Discord ID</span><span class="pip-value">${discordId}</span></div>
+    <div class="pip-row"><span class="pip-label">Roblox</span><span class="pip-value">${roblox}</span></div>
+    <div class="pip-row"><span class="pip-label">Zone</span><span class="pip-value">${zone}</span></div>
+    <div class="pip-row"><span class="pip-label">Trainer</span><span class="pip-value">${trainer}</span></div>
+    <div class="pip-row"><span class="pip-label">Timer</span><span class="pip-value">${timerText}</span></div>
+    <div class="pip-row"><span class="pip-label">Status</span><span class="pip-value">${done ? 'Done ✅' : 'In progress'}</span></div>
+  `;
+}
+
+function openTraineePip(row){
+  traineePipRow = row;
+  refreshTraineePip();
+  traineePip.style.display = 'flex';
+}
+
+document.getElementById('trainee-pip-close').addEventListener('click', ()=>{
+  traineePip.style.display = 'none';
+  traineePipRow = null;
+});
+
+(function enableTraineePipDrag(){
+  const header = document.getElementById('trainee-pip-header');
+  let dragging = false, offsetX = 0, offsetY = 0;
+  header.addEventListener('mousedown', (e)=>{
+    dragging = true;
+    const rect = traineePip.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+  });
+  document.addEventListener('mousemove', (e)=>{
+    if(!dragging) return;
+    traineePip.style.left = (e.clientX - offsetX) + 'px';
+    traineePip.style.top = (e.clientY - offsetY) + 'px';
+  });
+  document.addEventListener('mouseup', ()=>{ dragging = false; });
+})();
+
+/* ================= FLOATING FEEDBACK PIP ================= */
+const feedbackPip = document.getElementById('feedback-pip');
+const FEEDBACK_FIELDS = [
+  { key:'setup', label:'Setup' }, { key:'conflict', label:'Conflict Handling' },
+  { key:'priority', label:'Priority' }, { key:'rbtiming', label:'RB & Timing' },
+  { key:'overall', label:'Overall' }, { key:'notes', label:'Notes / Advice' },
+];
+
+function renderFeedbackPip(row){
+  const rowEl = document.querySelector(`tr[data-row="${row}"]`);
+  const name = rowEl?.querySelector('.trainee-name')?.value || 'Trainee';
+  document.getElementById('feedback-pip-title').textContent = 'Feedback — ' + name;
+  const data = getFeedbackData(row);
+  const fieldsEl = document.getElementById('feedback-pip-fields');
+  fieldsEl.innerHTML = FEEDBACK_FIELDS.map(f => `
+    <div><label>${f.label}</label><textarea data-field="${f.key}">${data[f.key] || ''}</textarea></div>
+  `).join('');
+  fieldsEl.querySelectorAll('textarea').forEach(ta=>{
+    ta.addEventListener('input', ()=>{
+      getFeedbackData(row)[ta.dataset.field] = ta.value;
+      queueLiveStateSync();
+      // keep the full modal's fields in sync too, in case it gets reopened later
+      const modalTa = document.querySelector(`.feedback-text[data-field="${ta.dataset.field}"]`);
+      if (modalTa && String(activeFeedbackRow) === String(row)) modalTa.value = ta.value;
+    });
+  });
+}
+
+document.getElementById('fb-popout').addEventListener('click', ()=>{
+  if (activeFeedbackRow === null) return;
+  renderFeedbackPip(activeFeedbackRow);
+  feedbackPip.style.display = 'flex';
+  closeFeedbackModal();
+});
+
+document.getElementById('feedback-pip-close').addEventListener('click', ()=>{
+  feedbackPip.style.display = 'none';
+});
+
+(function enableFeedbackPipDrag(){
+  const header = document.getElementById('feedback-pip-header');
+  let dragging = false, offsetX = 0, offsetY = 0;
+  header.addEventListener('mousedown', (e)=>{
+    dragging = true;
+    const rect = feedbackPip.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+  });
+  document.addEventListener('mousemove', (e)=>{
+    if(!dragging) return;
+    feedbackPip.style.left = (e.clientX - offsetX) + 'px';
+    feedbackPip.style.top = (e.clientY - offsetY) + 'px';
   });
   document.addEventListener('mouseup', ()=>{ dragging = false; });
 })();
@@ -1778,6 +1916,7 @@ function applyRemoteState(session, liveState) {
     const unallocatedRows = Array.from(tbody.querySelectorAll('tr'))
         .filter(tr => tr.querySelector('.slot-num')?.textContent.trim() === 'Unalloc.');
     [...orderedAllocated, ...unallocatedRows].forEach(tr => tbody.appendChild(tr));
+    renumberSlots();
 }
 
 const attendanceParts = (session.trainee_attendance || '').split(',');

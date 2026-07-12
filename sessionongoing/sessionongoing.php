@@ -409,6 +409,7 @@ if (!empty($sessionRow['live_state'])) {
   <div class="modal">
     <div class="modal-head">
       <h2>TRAINER FEEDBACK</h2>
+      <button type="button" class="modal-popout-btn" id="fb-popout" title="Pop out as floating panel"><i class="fas fa-up-right-from-square"></i></button>
       <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
@@ -525,6 +526,26 @@ if (!empty($sessionRow['live_state'])) {
   </div>
   <div class="notes-float-body">
     <textarea id="notes-float-textarea" placeholder="Notes for this trainee..."></textarea>
+  </div>
+</div>
+
+<div class="notes-float" id="trainee-pip">
+  <div class="notes-float-header" id="trainee-pip-header">
+    <span id="trainee-pip-title">Trainee</span>
+    <button type="button" class="notes-float-close" id="trainee-pip-close"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="notes-float-body">
+    <div class="trainee-pip-grid" id="trainee-pip-grid"></div>
+  </div>
+</div>
+
+<div class="notes-float" id="feedback-pip" style="width:340px;height:460px;">
+  <div class="notes-float-header" id="feedback-pip-header">
+    <span id="feedback-pip-title">Feedback</span>
+    <button type="button" class="notes-float-close" id="feedback-pip-close"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="notes-float-body" style="overflow-y:auto;">
+    <div class="feedback-pip-fields" id="feedback-pip-fields"></div>
   </div>
 </div>
 
