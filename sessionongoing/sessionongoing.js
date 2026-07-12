@@ -1041,6 +1041,14 @@ function openFeedbackModal(triggerBtn){
   document.getElementById('fb-setup-done').classList.toggle('done', !!(rowSetupBtn && rowSetupBtn.classList.contains('done')));
   renderScriptPreview(t.totalMinutes);
 
+  // Auto-show the script in the modal only — the PiP's script view stays behind its own toggle.
+  if (scriptPreviewEl && scriptToggleBtn) {
+    scriptPreviewEl.style.display = 'flex';
+    scriptToggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+    scriptToggleBtn.title = 'Hide script';
+    scriptToggleBtn.classList.add('active');
+  }
+
   const savedFb = getFeedbackData(row);
   document.getElementById('fb-trains').value = savedFb.trains;
   document.querySelectorAll('.feedback-text').forEach(ta=>{

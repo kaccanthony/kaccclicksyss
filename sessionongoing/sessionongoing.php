@@ -122,6 +122,7 @@ if (!empty($sessionRow['live_state'])) {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/png" href="/public/assets/images/YSS Logo.png"/>
 <title>YSS – Live Session</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -366,7 +367,7 @@ if (!empty($sessionRow['live_state'])) {
     </div>
     <div class="station-gen-row">
       <select id="station-select" class="cell-input"></select>
-      <button type="button" class="mini-override-btn" id="station-shuffle-btn" title="Pick a random station"><i class="fas fa-shuffle"></i></button>
+      <button type="button" class="mini-override-btn" id="station-shuffle-btn" title="Pick a random station"><i class="fas fa-random"></i></button>
       <button type="button" class="announcement-copy-btn" id="station-copy-btn" title="Copy station announcement"><i class="fas fa-copy"></i></button>
     </div>
   </section>
@@ -465,7 +466,7 @@ if (!empty($sessionRow['live_state'])) {
   <div class="modal">
     <div class="modal-head">
       <h2>TRAINER FEEDBACK</h2>
-      <button type="button" class="modal-popout-btn" id="fb-popout" title="Pop out as floating panel"><i class="fas fa-up-right-from-square"></i></button>
+      <button type="button" class="modal-popout-btn" id="fb-popout" title="Pop out as floating panel"><i class="fas fa-clone"></i></button>
       <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
