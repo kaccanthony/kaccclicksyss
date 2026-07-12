@@ -672,7 +672,7 @@ html, body {
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 18px;
     width: 94%;
-    max-width: 960px;
+    max-width: 1120px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
