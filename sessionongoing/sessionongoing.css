@@ -388,23 +388,27 @@ table.resizable-cols{table-layout:fixed;}
 
 /* Trainee table column widths */
 
-#trainee-scroll table th:nth-child(1){width:70px;min-width:56px;max-width:110px;}   /* Slot */
-#trainee-scroll table th:nth-child(2){width:130px;min-width:125px;max-width:270px;}  /* Trainee Discord */
-#trainee-scroll table th:nth-child(3){width:100px;min-width:100px;max-width:160px;}  /* Discord ID */
-#trainee-scroll table th:nth-child(4){width:100px;min-width:96px;max-width:160px;}  /* Roblox Username */
-#trainee-scroll table th:nth-child(5){width:90px;min-width:90px;max-width:110px;}  /* Zone Number */
-#trainee-scroll table th:nth-child(6){width: 190px;min-width:130px;max-width:190px;}  /* Timer */
-#trainee-scroll table th:nth-child(7){width: 95px;min-width:95px;max-width:110px;}  /* Attendance */
-#trainee-scroll table th:nth-child(8){width: 126px;min-width:126px;max-width:240px;}  /* Trainer Name */
-#trainee-scroll table th:nth-child(9){width: 140px;min-width:140px;max-width:200px;}  /* Trainer Discord ID */
-#trainee-scroll table th:nth-child(10){width: 110px;min-width:80px;max-width:110px;}  /* Feedback */
-#trainee-scroll table th:nth-child(11){width:220px;min-width:220px;max-width:300px;} /* Announcements */
-#trainee-scroll table th:nth-child(12){width: 200px;min-width:200px;max-width:300px;} /* Trainee Notes */
-#trainee-scroll table th:nth-child(13){width: 105px;min-width:65px;max-width:105px;} /* Completed */
-#trainee-scroll table th:nth-child(14){width: 80px;min-width:70px;max-width:80px;} /* Remove */
+#trainee-scroll table th:nth-child(1){width:44px;min-width:40px;max-width:60px;}    /* Pop-out */
+#trainee-scroll table th:nth-child(2){width:70px;min-width:56px;}                    /* Slot */
+#trainee-scroll table th:nth-child(3){width:130px;min-width:110px;}                  /* Trainee Discord */
+#trainee-scroll table th:nth-child(4){width:100px;min-width:90px;}                   /* Discord ID */
+#trainee-scroll table th:nth-child(5){width:100px;min-width:90px;}                   /* Roblox Username */
+#trainee-scroll table th:nth-child(6){width:90px;min-width:80px;}                    /* Zone Number */
+#trainee-scroll table th:nth-child(7){width:190px;min-width:130px;}                  /* Timer */
+#trainee-scroll table th:nth-child(8){width:44px;min-width:40px;max-width:60px;}    /* Timer Pop-out */
+#trainee-scroll table th:nth-child(9){width:95px;min-width:80px;}                    /* Attendance */
+#trainee-scroll table th:nth-child(10){width:126px;min-width:110px;}                 /* Trainer Name */
+#trainee-scroll table th:nth-child(11){width:140px;min-width:120px;}                 /* Trainer Discord ID */
+#trainee-scroll table th:nth-child(12){width:110px;min-width:80px;}                  /* Feedback */
+#trainee-scroll table th:nth-child(13){width:220px;min-width:160px;}                 /* Announcements */
+#trainee-scroll table th:nth-child(14){width:200px;min-width:150px;}                 /* Trainee Notes */
+#trainee-scroll table th:nth-child(15){width:105px;min-width:65px;}                  /* Completed */
+#trainee-scroll table th:nth-child(16){width:80px;min-width:70px;}                   /* Remove */
 
-#trainee-scroll table td:nth-child(6){text-align:center;}   /* Timer */
-#trainee-scroll table td:nth-child(10){text-align:center;}  /* Feedback */
+#trainee-scroll table td:nth-child(1){text-align:center;}   /* Pop-out */
+#trainee-scroll table td:nth-child(7){text-align:center;}   /* Timer */
+#trainee-scroll table td:nth-child(8){text-align:center;}   /* Timer Pop-out */
+#trainee-scroll table td:nth-child(12){text-align:center;}  /* Feedback */
 
 /* Trainee & Trainer locked style (replaces old :disabled look) */
 .trainee-detail-field.is-locked, .trainer-detail-field.is-locked{

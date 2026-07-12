@@ -872,47 +872,49 @@ function formatSessionDateTime(){
   return `${datePart} | ${timePart} BST`;
 }
 
-function buildFeedbackMessage(){
-  const row = activeFeedbackRow;
+function buildFeedbackMessageForRow(row){
   const rowEl = row !== null ? document.querySelector(`tr[data-row="${row}"]`) : null;
   const trainerFields = rowEl ? rowEl.querySelectorAll('.trainer-detail-field') : [];
   const trainerName = trainerFields[0] ? trainerFields[0].value.trim() : '';
-  const zoneSelect = rowEl ? rowEl.querySelector('td:nth-child(5) select') : null;
+  const zoneSelect = rowEl ? rowEl.querySelector('td:nth-child(6) select') : null; // col 6 = Zone (after the Pop-out column)
   const zoneVal = (zoneSelect && zoneSelect.value && zoneSelect.value !== 'Select') ? zoneSelect.value : '';
-  const trainsVal = document.getElementById('fb-trains')?.value.trim() || '';
-  const setupTimeVal = document.getElementById('fb-setup-time')?.value.trim() || '';
-
-  const getFb = (field) => document.querySelector(`.feedback-text[data-field="${field}"]`)?.value.trim() || '';
+  const fb = row !== null ? getFeedbackData(row) : { trains:'', setup:'', conflict:'', priority:'', rbtiming:'', overall:'', notes:'' };
+  const t = row !== null ? timers[row] : null;
+  const setupTimeVal = t && t.setupSeconds !== undefined ? fmt(t.setupSeconds) : '';
 
   return `# Practice Feedback
 **Trainer**: ${trainerName}
 **Date of session**: ${formatSessionDateTime()}
 **Zone**: ${zoneVal}
-**Trains signalled**: ${trainsVal}
+**Trains signalled**: ${fb.trains || ''}
 **Set-up time**: ${setupTimeVal}
 
 =========================
 
 __**Zone Setup**__
-${getFb('setup')}
+${fb.setup || ''}
 
 __**Conflict Handling**__
-${getFb('conflict')}
+${fb.conflict || ''}
 
 __**Priority Handling**__
-${getFb('priority')}
+${fb.priority || ''}
 
 __**Rollbacks and Delay**__
-${getFb('rbtiming')}
+${fb.rbtiming || ''}
 
 __**Overall**__
-${getFb('overall')}
+${fb.overall || ''}
 
 __*Notes/Advice*__
-${getFb('notes')}
+${fb.notes || ''}
 
 If you believe you were unfairly assessed or have any additional questions, feel free to ask!
 Thank you for attending.`;
+}
+
+function buildFeedbackMessage(){
+  return activeFeedbackRow !== null ? buildFeedbackMessageForRow(activeFeedbackRow) : '';
 }
 
 function renderScriptPreview(minutes){
@@ -1226,25 +1228,39 @@ function refreshActivePip(){
   if(!pipWin || pipWin.closed) return;
   if(pipKind === 'trainee') refreshTraineePipContent();
   else if(pipKind === 'timer') refreshTimerPipContent();
-  else if(pipKind === 'feedback') refreshFeedbackPipContent();
 }
 
-/* ---- Trainee pop-out: full details + interactive controls ---- */
+/* ---- Trainee pop-out: details, timer (incl. Setup Done), attendance, notes,
+  and a condensed feedback form all in one window — feedback no longer gets
+   its own pop-out since only one Document PiP window can be open at a time. ---- */
 function buildTraineePip(win){
   win.document.body.innerHTML = `
     <div style="padding:14px;">
       <div class="trainee-pip-grid" id="tpip-grid"></div>
-      <div class="timer-cell" id="tpip-timer" style="margin-top:12px;justify-content:center;"></div>
+      <div class="timer-cell" id="tpip-timer" style="margin-top:12px;justify-content:center;flex-wrap:wrap;"></div>
+      <div class="pip-row" id="tpip-setup-row" style="margin-top:6px;"></div>
       <div class="pip-row" style="margin-top:10px;"><span class="pip-label">Attendance</span><input type="checkbox" id="tpip-attendance"/></div>
       <div style="margin-top:10px;">
-        <textarea id="tpip-note" rows="3" style="width:100%;" class="cell-input" placeholder="Notes for this trainee..."></textarea>
+        <textarea id="tpip-note" rows="2" style="width:100%;" class="cell-input" placeholder="Notes for this trainee..."></textarea>
       </div>
-      <div style="display:flex;gap:8px;margin-top:10px;">
-        <button class="feedback-btn" id="tpip-feedback-btn" style="flex:1;"><i class="fas fa-comment-dots"></i> Feedback</button>
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span class="pip-label" style="font-weight:600;">Feedback</span>
+          <button type="button" class="copy-feedback-btn" id="tpip-copy-fb" title="Copy full feedback message"><i class="fas fa-copy"></i></button>
+        </div>
+        <input class="cell-input" id="tpip-trains" placeholder="Trains signalled" style="width:100%;margin-bottom:8px;"/>
+        <div class="feedback-pip-fields" id="tpip-fb-fields"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="feedback-btn" id="tpip-open-modal-btn" style="flex:1;" title="Open the full feedback editor with script preview"><i class="fas fa-up-right-and-down-left-from-center"></i> Full editor</button>
         <button class="complete-btn" id="tpip-complete-btn" style="flex:1;">Mark done</button>
       </div>
     </div>
   `;
+  win.document.getElementById('tpip-fb-fields').innerHTML = FEEDBACK_FIELDS.map(f=>`
+    <div><label>${f.label}</label><textarea rows="2" data-field="${f.key}"></textarea></div>
+  `).join('');
+
   win.document.getElementById('tpip-note').addEventListener('input', (e)=>{
     const rowTextarea = document.querySelector(`tr[data-row="${pipRow}"] .trainee-notes-input`);
     if(rowTextarea) rowTextarea.value = e.target.value;
@@ -1255,7 +1271,29 @@ function buildTraineePip(win){
     if(rowChk) rowChk.checked = e.target.checked;
     queueLiveStateSync();
   });
-  win.document.getElementById('tpip-feedback-btn').addEventListener('click', ()=>{
+  win.document.getElementById('tpip-trains').addEventListener('input', (e)=>{
+    getFeedbackData(pipRow).trains = e.target.value;
+    const modalTrains = document.getElementById('fb-trains');
+    if(modalTrains && String(activeFeedbackRow) === String(pipRow)) modalTrains.value = e.target.value;
+    queueLiveStateSync();
+  });
+  win.document.querySelectorAll('#tpip-fb-fields textarea').forEach(ta=>{
+    ta.addEventListener('input', ()=>{
+      getFeedbackData(pipRow)[ta.dataset.field] = ta.value;
+      const modalTa = document.querySelector(`.feedback-text[data-field="${ta.dataset.field}"]`);
+      if(modalTa && String(activeFeedbackRow) === String(pipRow)) modalTa.value = ta.value;
+      queueLiveStateSync();
+    });
+  });
+  win.document.getElementById('tpip-copy-fb').addEventListener('click', ()=>{
+    win.navigator.clipboard.writeText(buildFeedbackMessageForRow(pipRow)).then(()=>{
+      const btn = win.document.getElementById('tpip-copy-fb');
+      btn.classList.add('copied');
+      btn.innerHTML = '<i class="fas fa-check"></i>';
+      setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 1200);
+    });
+  });
+  win.document.getElementById('tpip-open-modal-btn').addEventListener('click', ()=>{
     const rowBtn = document.querySelector(`tr[data-row="${pipRow}"] .feedback-btn`);
     if(rowBtn) openFeedbackModal(rowBtn);
   });
@@ -1291,6 +1329,7 @@ function refreshTraineePipContent(){
     <div class="pip-row"><span class="pip-label">Zone</span><span class="pip-value">${zone}</span></div>
     <div class="pip-row"><span class="pip-label">Trainer</span><span class="pip-value">${trainer}</span></div>
   `;
+
   const timerHost = pipWin.document.getElementById('tpip-timer');
   if(timerHost && !timerHost.dataset.built){
     timerHost.dataset.built = '1';
@@ -1298,9 +1337,25 @@ function refreshTraineePipContent(){
       <span class="timer-display" id="tpip-timer-display"></span>
       <button class="timer-btn play" id="tpip-play" title="Start/pause"><i class="fas fa-play"></i></button>
       <button class="timer-btn" id="tpip-reset" title="Reset"><i class="fas fa-redo"></i></button>
+      <button class="timer-btn setup-done" id="tpip-setup-done" style="width:24px" title="Mark setup done (stops timer)"><i class="fas fa-check"></i></button>
       <button class="timer-btn override" id="tpip-override" title="Override timer"><i class="fas fa-exclamation-triangle"></i></button>
     `;
-    win_bindTraineeTimerButtons();
+    pipWin.document.getElementById('tpip-play').addEventListener('click', ()=> toggleTimer(pipRow));
+    pipWin.document.getElementById('tpip-reset').addEventListener('click', ()=> resetTimer(pipRow));
+    pipWin.document.getElementById('tpip-override').addEventListener('click', ()=>{
+      const input = pipWin.prompt('Set timer to MM:SS:', fmt(computeCurrentRemaining(timers[pipRow])));
+      if(input !== null) setTimerValue(pipRow, input);
+    });
+    pipWin.document.getElementById('tpip-setup-done').addEventListener('click', ()=>{
+      const btn = pipWin.document.getElementById('tpip-setup-done');
+      if(btn.classList.contains('done')) return; // locked once marked — use the Edit link instead
+      btn.classList.add('done');
+      recordSetupDone(pipRow);
+      const rowBtn = document.querySelector(`.timer-btn.setup-done[data-row="${pipRow}"]`);
+      if(rowBtn) rowBtn.classList.add('done');
+      syncModalSetupDoneBtn(pipRow, true);
+      refreshTraineePipContent();
+    });
   }
   const t = timers[pipRow];
   const disp = pipWin.document.getElementById('tpip-timer-display');
@@ -1314,6 +1369,26 @@ function refreshTraineePipContent(){
   const playBtn = pipWin.document.getElementById('tpip-play');
   if(playBtn && t){ playBtn.innerHTML = t.running ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>'; playBtn.classList.toggle('active', t.running); }
 
+  const rowSetupBtn = rowEl.querySelector('.timer-btn.setup-done');
+  const setupDoneBtn = pipWin.document.getElementById('tpip-setup-done');
+  const isSetupDone = !!(rowSetupBtn && rowSetupBtn.classList.contains('done'));
+  if(setupDoneBtn) setupDoneBtn.classList.toggle('done', isSetupDone);
+  const setupRow = pipWin.document.getElementById('tpip-setup-row');
+  if(setupRow){
+    setupRow.innerHTML = `<span class="pip-label">Setup time</span><span class="pip-value">${t && t.setupSeconds !== undefined ? fmt(t.setupSeconds) : '—'}${isSetupDone ? ' <button type="button" class="timer-btn override" id="tpip-setup-override" style="width:auto;padding:0 8px;margin-left:6px;" title="Override setup time">Edit</button>' : ''}</span>`;
+    const overrideBtn = pipWin.document.getElementById('tpip-setup-override');
+    if(overrideBtn) overrideBtn.addEventListener('click', ()=>{
+      const current = t.setupSeconds !== undefined ? fmt(t.setupSeconds) : '00:00';
+      const input = pipWin.prompt('Override setup time (MM:SS):', current);
+      if(input === null) return;
+      const parts = String(input).split(':').map(n => parseInt(n, 10) || 0);
+      t.setupSeconds = parts.length === 2 ? (parts[0] * 60 + parts[1]) : (parseInt(input, 10) || 0);
+      updateModalSetupTimeIfOpen(pipRow);
+      queueLiveStateSync();
+      refreshTraineePipContent();
+    });
+  }
+
   const attendance = pipWin.document.getElementById('tpip-attendance');
   const rowChk = rowEl.querySelector('.chk');
   if(attendance && pipWin.document.activeElement !== attendance) attendance.checked = !!(rowChk && rowChk.checked);
@@ -1322,21 +1397,19 @@ function refreshTraineePipContent(){
   const rowNote = rowEl.querySelector('.trainee-notes-input');
   if(note && pipWin.document.activeElement !== note) note.value = rowNote ? rowNote.value : '';
 
+  const fbData = getFeedbackData(pipRow);
+  const trainsInput = pipWin.document.getElementById('tpip-trains');
+  if(trainsInput && pipWin.document.activeElement !== trainsInput) trainsInput.value = fbData.trains || '';
+  pipWin.document.querySelectorAll('#tpip-fb-fields textarea').forEach(ta=>{
+    if(pipWin.document.activeElement !== ta) ta.value = fbData[ta.dataset.field] || '';
+  });
+
   const completeBtn = pipWin.document.getElementById('tpip-complete-btn');
   if(completeBtn){ completeBtn.textContent = done ? 'Done' : 'Mark done'; completeBtn.classList.toggle('done', !!done); }
 }
 
-function win_bindTraineeTimerButtons(){
-  pipWin.document.getElementById('tpip-play').addEventListener('click', ()=> toggleTimer(pipRow));
-  pipWin.document.getElementById('tpip-reset').addEventListener('click', ()=> resetTimer(pipRow));
-  pipWin.document.getElementById('tpip-override').addEventListener('click', ()=>{
-    const input = pipWin.prompt('Set timer to MM:SS:', fmt(computeCurrentRemaining(timers[pipRow])));
-    if(input !== null) setTimerValue(pipRow, input);
-  });
-}
-
 function openTraineePip(row){
-  openPip('trainee', row, buildTraineePip, { width: 300, height: 420, title: 'Trainee pop-out' });
+  openPip('trainee', row, buildTraineePip, { width: 320, height: 560, title: 'Trainee pop-out' });
 }
 
 /* ---- Timer-only pop-out: just the running clock + controls ---- */
@@ -1391,39 +1464,13 @@ function openTimerPip(row){
   openPip('timer', row, buildTimerPip, { width: 220, height: 210, title: 'Timer pop-out' });
 }
 
-/* ---- Feedback pop-out: one per trainee, opened from the feedback modal ---- */
-function buildFeedbackPip(win){
-  const rowEl = document.querySelector(`tr[data-row="${pipRow}"]`);
-  const name = rowEl?.querySelector('.trainee-name')?.value || 'Trainee';
-  win.document.title = 'Feedback — ' + name;
-  const data = getFeedbackData(pipRow);
-  win.document.body.innerHTML = `<div class="feedback-pip-fields" style="padding:14px;">
-    ${FEEDBACK_FIELDS.map(f=>`<div><label>${f.label}</label><textarea data-field="${f.key}">${data[f.key] || ''}</textarea></div>`).join('')}
-  </div>`;
-  win.document.querySelectorAll('textarea').forEach(ta=>{
-    ta.addEventListener('input', ()=>{
-      getFeedbackData(pipRow)[ta.dataset.field] = ta.value;
-      queueLiveStateSync();
-      const modalTa = document.querySelector(`.feedback-text[data-field="${ta.dataset.field}"]`);
-      if(modalTa && String(activeFeedbackRow) === String(pipRow)) modalTa.value = ta.value;
-    });
-  });
-}
-
-function refreshFeedbackPipContent(){
-  if(pipKind !== 'feedback' || !pipWin || pipWin.closed) return;
-  const rowEl = document.querySelector(`tr[data-row="${pipRow}"]`);
-  const name = rowEl?.querySelector('.trainee-name')?.value || 'Trainee';
-  pipWin.document.title = 'Feedback — ' + name;
-}
-
-function openFeedbackPip(row){
-  openPip('feedback', row, buildFeedbackPip, { width: 320, height: 460, title: 'Feedback pop-out' });
-}
-
+// The "pop out" button in the full feedback modal now just opens the trainee
+// pop-out (which already has the condensed feedback fields built in) — a
+// separate feedback-only window isn't possible alongside it (one PiP window
+// per tab).
 document.getElementById('fb-popout').addEventListener('click', ()=>{
   if (activeFeedbackRow === null) return;
-  openFeedbackPip(activeFeedbackRow);
+  openTraineePip(activeFeedbackRow);
   closeFeedbackModal();
 });
 
@@ -1702,7 +1749,7 @@ function makeColumnsResizable(table){
     });
   });
 }
-document.querySelector('#trainee-scroll table') && makeColumnsResizable(document.querySelector('#trainee-scroll table'));
+document.querySelector('#trainee-scroll table') && makeColumnsResizableContained(document.querySelector('#trainee-scroll table'));
 document.querySelectorAll('.drivers-table, .staff-table').forEach(makeColumnsResizableContained);
 
 function makeColumnsResizableContained(table){
