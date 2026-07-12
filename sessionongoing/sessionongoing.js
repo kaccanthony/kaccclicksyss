@@ -284,11 +284,6 @@ document.getElementById('status-select').addEventListener('change', (e)=>{
 const zones = ['Zone 1','Zone 2','Zone 3','Zone 4', 'Zone 5','Zone 6','Zone 7','Zone 8','Zone 9','Zone 10'];
 let COUNTDOWN_START = (parseInt(SESSION_DATA.trainee_timer, 10) || 12) * 60; // from session_ongoing.trainee_timer
 
-const fbZoneSelect = document.getElementById('fb-zone');
-if(fbZoneSelect){
-  fbZoneSelect.innerHTML = '<option>Select</option>' + zones.map(z=>`<option>${z}</option>`).join('');
-}
-
 function fmt(s){
   const sign = s < 0 ? '-' : '';
   const abs = Math.abs(s);

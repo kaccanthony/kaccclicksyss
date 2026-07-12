@@ -473,7 +473,11 @@ if (!empty($sessionRow['live_state'])) {
       <div class="mf-grid">
         <div class="mf-field">
           <label>Zone</label>
-          <select id="fb-zone" class="locked-field" data-lock-msg="This can't be edited here — override Trainee Details in the Trainee panel to change it there."><option>Select</option><option>Zone A</option><option>Zone B</option><option>Zone C</option><option>Zone D</option></select>
+          <select id="fb-zone" class="locked-field" data-lock-msg="This can't be edited here — override Trainee Details in the Trainee panel to change it there.">
+            <option>Select</option>
+            <option>Zone 1</option><option>Zone 2</option><option>Zone 3</option><option>Zone 4</option><option>Zone 5</option>
+            <option>Zone 6</option><option>Zone 7</option><option>Zone 8</option><option>Zone 9</option><option>Zone 10</option>
+          </select>
         </div>
         <div class="mf-field">
           <label>Date</label>
