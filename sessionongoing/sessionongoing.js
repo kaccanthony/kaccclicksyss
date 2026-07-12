@@ -307,6 +307,14 @@ function computeCurrentRemaining(t) {
     return Math.max(0, t.remainingSeconds - elapsed);
 }
 
+function playTimerWarningSound() {
+    if (!PLAY_TRAINEE_WARNING_SOUND) return;
+    const snd = document.getElementById('sound-trainee-warning');
+    if (!snd) return;
+    snd.currentTime = 0;
+    snd.play().catch(()=>{});
+}
+
 function updateTimerDisplay(row) {
     const t = timers[row];
     if (!t) return;
@@ -317,6 +325,10 @@ function updateTimerDisplay(row) {
         rowDisplay.classList.toggle('running', live > 60 && t.running);
         rowDisplay.classList.toggle('low', live <= 60 && live > 0);
         rowDisplay.classList.toggle('expired', live <= 0);
+    }
+    if (t.running) {
+        if (live <= 120 && live > 0 && !t.warned2min) { t.warned2min = true; playTimerWarningSound(); }
+        if (live <= 60 && live > 0 && !t.warned1min) { t.warned1min = true; playTimerWarningSound(); }
     }
     updateModalTimerIfOpen(row);
     if (pipWin && !pipWin.closed && String(pipRow) === String(row)) {
@@ -350,6 +362,8 @@ function resetTimer(row) {
     t.running = false;
     t.remainingSeconds = COUNTDOWN_START;
     t.syncedAt = Date.now();
+    t.warned2min = false;
+    t.warned1min = false;
     const rowPlayBtn = document.querySelector(`.timer-btn.play[data-row="${row}"]`);
     if (rowPlayBtn) { rowPlayBtn.innerHTML = '<i class="fas fa-play"></i>'; rowPlayBtn.classList.remove('active'); }
     syncModalPlayBtn(row, false);
@@ -363,6 +377,8 @@ function setTimerValue(row, mmss) {
     const parts = String(mmss).split(':').map(n => parseInt(n, 10) || 0);
     t.remainingSeconds = parts.length === 2 ? (parts[0] * 60 + parts[1]) : (parseInt(mmss, 10) || 0);
     t.syncedAt = Date.now();
+    if (t.remainingSeconds > 120) t.warned2min = false;
+    if (t.remainingSeconds > 60) t.warned1min = false;
     updateTimerDisplay(row);
     queueLiveStateSync();
 }
@@ -498,7 +514,7 @@ function addTraineeRow(unallocated, uid){
   `;
   document.getElementById('trainee-rows').appendChild(tr);
   refreshTrainerDropdowns();
-  timers[idx] = { remainingSeconds: COUNTDOWN_START, running: false, syncedAt: Date.now(), totalMinutes: COUNTDOWN_START/60, setupSeconds: undefined };
+  timers[idx] = { remainingSeconds: COUNTDOWN_START, running: false, syncedAt: Date.now(), totalMinutes: COUNTDOWN_START/60, setupSeconds: undefined, warned2min: false, warned1min: false };
   applyOverrides();
   renderAnnouncementPreview(idx);
   updateStatusLockState();
@@ -1474,6 +1490,18 @@ document.getElementById('fb-popout').addEventListener('click', ()=>{
   closeFeedbackModal();
 });
 
+const scriptToggleBtn = document.getElementById('script-toggle-btn');
+const scriptPreviewEl = document.getElementById('script-preview');
+if (scriptToggleBtn && scriptPreviewEl) {
+  scriptToggleBtn.addEventListener('click', () => {
+    const hidden = scriptPreviewEl.style.display === 'none';
+    scriptPreviewEl.style.display = hidden ? 'flex' : 'none';
+    scriptToggleBtn.innerHTML = hidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+    scriptToggleBtn.title = hidden ? 'Hide script' : 'Show script';
+    scriptToggleBtn.classList.toggle('active', hidden);
+  });
+}
+
 /* ================= FLOATING ANNOUNCEMENT PREVIEW (read-only) ================= */
 const announcementFloat = document.getElementById('announcement-float');
 const announcementFloatPreview = document.getElementById('announcement-float-preview');
@@ -2016,7 +2044,7 @@ function collectLiveState() {
             };
         });
 
-    return {
+    const payload = {
         timers: timerState,
         drivers: drivers,
         staffShift: staffShift,
@@ -2026,6 +2054,11 @@ function collectLiveState() {
         slotOrder: slotOrder,
         unallocatedTrainees: unallocatedTrainees,
     };
+    if (pendingAnnouncement) {
+        payload.announcement = pendingAnnouncement;
+        pendingAnnouncement = null;
+    }
+    return payload;
 }
 
 async function pushState() {
@@ -2178,6 +2211,10 @@ const attendanceParts = (session.trainee_attendance || '').split(',');
             applyOverrides();
         }
     }
+    if (liveState.announcement && liveState.announcement.id !== lastSeenAnnouncementId) {
+        lastSeenAnnouncementId = liveState.announcement.id;
+        displayIncomingAnnouncement(liveState.announcement);
+    }
 }
 
 async function pullState() {
@@ -2246,4 +2283,89 @@ function refreshTrainerDropdowns(){
     sel.innerHTML = '<option value="">— None —</option>' + names.map(n=>`<option value="${n}">${n}</option>`).join('');
     if(names.includes(current)) sel.value = current;
   });
+}
+
+/* ================= HOST ANNOUNCEMENT BROADCAST ================= */
+let pendingAnnouncement = null;
+let lastSeenAnnouncementId = (LIVE_STATE.announcement && LIVE_STATE.announcement.id) || null;
+
+const announceFab = document.getElementById('announce-fab');
+const announceWidget = document.getElementById('announce-widget');
+const announcePanel = document.getElementById('announce-panel');
+
+if (announceFab) {
+  document.getElementById('announce-panel-close').addEventListener('click', ()=> announcePanel.classList.remove('open'));
+  document.addEventListener('click', (e)=>{
+    if (!e.target.closest('#announce-widget')) announcePanel.classList.remove('open');
+  });
+
+  (function enableAnnounceDrag(){
+    let dragging = false, moved = false, offsetX = 0, offsetY = 0;
+    announceFab.addEventListener('mousedown', (e)=>{
+      dragging = true; moved = false;
+      const rect = announceWidget.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', (e)=>{
+      if(!dragging) return;
+      moved = true;
+      const maxLeft = window.innerWidth - announceFab.offsetWidth;
+      const maxTop = window.innerHeight - announceFab.offsetHeight;
+      announceWidget.style.left = Math.min(Math.max(0, e.clientX - offsetX), maxLeft) + 'px';
+      announceWidget.style.right = 'auto';
+      announceWidget.style.top = Math.min(Math.max(0, e.clientY - offsetY), maxTop) + 'px';
+      announceWidget.style.bottom = 'auto';
+    });
+    document.addEventListener('mouseup', ()=>{
+      if(dragging && !moved) announcePanel.classList.toggle('open');
+      dragging = false;
+    });
+  })();
+
+  document.getElementById('announce-send-btn').addEventListener('click', ()=>{
+    const input = document.getElementById('announce-message-input');
+    const message = input.value.trim();
+    if (!message) return;
+    pendingAnnouncement = {
+      id: Date.now() + '_' + myClientId,
+      message: message,
+      senderName: SESSION_DATA.host || 'Host',
+      sentAt: Date.now(),
+    };
+    lastSeenAnnouncementId = pendingAnnouncement.id; // don't show it to myself
+    queueLiveStateSync();
+    pushState();
+    input.value = '';
+    announcePanel.classList.remove('open');
+    showToast('Announcement sent to everyone.');
+  });
+}
+
+function showAnnouncementFullscreen(text){
+  document.getElementById('announce-fullscreen-text').textContent = text;
+  document.getElementById('announce-fullscreen').classList.add('show');
+}
+document.getElementById('announce-fullscreen-close')?.addEventListener('click', ()=>{
+  document.getElementById('announce-fullscreen').classList.remove('show');
+});
+
+function showAnnouncementBanner(text){
+  document.getElementById('announce-banner-text').textContent = text;
+  document.getElementById('announce-banner').classList.add('show');
+  setTimeout(()=> document.getElementById('announce-banner').classList.remove('show'), 12000);
+}
+document.getElementById('announce-banner-close')?.addEventListener('click', ()=>{
+  document.getElementById('announce-banner').classList.remove('show');
+});
+
+function displayIncomingAnnouncement(ann){
+  if (!ANNOUNCEMENT_ENABLED_PREF) return;
+  const text = `${ann.senderName}: ${ann.message}`;
+  const snd = document.getElementById('sound-announcement');
+  if (snd) { snd.currentTime = 0; snd.play().catch(()=>{}); }
+  if (ANNOUNCEMENT_DISPLAY_PREF === 'fullscreen') showAnnouncementFullscreen(text);
+  else if (ANNOUNCEMENT_DISPLAY_PREF === 'banner') showAnnouncementBanner(text);
+  else showToast(text);
 }

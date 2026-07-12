@@ -49,6 +49,19 @@ if ($staffId) {
     $hasAvatar = mysqli_stmt_num_rows($stmt) > 0;
 }
 
+function getStaffPref($conn, $staffId, $key, $default = null) {
+    if (!$staffId) return $default;
+    $stmt = mysqli_prepare($conn, "SELECT pref_value FROM user_staff_notif_prefs WHERE user_id = ? AND pref_key = ?");
+    mysqli_stmt_bind_param($stmt, "ss", $staffId, $key);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt)->fetch_assoc();
+    return $res ? $res['pref_value'] : $default;
+}
+
+$prefTraineeWarning     = getStaffPref($conn, $staffId, 'staff_trainee_warning', '1');       // default: play
+$prefAnnouncementDisplay = getStaffPref($conn, $staffId, 'staff_announcement_display', 'toast');
+$prefAnnouncementEnabled = getStaffPref($conn, $staffId, 'staff_announcement_enabled', '1');
+
 $stmt = mysqli_prepare($conn, "SELECT * FROM session_ongoing WHERE session_id = ?");
 mysqli_stmt_bind_param($stmt, "i", $sessionId);
 mysqli_stmt_execute($stmt);
@@ -383,9 +396,37 @@ if (!empty($sessionRow['live_state'])) {
   </button>
 </div>
 
+<?php if ($viewerRole === 'Host'): ?>
+<div class="announce-widget" id="announce-widget">
+  <div class="announce-panel" id="announce-panel">
+    <div class="announce-panel-header"><i class="fas fa-bullhorn"></i> Announce to everyone <button type="button" class="bell-panel-close" id="announce-panel-close"><i class="fas fa-times"></i></button></div>
+    <div class="announce-panel-body">
+      <textarea id="announce-message-input" placeholder="Type a message for every connected staff member..." maxlength="500"></textarea>
+      <button type="button" class="mbtn primary" id="announce-send-btn"><i class="fas fa-paper-plane"></i> Send</button>
+    </div>
+  </div>
+  <button class="announce-fab" id="announce-fab" title="Announce to everyone"><i class="fas fa-bullhorn"></i></button>
+</div>
+<?php endif; ?>
+
+<!-- Incoming announcement display surfaces -->
+<div class="announce-banner" id="announce-banner">
+  <span id="announce-banner-text"></span>
+  <button type="button" id="announce-banner-close"><i class="fas fa-times"></i></button>
+</div>
+<div class="announce-fullscreen" id="announce-fullscreen">
+  <div class="announce-fullscreen-box">
+    <i class="fas fa-bullhorn"></i>
+    <p id="announce-fullscreen-text"></p>
+    <button type="button" class="mbtn" id="announce-fullscreen-close">Dismiss</button>
+  </div>
+</div>
+
 <audio id="sound-host-bell" src="../public/assets/sounds/TrainerBuzzer.ogg" preload="auto"></audio>
 <audio id="sound-cohost-ack" src="../public/assets/sounds/CoHostBuzzer.ogg" preload="auto"></audio>
 <audio id="sound-assistant-ack" src="../public/assets/sounds/AssistantBuzzer.ogg" preload="auto"></audio>
+<audio id="sound-trainee-warning" src="../public/assets/sounds/TraineeWarning.ogg" preload="auto"></audio>
+<audio id="sound-announcement" src="../public/assets/sounds/Announcement.ogg" preload="auto"></audio>
 
 <!-- Toasts -->
 <div class="toast-container" id="toast-container"></div>
@@ -461,8 +502,12 @@ if (!empty($sessionRow['live_state'])) {
       <!-- Script section -->
       <div class="script-feedback-grid">
         <div class="script-col">
-          <div class="mf-section-label">Script <span class="script-hint">read-only — tap the copy icon on a line</span></div>
-          <div class="script-preview" id="script-preview"><!-- lines injected by JS via SCRIPT_LINES --></div>
+          <div class="mf-section-label">
+            Script
+            <button type="button" class="script-toggle-btn" id="script-toggle-btn" title="Show script"><i class="fas fa-eye"></i></button>
+            <span class="script-hint">read-only — tap the copy icon on a line</span>
+          </div>
+          <div class="script-preview" id="script-preview" style="display:none;"><!-- lines injected by JS via SCRIPT_LINES --></div>
         </div>
 
         <div class="feedback-col">
@@ -568,6 +613,9 @@ const LIVE_STATE = <?= json_encode($liveState, JSON_HEX_TAG | JSON_HEX_APOS | JS
 const STAFF_DIRECTORY = <?= json_encode($staffDirectory, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) ?>;
 const SESSION_STARTED_AT = <?= json_encode($sessionRow['started_at']) ?>; // e.g. "2026-07-10 14:32:00"
 const MY_ROLE = <?= json_encode(strtolower(str_replace('-', '', $viewerRole))) ?>; // 'host' | 'cohost' | 'assistant'
+const PLAY_TRAINEE_WARNING_SOUND = <?= json_encode($prefTraineeWarning !== '0') ?>;
+const ANNOUNCEMENT_DISPLAY_PREF = <?= json_encode($prefAnnouncementDisplay ?: 'toast') ?>;
+const ANNOUNCEMENT_ENABLED_PREF = <?= json_encode($prefAnnouncementEnabled !== '0') ?>;
 const ELIGIBLE_STAFF = {
   'Co-Host': <?= json_encode($eligibleCohost) ?>,
   'Assistant': <?= json_encode($eligibleAssistant) ?>
