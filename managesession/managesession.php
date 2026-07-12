@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
                 $types = 'i' . 'sssisissi' . 'ssssssssss'. 
                                 str_repeat('sssis', 10); // 5 params (name, discord, discord_id, zone, note) × 10 trainees = 50 params;
                 mysqli_stmt_bind_param($stmt, $types,
-            $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
+            $customId, $sn, $sd, $ss, $sb, $sdur, $ns, $sdate, $stime, $tt,
             $host, $ch1, $ch2, $ch3, $ch4, $as1, $as2, $as3, $as4, $add,
             $traineeFields['trainee_1_name'], $traineeFields['trainee_1_discord'], 
             $traineeFields['trainee_1_discord_id'], $traineeFields['trainee_1_zone'], $traineeFields['trainee_1_note'],
