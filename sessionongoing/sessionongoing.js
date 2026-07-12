@@ -1768,11 +1768,6 @@ function applyRemoteState(session, liveState) {
 
     refreshTrainerDropdowns();
 
-    if(session.session_status === 'concluded' && myRole !== 'host'){
-    showToast('The host has concluded this session. Returning to dashboard...');
-    setTimeout(()=>{ window.location.href = '../dashboard/dashboard.php'; }, 2500);
-  }
-
   if (liveState.slotOrder && !document.activeElement?.closest('#trainee-rows')) {
     const tbody = document.getElementById('trainee-rows');
     // Reorder allocated rows per slotOrder, THEN append unallocated rows after them —
@@ -1836,8 +1831,8 @@ async function pullState() {
     try {
         const res = await fetch(`sync_session.php?session_id=${SESSION_DATA.session_id}`);
         if (res.status === 404) {
-            showToast('This session has been concluded. Returning to dashboard...');
-            setTimeout(()=>{ window.location.href = '../dashboard/dashboard.php'; }, 2000);
+            showToast('This session has been concluded by the host. Returning to dashboard...');
+            setTimeout(()=>{ window.location.href = '../dashboard/dashboard.php'; }, 2500);
             return;
         }
         const data = await res.json();
