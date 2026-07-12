@@ -38,6 +38,61 @@ if ($staffId) {
     }
 }
 
+// ── Assigned Sessions (host / co-host / assistant / additional staff) ──
+$myDisplayName = '';
+if ($staffId) {
+    $stmtMe = mysqli_prepare($conn, "SELECT staff_display_name, staff_name FROM staff_list WHERE staff_id = ?");
+    mysqli_stmt_bind_param($stmtMe, "s", $staffId);
+    mysqli_stmt_execute($stmtMe);
+    if ($rowMe = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtMe))) {
+        $myDisplayName = $rowMe['staff_display_name'] ?: $rowMe['staff_name'];
+    }
+}
+
+$assignedSessions = [];
+if ($myDisplayName) {
+    $bst = new DateTimeZone('Europe/London');
+    $nowBST = new DateTime('now', $bst);
+
+    $stmtAssigned = mysqli_prepare($conn, "SELECT session_id, session_name, session_date, session_time,
+            host, co_host1, co_host2, co_host3, `co_host4/supervisor`,
+            assistant_1, assistant_2, assistant_3, assistant_4, additional_staff
+        FROM session_upcoming
+        WHERE session_status IN ('Booked','Scheduled')
+          AND session_booked = 1
+          AND (session_date > ? OR (session_date = ? AND session_time >= ?))
+          AND (host = ? OR co_host1 = ? OR co_host2 = ? OR co_host3 = ? OR `co_host4/supervisor` = ?
+               OR assistant_1 = ? OR assistant_2 = ? OR assistant_3 = ? OR assistant_4 = ?
+               OR additional_staff LIKE ?)
+        ORDER BY session_date ASC, session_time ASC
+        LIMIT 8");
+    $todayBST = $nowBST->format('Y-m-d');
+    $nowTimeBST = $nowBST->format('H:i:s');
+    $likeMe = '%' . $myDisplayName . '%';
+    mysqli_stmt_bind_param($stmtAssigned, "sssssssssssss",
+        $todayBST, $todayBST, $nowTimeBST,
+        $myDisplayName, $myDisplayName, $myDisplayName, $myDisplayName, $myDisplayName,
+        $myDisplayName, $myDisplayName, $myDisplayName, $myDisplayName, $likeMe
+    );
+    mysqli_stmt_execute($stmtAssigned);
+    $resAssigned = mysqli_stmt_get_result($stmtAssigned);
+    while ($row = mysqli_fetch_assoc($resAssigned)) {
+        $roleLabel = 'Additional Staff';
+        if ($row['host'] === $myDisplayName)                         $roleLabel = 'Host';
+        elseif ($row['co_host1'] === $myDisplayName)                 $roleLabel = 'Co-Host 1';
+        elseif ($row['co_host2'] === $myDisplayName)                 $roleLabel = 'Co-Host 2';
+        elseif ($row['co_host3'] === $myDisplayName)                 $roleLabel = 'Co-Host 3';
+        elseif ($row['co_host4/supervisor'] === $myDisplayName)      $roleLabel = 'Co-Host 4 / SV';
+        elseif ($row['assistant_1'] === $myDisplayName)              $roleLabel = 'Assistant 1';
+        elseif ($row['assistant_2'] === $myDisplayName)              $roleLabel = 'Assistant 2';
+        elseif ($row['assistant_3'] === $myDisplayName)              $roleLabel = 'Assistant 3';
+        elseif ($row['assistant_4'] === $myDisplayName)              $roleLabel = 'Assistant 4';
+
+        $row['role_label'] = $roleLabel;
+        $assignedSessions[] = $row;
+    }
+}
+
 if (empty($user['role'])) {
     $_SESSION['error'] = 'Your account has no role assigned. Contact an admin.';
     header('Location: /login/login.php');
@@ -129,7 +184,19 @@ foreach (($roleCards[$role] ?? []) as $key) {
             </div>
             <div class="popup-section-label">Assigned Sessions</div>
             <div class="popup-sessions" id="popup-sessions">
-                <span class="session-pill"><i class="fas fa-circle-dot"></i> No active sessions</span>
+                <?php if (empty($assignedSessions)): ?>
+                    <span class="session-pill"><i class="fas fa-circle-dot"></i> No active sessions</span>
+                <?php else: ?>
+                    <?php foreach ($assignedSessions as $as): ?>
+                        <?php
+                            $sessionDT = new DateTime($as['session_date'] . ' ' . $as['session_time'], new DateTimeZone('Europe/London'));
+                        ?>
+                        <span class="session-pill" title="<?= htmlspecialchars($as['session_name'] ?: ('Session #' . $as['session_id'])) ?>">
+                            <i class="fas fa-circle-dot"></i>
+                            <?= htmlspecialchars($sessionDT->format('M j, H:i')) ?> BST — <?= htmlspecialchars($as['role_label']) ?>
+                        </span>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
             <div class="popup-divider"></div>
             <a href="notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>

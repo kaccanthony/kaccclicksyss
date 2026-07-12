@@ -63,6 +63,8 @@ $stmtS = mysqli_prepare($conn,
     "SELECT * FROM session_upcoming
     WHERE session_date = ?
     AND host = ?
+    AND session_status IN ('Booked', 'Scheduled')
+    AND session_booked = 1
     ORDER BY session_time ASC"
 );
 mysqli_stmt_bind_param($stmtS, "ss", $todayBST, $hostDisplayName);
