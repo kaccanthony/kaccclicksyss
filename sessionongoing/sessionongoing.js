@@ -1562,10 +1562,16 @@ function fmtHMS(seconds) {
 
 /* ================= GLOBAL TRAINEE TIMER (overall session clock) ================= */
 const sessionStartMs = SESSION_STARTED_AT ? new Date(SESSION_STARTED_AT.replace(' ', 'T') + 'Z').getTime() : Date.now();
+const sessionDurationSeconds = (parseInt(SESSION_DATA.session_duration, 10) || 0) * 60;
 setInterval(()=>{
   const elapsed = Math.max(0, Math.floor((Date.now() - sessionStartMs) / 1000));
   const el = document.getElementById('global-timer-display');
   if(el) el.textContent = fmtHMS(elapsed);
+
+  const overtimePill = document.getElementById('overtime-pill');
+  const isOvertime = sessionDurationSeconds > 0 && elapsed > sessionDurationSeconds;
+  if (el) el.classList.toggle('overtime', isOvertime);
+  if (overtimePill) overtimePill.style.display = isOvertime ? 'inline-flex' : 'none';
 }, 1000);
 
 /* real sync indicator — only resets after an actual successful round-trip */
@@ -1795,40 +1801,8 @@ function makeColumnsResizable(table){
     });
   });
 }
-document.querySelector('#trainee-scroll table') && makeColumnsResizableContained(document.querySelector('#trainee-scroll table'));
-document.querySelectorAll('.drivers-table, .staff-table').forEach(makeColumnsResizableContained);
-
-function makeColumnsResizableContained(table){
-  table.classList.add('resizable-cols');
-  table.querySelectorAll('thead th').forEach(th=>{
-    if(th.querySelector('.col-resizer')) return;
-    const handle = document.createElement('span');
-    handle.className = 'col-resizer';
-    th.appendChild(handle);
-    handle.addEventListener('mousedown', (e)=>{
-      e.preventDefault();
-      const startX = e.pageX;
-      const startWidth = th.offsetWidth;
-      handle.classList.add('resizing');
-      const wrapper = table.closest('.table-wrap');
-      function onMove(ev){
-        const containerWidth = wrapper.clientWidth;
-        const otherThs = Array.from(table.querySelectorAll('thead th')).filter(o => o !== th);
-        const othersWidth = otherThs.reduce((sum, o) => sum + o.offsetWidth, 0);
-        const maxWidth = containerWidth - othersWidth - 2; // small buffer so borders don't tip it over
-        const requested = startWidth + (ev.pageX - startX);
-        th.style.width = Math.max(50, Math.min(requested, maxWidth)) + 'px';
-      }
-      function onUp(){
-        handle.classList.remove('resizing');
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-      }
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
-    });
-  });
-}
+document.querySelector('#trainee-scroll table') && makeColumnsResizable(document.querySelector('#trainee-scroll table'));
+document.querySelectorAll('.drivers-table, .staff-table').forEach(makeColumnsResizable);
 
 /* ================= COLUMN VISIBILITY (Trainees panel only) ================= */
 const TRAINEE_COLUMNS = [

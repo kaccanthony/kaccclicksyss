@@ -281,6 +281,7 @@ if (!empty($sessionRow['live_state'])) {
       <div class="info-cell" style="grid-column:4/5;">
         <div class="info-label">Session Elapsed Time</div>
         <div class="global-timer-value" id="global-timer-display">00:00:00</div>
+        <span class="overtime-pill" id="overtime-pill" style="display:none;"><i class="fas fa-triangle-exclamation"></i> Overtime — please pick up the pace and conclude the session now.</span>
       </div>
   </section>
 
