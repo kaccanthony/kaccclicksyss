@@ -311,7 +311,7 @@ function statusBadge($status) {
         </div>
         <select name="status" class="filter-select" onchange="this.form.submit()">
             <option value="">All Statuses</option>
-            <?php foreach (['Scheduled','Booked','Cancelled','Postponed'] as $s): ?>
+            <?php foreach (['Requested','Scheduled','Booked','Cancelled','Postponed'] as $s): ?>
                 <option value="<?= $s ?>" <?= $filter_status===$s?'selected':'' ?>><?= $s ?></option>
             <?php endforeach; ?>
         </select>
