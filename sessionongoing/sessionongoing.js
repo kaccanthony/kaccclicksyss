@@ -1766,19 +1766,13 @@ function applyRemoteState(session, liveState) {
 
     const statusSelect = document.getElementById('status-select');
     const normalizedStatus = (session.session_status || '').toLowerCase().replace(/\s+/g, '');
-    if (statusSelect.value !== normalizedStatus && [...statusSelect.options].some(o=>o.value===normalizedStatus)) {
+    if (statusSelect.value !== 'concluded' && statusSelect.value !== normalizedStatus && [...statusSelect.options].some(o=>o.value===normalizedStatus)) {
         statusSelect.value = normalizedStatus;
         statusSelect.dispatchEvent(new Event('change'));
     }
 
     refreshTrainerDropdowns();
-    if (!isEditingField(active) || active.id !== 'status-select') {
-        const statusSelect = document.getElementById('status-select');
-        if (statusSelect.value !== session.session_status) {
-            statusSelect.value = session.session_status;
-            statusSelect.dispatchEvent(new Event('change'));
-        }
-    }
+
     if(session.session_status === 'concluded' && myRole !== 'host'){
     showToast('The host has concluded this session. Returning to dashboard...');
     setTimeout(()=>{ window.location.href = '../dashboard/dashboard.php'; }, 2500);
