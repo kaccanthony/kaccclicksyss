@@ -37,8 +37,6 @@ if ($permLevel < 10) {
 // ── Handle POST: Add / Edit / Delete ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
 
-    @file_put_contents(__DIR__ . '/debug.log', date('Y-m-d H:i:s') . "\n" . print_r($_POST, true) . "\n---\n", FILE_APPEND);
-
     $action = $_POST['action'] ?? '';
 
     if ($action === 'delete' && $permLevel >= 15) {
