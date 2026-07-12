@@ -588,13 +588,7 @@ const expandBtn = e.target.closest('.notes-expand-btn');
       return;
     }
 
-const expandBtn = e.target.closest('.notes-expand-btn');
-    if(expandBtn){
-      openNotesFloat(expandBtn.dataset.row);
-      return;
-    }
-
-    const announceCopyBtn = e.target.closest('.announcement-copy-btn');
+const announceCopyBtn = e.target.closest('.announcement-copy-btn');
     if(announceCopyBtn){
       const text = resolveAnnouncement(announceCopyBtn.dataset.row);
       navigator.clipboard.writeText(text).then(()=>{
