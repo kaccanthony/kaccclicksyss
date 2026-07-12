@@ -103,15 +103,22 @@ if (empty($user['role'])) {
 $myLiveSessionId = null;
 if ($myDisplayName) {
     $stmtLive = mysqli_prepare($conn, "SELECT session_id FROM session_ongoing
-        WHERE host = ? OR co_host1 = ? OR co_host2 = ? OR co_host3 = ? OR `co_host4/supervisor` = ?
-           OR assistant_1 = ? OR assistant_2 = ? OR assistant_3 = ? OR assistant_4 = ?
-           OR additional_staff LIKE ?
-        LIMIT 1");
-    $likeMeLive = '%' . $myDisplayName . '%';
-    mysqli_stmt_bind_param($stmtLive, "ssssssssss",
-        $myDisplayName, $myDisplayName, $myDisplayName, $myDisplayName, $myDisplayName,
-        $myDisplayName, $myDisplayName, $myDisplayName, $myDisplayName, $likeMeLive
-    );
+    WHERE LOWER(TRIM(host)) = LOWER(TRIM(?))
+       OR LOWER(TRIM(co_host1)) = LOWER(TRIM(?))
+       OR LOWER(TRIM(co_host2)) = LOWER(TRIM(?))
+       OR LOWER(TRIM(co_host3)) = LOWER(TRIM(?))
+       OR LOWER(TRIM(`co_host4/supervisor`)) = LOWER(TRIM(?))
+       OR LOWER(TRIM(assistant_1)) = LOWER(TRIM(?))
+       OR LOWER(TRIM(assistant_2)) = LOWER(TRIM(?))
+       OR LOWER(TRIM(assistant_3)) = LOWER(TRIM(?))
+       OR LOWER(TRIM(assistant_4)) = LOWER(TRIM(?))
+       OR LOWER(additional_staff) LIKE LOWER(?)
+    LIMIT 1");
+$likeMeLive = '%' . $myDisplayName . '%';
+mysqli_stmt_bind_param($stmtLive, "ssssssssss",
+    $myDisplayName, $myDisplayName, $myDisplayName, $myDisplayName, $myDisplayName,
+    $myDisplayName, $myDisplayName, $myDisplayName, $myDisplayName, $likeMeLive
+);
     mysqli_stmt_execute($stmtLive);
     if ($rowLive = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtLive))) {
         $myLiveSessionId = $rowLive['session_id'];
