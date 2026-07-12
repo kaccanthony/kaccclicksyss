@@ -1900,6 +1900,11 @@ document.getElementById('conclude-session-btn').addEventListener('click', async 
   const ok = await showConfirm(html, 'Conclude this session?', true);
   if(!ok) return;
 
+  // Force a final push so anything typed in the last few seconds (trains, setup time,
+  // feedback notes, etc.) is actually in the database before we archive and delete this row.
+  queueLiveStateSync();
+  await pushState();
+
   const result = await fetch('conclude_session.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
