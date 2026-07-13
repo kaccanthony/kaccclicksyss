@@ -151,9 +151,6 @@ try {
             $sessionId, $discordId, $name, $zone, $attended, $trainerId, $notes, $feedbackFlag
         );
         if (!mysqli_stmt_execute($stmtFull)) throw new Exception(mysqli_error($conn));
-        }
-    }
-
 
         // Only write to session_feedback_logs if feedback was actually filled in
         if ($hasFeedback) {
