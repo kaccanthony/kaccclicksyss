@@ -1,4 +1,12 @@
 <?php
+ini_set('session.gc_maxlifetime', 86400);
+session_set_cookie_params([
+    'lifetime' => 86400, // 24 hours, in seconds
+    'path'     => '/',
+    'secure'   => true,
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 require_once 'cnn.php';
 
