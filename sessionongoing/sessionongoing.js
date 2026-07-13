@@ -460,7 +460,7 @@ function addTraineeRow(unallocated, uid){
         <td><input class="cell-input trainee-detail-field" placeholder="Discord ID" data-lock-msg="Trainee details are locked. Ask the host to enable Override Trainee Details."/></td>
         <td><input class="cell-input trainee-detail-field" placeholder="username" data-lock-msg="Trainee details are locked. Ask the host to enable Override Trainee Details."/></td>
         <td>
-          <select class="cell-input trainee-detail-field" data-lock-msg="Trainee details are locked. Ask the host to enable Override Trainee Details.">
+          <select class="cell-input trainee-detail-field zone-select" data-lock-msg="Trainee details are locked. Ask the host to enable Override Trainee Details.">
             <option>Select</option>
             ${zones.map(z=>`<option>${z}</option>`).join('')}
           </select>
@@ -477,7 +477,7 @@ function addTraineeRow(unallocated, uid){
     <td style="text-align:center;">
       <button type="button" class="timer-pip-btn" data-row="${idx}" title="Pop out just this timer (Picture-in-Picture)"><i class="fas fa-stopwatch"></i></button>
     </td>
-    <td style="text-align:center;"><input type="checkbox" class="chk"/></td>
+    <td style="text-align:center;"><input type="checkbox" class="chk attendance-chk"/></td>
     <td>
       <select class="cell-input trainer-detail-field trainer-name-select" data-lock-msg="Trainer assignment is locked. Ask the host to enable Override Trainer Assignment.">
         <option value="">— None —</option>
@@ -887,7 +887,7 @@ function buildFeedbackMessageForRow(row){
   const rowEl = row !== null ? document.querySelector(`tr[data-row="${row}"]`) : null;
   const trainerFields = rowEl ? rowEl.querySelectorAll('.trainer-detail-field') : [];
   const trainerName = trainerFields[0] ? trainerFields[0].value.trim() : '';
-  const zoneSelect = rowEl ? rowEl.querySelector('td:nth-child(6) select') : null; // col 6 = Zone (after the Pop-out column)
+  const zoneSelect = rowEl ? rowEl.querySelector('.zone-select') : null;
   const zoneVal = (zoneSelect && zoneSelect.value && zoneSelect.value !== 'Select') ? zoneSelect.value : '';
   const fb = row !== null ? getFeedbackData(row) : { trains:'', setup:'', conflict:'', priority:'', rbtiming:'', overall:'', notes:'' };
   const t = row !== null ? timers[row] : null;
@@ -1021,7 +1021,7 @@ function openFeedbackModal(triggerBtn){
 
   const rowEl = document.querySelector(`tr[data-row="${row}"]`);
   const nameInput = rowEl.querySelector('.trainee-name');
-  const zoneSelect = rowEl.querySelector('td:nth-child(5) select');
+  const zoneSelect = rowEl.querySelector('.zone-select');
 
   document.getElementById('fb-trainee-name').value = nameInput ? nameInput.value : '';
   document.getElementById('fb-zone').value = zoneSelect ? zoneSelect.value : 'Select';
@@ -1587,7 +1587,7 @@ setInterval(()=>{
 
 /* ================= BELL SYSTEM ================= */
 /* ================= BELL SYSTEM (LOCAL SIMULATION — testing only, no server calls yet) ================= */
-const BELL_BUTTON_COOLDOWN_MS = 7000;
+const BELL_BUTTON_COOLDOWN_MS = 5000;
 const BELL_GLOBAL_COOLDOWN_MS = 5 * 60 * 1000;
 const BELL_MAX_INITIATIONS = 3;
 
@@ -1666,19 +1666,24 @@ function renderBellState(){
     }
   });
     
+  const hostIsInitiatorActive = bellState.active && bellState.initiatorRole === 'host';
+  const hostCanReRing = hostIsInitiatorActive && bellState.ringCount < 3 && (now - bellState.lastRingAt) >= 5000;
   bellButtons.host.disabled = globalCooldownActive || localButtonCooldownUntil.host > now ||
     (bellState.active
-      ? (bellState.initiatorRole === 'host' || bellState.acks.host)
-      : bellState.initiationCount >= BELL_MAX_INITIATIONS);
+      ? (hostIsInitiatorActive ? !hostCanReRing : bellState.acks.host)
+      : false);
+
+  const cohostIsInitiatorActive = bellState.active && bellState.initiatorRole === 'cohost';
+  const cohostCanReRing = cohostIsInitiatorActive && bellState.ringCount < 3 && (now - bellState.lastRingAt) >= 5000;
   bellButtons.cohost.disabled = globalCooldownActive || localButtonCooldownUntil.cohost > now ||
     (bellState.active
-      ? (bellState.initiatorRole === 'cohost' || bellState.acks.cohost)
-      : bellState.initiationCount >= BELL_MAX_INITIATIONS);
+      ? (cohostIsInitiatorActive ? !cohostCanReRing : bellState.acks.cohost)
+      : false);
   bellButtons.assistant.disabled = globalCooldownActive || localButtonCooldownUntil.assistant > now ||
     (bellState.active ? bellState.acks.assistant : true);
   bellFabDot.classList.toggle('show', bellState.active);
-  if(!sessionHasCohost) bellButtons.cohost.disabled = true;
-  if(!sessionHasAssistant) bellButtons.assistant.disabled = true;
+  if(!sessionHasCohost) bellButtons.cohost.style.display = 'none'; // Button won't show if a co-host is not signed-up
+  if(!sessionHasAssistant) bellButtons.assistant.style.display = 'none'; // Button won't show if an assistant is not signed-up
 }
 
 function armButtonCooldown(role){
@@ -1725,10 +1730,12 @@ async function ackBell(role){
     });
     const data = await res.json();
     if(!res.ok){ showToast(data.error || 'Could not acknowledge.'); return; }
+    const prevState = bellState;
     bellState = mapServerBell(data);
     renderBellState();
     const snd = role === 'cohost' ? bellSounds.cohostAck : bellSounds.assistantAck;
     snd.currentTime = 0; snd.play().catch(()=>{});
+    announceBellCycleEnd(prevState, bellState);
     armButtonCooldown(role);
   } catch (err) {
     console.error('Bell ack failed:', err);
@@ -1738,22 +1745,40 @@ async function ackBell(role){
 
 function mapServerBell(s){
   return { active:s.active, initiatorRole:s.initiator_role, acks:s.acks,
-          globalCooldownUntil: s.cooldown_until ? s.cooldown_until*1000 : 0, initiationCount: 0 };
+          globalCooldownUntil: s.cooldown_until ? s.cooldown_until*1000 : 0,
+          ringCount: s.ring_count || 0,
+          lastRingAt: s.last_ring_at ? s.last_ring_at*1000 : 0 };
 }
+
+function announceBellCycleEnd(prevState, newState){
+  if (!prevState.active || newState.active) return; // only fires on an active -> inactive transition
+  const requiredRoles = ['host','cohost','assistant'].filter(r => {
+    if (r === prevState.initiatorRole) return false;
+    if (r === 'cohost' && !sessionHasCohost) return false;
+    if (r === 'assistant' && !sessionHasAssistant) return false;
+    return true;
+  });
+  const everyoneAcked = requiredRoles.every(r => prevState.acks[r]);
+  showToast(everyoneAcked
+    ? 'Everyone acknowledged the bell — entering a 5 minute cooldown.'
+    : 'Bell timed out waiting on an acknowledgment — entering a 5 minute cooldown.');
+}
+
 async function pollBell(){
   try{
     const res = await fetch(`bell_state.php?session_id=${SESSION_DATA.session_id}`);
     if (!res.ok) throw new Error(`bell_state.php returned ${res.status}`);
     const data = await res.json();
-    const prevActive = bellState.active, prevAcks = {...bellState.acks};
+    const prevState = bellState;
     bellState = mapServerBell(data);
-    if(!prevActive && bellState.active){ bellSounds.hostRing.currentTime=0; bellSounds.hostRing.play().catch(()=>{}); }
+    if(!prevState.active && bellState.active){ bellSounds.hostRing.currentTime=0; bellSounds.hostRing.play().catch(()=>{}); }
     ['cohost','assistant'].forEach(r=>{
-      if(!prevAcks[r] && bellState.acks[r]){
+      if(!prevState.acks[r] && bellState.acks[r]){
         const snd = r==='cohost' ? bellSounds.cohostAck : bellSounds.assistantAck;
         snd.currentTime=0; snd.play().catch(()=>{});
       }
     });
+    announceBellCycleEnd(prevState, bellState);
     renderBellState();
   }catch(e){ console.error('Bell poll failed:', e); }
 }
@@ -1764,12 +1789,14 @@ pollBell();
 bellButtons.host.addEventListener('click', ()=>{
   if(myRole !== 'host'){ showToast('Only the Host can use this bell.'); return; }
   if(bellButtons.host.disabled) return;
-  bellState.active ? ackBell('host') : ringBell('host');
+  if(!bellState.active || bellState.initiatorRole === 'host') ringBell('host');
+  else ackBell('host');
 });
 bellButtons.cohost.addEventListener('click', ()=>{
   if(myRole !== 'cohost'){ showToast('Only a Co-Host can use this bell.'); return; }
   if(bellButtons.cohost.disabled) return;
-  bellState.active ? ackBell('cohost') : ringBell('cohost');
+  if(!bellState.active || bellState.initiatorRole === 'cohost') ringBell('cohost');
+  else ackBell('cohost');
 });
 bellButtons.assistant.addEventListener('click', ()=>{
   if(myRole !== 'assistant'){ showToast('Only an Assistant can use this bell.'); return; }
@@ -1945,7 +1972,7 @@ function collectCoreUpdates() {
 
     const traineeAttendanceParts = [];
     document.querySelectorAll('#trainee-rows tr').forEach(tr => {
-        const chk = tr.querySelector('td:nth-child(7) .chk');
+        const chk = tr.querySelector('.attendance-chk');
         traineeAttendanceParts.push(chk && chk.checked ? '1' : '0');
     });
     if (traineeAttendanceParts.length) updates.trainee_attendance = traineeAttendanceParts.join(',');
@@ -2175,7 +2202,7 @@ const attendanceParts = (session.trainee_attendance || '').split(',');
         const detailFields = tr.querySelectorAll('.trainee-detail-field');
         const trainerFields = tr.querySelectorAll('.trainer-detail-field');
         const notesArea = tr.querySelector('.trainee-notes-input');
-        const attendanceChk = tr.querySelector('td:nth-child(7) .chk');
+        const attendanceChk = tr.querySelector('.attendance-chk');
         if (attendanceChk && active !== attendanceChk) {
             attendanceChk.checked = attendanceParts[idx - 1] === '1';
         }

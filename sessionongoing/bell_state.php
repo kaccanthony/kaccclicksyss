@@ -12,9 +12,10 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
-const ACK_TIMEOUT_SECONDS      = 30;
-const COOLDOWN_SECONDS         = 300;
-const MAX_INITIATIONS_PER_USER = 3;
+const ACK_TIMEOUT_SECONDS   = 30;   // measured from the FIRST ring of the cycle — re-rings don't reset this
+const COOLDOWN_SECONDS      = 300;
+const MAX_RINGS_PER_CYCLE   = 3;    // total rings (including the first) allowed within one active cycle
+const RING_SPACING_SECONDS  = 5;    // minimum gap between consecutive rings in the same cycle
 
 function defaultState() {
     return [
@@ -22,9 +23,10 @@ function defaultState() {
         'initiator_role'    => null,
         'initiator_client'  => null,
         'acks'              => ['host' => false, 'cohost' => false, 'assistant' => false],
-        'ring_started_at'   => null,
+        'ring_started_at'   => null,  // timestamp of the FIRST ring — never changes across re-rings
+        'last_ring_at'      => null,  // timestamp of the MOST RECENT ring — gates the 5s spacing
+        'ring_count'        => 0,
         'cooldown_until'    => null,
-        'initiation_counts' => [],
         'updated_at'        => time(),
     ];
 }
@@ -97,36 +99,51 @@ if ($method === 'POST') {
             echo json_encode(['error' => 'Only Host or Co-host can start the bell.']);
             exit;
         }
-        if ($state['active']) {
-            http_response_code(409);
-            echo json_encode(['error' => 'A bell is already active.']);
-            exit;
-        }
         if ($state['cooldown_until'] !== null && $now < $state['cooldown_until']) {
             http_response_code(409);
             echo json_encode(['error' => 'Bell system is cooling down.']);
             exit;
         }
-        $count = $state['initiation_counts'][$clientId] ?? 0;
-        if ($count >= MAX_INITIATIONS_PER_USER) {
-            http_response_code(403);
-            echo json_encode(['error' => 'You have reached the bell limit until the next reset.']);
-            exit;
-        }
-        $state['active']           = true;
-        $state['initiator_role']   = $role;
-        $state['initiator_client'] = $clientId;
-        $state['acks']             = ['host' => false, 'cohost' => false, 'assistant' => false];
-        $state['acks'][$role]      = true;
-        $state['ring_started_at']  = $now;
-        $state['initiation_counts'][$clientId] = $count + 1;
 
-        // If nobody else needs to ack (e.g. host rings in a session with no co-host and no
-        // assistant at all), close the cycle immediately instead of leaving it hanging.
-        $requiredNow = array_diff($rolesInSession, [$role]);
-        if (empty($requiredNow)) {
-            $state['active']         = false;
-            $state['cooldown_until'] = $now + COOLDOWN_SECONDS;
+        if (!$state['active']) {
+            // Starting a brand new cycle.
+            $state['active']           = true;
+            $state['initiator_role']   = $role;
+            $state['initiator_client'] = $clientId;
+            $state['acks']             = ['host' => false, 'cohost' => false, 'assistant' => false];
+            $state['acks'][$role]      = true;
+            $state['ring_started_at']  = $now;
+            $state['last_ring_at']     = $now;
+            $state['ring_count']       = 1;
+
+            // If nobody else needs to ack (e.g. host rings in a session with no co-host and no
+            // assistant at all), close the cycle immediately instead of leaving it hanging.
+            $requiredNow = array_diff($rolesInSession, [$role]);
+            if (empty($requiredNow)) {
+                $state['active']         = false;
+                $state['cooldown_until'] = $now + COOLDOWN_SECONDS;
+            }
+        } else {
+            // Re-ringing an already-active cycle — only the original initiator may nudge again.
+            if ($role !== $state['initiator_role']) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Only the person who started this bell can ring it again.']);
+                exit;
+            }
+            if ($state['ring_count'] >= MAX_RINGS_PER_CYCLE) {
+                http_response_code(409);
+                echo json_encode(['error' => 'No more re-rings left for this bell — waiting on acknowledgment or timeout.']);
+                exit;
+            }
+            $secondsSinceLastRing = $now - $state['last_ring_at'];
+            if ($secondsSinceLastRing < RING_SPACING_SECONDS) {
+                http_response_code(429);
+                echo json_encode(['error' => 'Please wait ' . (RING_SPACING_SECONDS - $secondsSinceLastRing) . 's before ringing again.']);
+                exit;
+            }
+            $state['ring_count']++;
+            $state['last_ring_at'] = $now;
+            // ring_started_at is deliberately untouched — the 30s ack deadline is fixed to the first ring.
         }
 
         $state = saveState($stateFile, $state);

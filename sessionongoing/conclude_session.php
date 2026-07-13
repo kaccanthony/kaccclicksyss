@@ -151,17 +151,6 @@ try {
             $sessionId, $discordId, $name, $zone, $attended, $trainerId, $notes, $feedbackFlag
         );
         if (!mysqli_stmt_execute($stmtFull)) throw new Exception(mysqli_error($conn));
-
-        // Write to session_feedback_logs if there's feedback text, trains, or a setup time to preserve
-        if ($hasFeedback) {
-            $fb['trains'] = $trainsVal;
-            $fb['setupSeconds'] = $setupSecondsVal;
-            $feedbackJson = json_encode($fb);
-            $stmtFb = mysqli_prepare($conn, "INSERT INTO session_feedback_logs
-                (session_id, trainee_id, trainer_id, feedback_json, created_at)
-                VALUES (?, ?, ?, ?, NOW())");
-            mysqli_stmt_bind_param($stmtFb, "isss", $sessionId, $discordId, $trainerId, $feedbackJson);
-            if (!mysqli_stmt_execute($stmtFb)) throw new Exception(mysqli_error($conn));
         }
     }
 
