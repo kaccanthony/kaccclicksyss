@@ -17,7 +17,8 @@ if (!isset($_SESSION['user'])) {
 $user      = $_SESSION['user'];
 $username  = htmlspecialchars($user['username']);
 require_once __DIR__ . '/../public/assets/misc/role_display.php';
-$role = htmlspecialchars(formatRoleDisplay($user['role'] ?? '', (int)($user['perm_level'] ?? 0)));
+$rawRole   = $user['role'] ?? '';                                        // untouched DB value — used for permission logic
+$role      = htmlspecialchars(formatRoleDisplay($rawRole, (int)($user['perm_level'] ?? 0))); // formatted — used for on-screen display only
 $permLevel = (int)($user['perm_level'] ?? 0);
 $staffId   = $user['id'] ?? '';   // ← define this
 
@@ -148,7 +149,7 @@ $roleCards = [
 ];
 
 $cards = [];
-foreach (($roleCards[$role] ?? []) as $key) {
+foreach (($roleCards[$rawRole] ?? []) as $key) {
     if ($key === 'my_session' && !$myLiveSessionId) continue; // hide entirely when nothing to jump to
     if (isset($allCards[$key])) $cards[] = $allCards[$key];
 }
