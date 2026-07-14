@@ -5,13 +5,15 @@
 
 /* ── Page ───────────────────────────────────────────── */
 html, body {
-    height: 100%;
+    min-height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Libre Baskerville', serif;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     background: #000;
+    padding: 30px 16px;
 }
 
 /* ── Blurred background image ───────────────────────── */
@@ -44,16 +46,21 @@ html, body {
     z-index: 1;
 }
 
-/* ── Flip container (reference-style: forms side-by-side, cover flips over) ── */
+/* ══════════════════════════════════════════════════════
+   Sliding login/register container
+   ══════════════════════════════════════════════════════ */
+#flip { display: none; }
+
 .container {
     position: relative;
     z-index: 2;
-    width: min(900px, 94vw);
-    perspective: 2200px;
+    width: min(860px, 94vw);
 }
 
 .forms {
+    position: relative;
     width: 100%;
+    min-height: 620px;
     border-radius: 24px;
     overflow: hidden;
     background: rgba(255, 255, 255, 0.08);
@@ -65,96 +72,121 @@ html, body {
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
-.form-content {
-    display: flex;
-    align-items: stretch;
-}
-
+/* ── Form panes — both start on the left; a transform + opacity/z-index
+   swap makes the active one look like it slides in from the right ── */
 .form-pane {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 50%;
-    padding: 46px 42px 38px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    transition: transform .6s ease-in-out, opacity .6s ease-in-out;
+    overflow-y: auto;
 }
-
-.form-pane .btn-login { margin-top: 28px; }
-
-/* Card look for each pane (h1 / subtitle / fields inherit existing rules below) */
-.card h1 { color: #fff; font-size: 1.55rem; font-weight: 600; letter-spacing: .02em; margin-bottom: 6px; }
+.form-inner { width: 100%; padding: 46px; }
+.form-inner h1 { color: #fff; font-size: 1.55rem; font-weight: 600; letter-spacing: .02em; margin-bottom: 6px; }
 .subtitle { color: rgba(255, 255, 255, .40); font-size: .82rem; margin-bottom: 32px; }
 
-/* ── The flipping cover panel ───────────────────────── */
-#flip { display: none; }
+.login-pane  { z-index: 2; opacity: 1; transform: translateX(0); }
+.signup-pane { z-index: 1; opacity: 0; transform: translateX(0); pointer-events: none; }
 
-.container .cover {
+#flip:checked ~ .forms .login-pane {
+    transform: translateX(100%);
+    opacity: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+#flip:checked ~ .forms .signup-pane {
+    transform: translateX(100%);
+    opacity: 1;
+    z-index: 5;
+    pointer-events: auto;
+}
+
+/* ── Sliding image/quote overlay — sits on the right at rest, slides left
+   to cover the login pane once the register pane becomes active ── */
+.overlay-container {
     position: absolute;
     top: 0;
     left: 50%;
-    height: 100%;
     width: 50%;
-    z-index: 5;
-    transition: transform 0.9s ease;
-    transform-origin: left;
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
-}
-
-#flip:checked ~ .cover { transform: rotateY(-180deg); }
-#flip:checked ~ .forms .login-pane { pointer-events: none; }
-#flip:checked ~ .forms .signup-pane ~ .cover { } /* placeholder for specificity, no-op */
-
-.container .cover .front,
-.container .cover .back {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: url("../images/YSSbgweb.png") center/cover no-repeat;
-    border-radius: 0 24px 24px 0;
+    height: 100%;
     overflow: hidden;
+    transition: transform .6s ease-in-out;
+    z-index: 10;
 }
-.cover .back { transform: rotateY(180deg); border-radius: 24px 0 0 24px; }
+#flip:checked ~ .forms .overlay-container { transform: translateX(-100%); }
 
-.container .cover .front::before,
-.container .cover .back::before {
+.overlay {
+    position: relative;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: url("../images/YSSbgweb.png") center/cover no-repeat;
+    transform: translateX(0);
+    transition: transform .6s ease-in-out;
+}
+.overlay::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, .55);
+    background: rgba(0, 0, 0, .58);
 }
-.cover .back::before { background: rgba(20, 10, 40, .60); }
+#flip:checked ~ .forms .overlay { transform: translateX(50%); }
 
-.cover-text {
-    position: relative;
-    z-index: 2;
-    padding: 0 36px;
+.overlay-panel {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
+    padding: 0 40px;
     color: #fff;
 }
+.overlay-left  { left: 0;  transform: translateX(-20%); transition: transform .6s ease-in-out; }
+.overlay-right { right: 0; transform: translateX(0);    transition: transform .6s ease-in-out; }
+#flip:checked ~ .forms .overlay-left  { transform: translateX(0); }
+#flip:checked ~ .forms .overlay-right { transform: translateX(20%); }
+
 .cover-title {
     display: block;
-    font-size: 1.4rem;
+    font-size: 1.35rem;
     font-weight: 600;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 2;
 }
 .cover-sub {
     display: block;
     font-size: .85rem;
     color: rgba(255, 255, 255, .75);
+    line-height: 1.5;
+    margin-bottom: 22px;
+    position: relative;
+    z-index: 2;
 }
-
-/* ── Heading ────────────────────────────────────────── */
-.card h1 {
+.ghost-btn {
+    position: relative;
+    z-index: 2;
+    display: inline-block;
+    padding: 11px 30px;
+    border: 1px solid rgba(255,255,255,.6);
+    border-radius: 10px;
     color: #fff;
-    font-size: 1.55rem;
+    font-size: .85rem;
     font-weight: 600;
-    letter-spacing: .02em;
-    margin-bottom: 6px;
+    letter-spacing: .03em;
+    cursor: pointer;
+    background: transparent;
+    transition: background .2s, color .2s;
 }
-.card .subtitle {
-    color: rgba(255, 255, 255, .40);
-    font-size: .82rem;
-    margin-bottom: 32px;
-}
+.ghost-btn:hover { background: rgba(255,255,255,.15); }
 
 /* ── Fields ─────────────────────────────────────────── */
 .field {
@@ -205,23 +237,6 @@ html, body {
     line-height: 1;
 }
 .pw-toggle:hover { color: rgba(255, 255, 255, .70); }
-
-/* ── Forgot link ────────────────────────────────────── */
-.forgot-row {
-    text-align: right;
-    margin-top: -8px;
-    margin-bottom: 26px;
-}
-.forgot-row button {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, .38);
-    font-size: .78rem;
-    cursor: pointer;
-    padding: 0;
-    transition: color .2s;
-}
-.forgot-row button:hover { color: rgba(255, 255, 255, .75); }
 
 /* ── Submit button ──────────────────────────────────── */
 .btn-login {
@@ -351,37 +366,18 @@ html, body {
     accent-color: #fff;
     cursor: pointer;
 }
-
-/* ── Flip container (checkbox-driven, no JS needed) ── */
-#flip { display: none; }
-
-.flip-scene {
-    position: relative;
-    z-index: 2;
-    width: min(520px, 90vw);
-    min-height: 640px;
-    perspective: 1800px;
+.remember-row button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, .38);
+    font-size: .78rem;
+    cursor: pointer;
+    padding: 0;
+    transition: color .2s;
 }
-.flip-card {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    transform-style: preserve-3d;
-    transition: transform .6s cubic-bezier(.4, .2, .2, 1);
-}
-#flip:checked ~ .flip-scene .flip-card { transform: rotateY(180deg); }
+.remember-row button:hover { color: rgba(255, 255, 255, .75); }
 
-.flip-face {
-    position: absolute;
-    inset: 0;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-}
-.flip-face.back { transform: rotateY(180deg); }
-
-/* card already has its own width/padding/etc — just let it fill the face */
-.flip-face .card { width: 100%; height: 100%; }
-
+/* ── Switch link under each form ────────────────────── */
 .switch-text {
     text-align: center;
     margin-top: 18px;
@@ -397,11 +393,20 @@ html, body {
 }
 .switch-text label:hover { color: rgba(255,255,255,.75); }
 
-/* ── Mobile: drop the cover, toggle between panes instead ── */
+/* ── Mobile: overlay doesn't fit, just toggle between full-width panes
+   (the switch-text links below each form still work here) ── */
 @media (max-width: 780px) {
-    .container .cover { display: none; }
-    .form-pane { width: 100%; padding: 38px 26px 32px; }
+    .overlay-container { display: none; }
+    .forms { min-height: auto; }
+    .form-pane {
+        position: relative;
+        width: 100%;
+        transform: none !important;
+        opacity: 1 !important;
+        z-index: 1 !important;
+        pointer-events: auto !important;
+    }
     .signup-pane { display: none; }
-    #flip:checked ~ .forms .signup-pane { display: block; }
+    #flip:checked ~ .forms .signup-pane { display: flex; }
     #flip:checked ~ .forms .login-pane { display: none; }
 }

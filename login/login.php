@@ -203,14 +203,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
 <div id="bg"></div>
 <div id="bg-glow"></div>
 
-<input type="checkbox" id="flip" <?= $showRegisterFace ? 'checked' : '' ?> />
+<div class="container">
+  <input type="checkbox" id="flip" <?= $showRegisterFace ? 'checked' : '' ?> />
 
-<div class="flip-scene">
-  <div class="flip-card">
+  <div class="forms">
 
-    <!-- FRONT — Login -->
-    <div class="flip-face front">
-      <div class="card">
+    <!-- LOGIN -->
+    <div class="form-pane login-pane">
+      <div class="form-inner">
         <h1>YSS Session Manager</h1>
         <p class="subtitle">Sign in to continue</p>
 
@@ -248,9 +248,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
       </div>
     </div>
 
-    <!-- BACK — Register -->
-    <div class="flip-face back">
-      <div class="card">
+    <!-- REGISTER -->
+    <div class="form-pane signup-pane">
+      <div class="form-inner">
         <h1>Create Account</h1>
         <p class="subtitle">Register as a user</p>
 
@@ -296,6 +296,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
             <button type="submit" class="btn-login">Create account</button>
             <div class="switch-text">Already have an account? <label for="flip">Login now</label></div>
         </form>
+      </div>
+    </div>
+
+    <!-- Sliding image + quote overlay -->
+    <div class="overlay-container">
+      <div class="overlay">
+        <div class="overlay-panel overlay-left">
+          <span class="cover-title">Welcome Back</span>
+          <span class="cover-sub">"Every session is a step closer to mastery."<br>Already have an account?</span>
+          <label for="flip" class="ghost-btn">Sign In</label>
+        </div>
+        <div class="overlay-panel overlay-right">
+          <span class="cover-title">New Here?</span>
+          <span class="cover-sub">"Great journeys begin with a single step."<br>Join YSS today.</span>
+          <label for="flip" class="ghost-btn">Register</label>
+        </div>
       </div>
     </div>
 
