@@ -703,7 +703,7 @@ function statusBadge($status) {
 <?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
 <div class="toast-container" id="toast-container"></div>
 <script>
-const IS_MANAGER    = <?= json_encode(in_array($role, ['Community Manager','Operations Manager'])) ?>;
+const IS_MANAGER    = <?= json_encode(in_array($role, ['Community Manager','Operations Manager','Admin']) || $permLevel >= 20) ?>;
 const IS_HEAD_STAFF = <?= json_encode($role === 'Head Staff') ?>;
 const TOAST_FLASH    = <?= json_encode($_SESSION['success'] ?? null) ?>;
 </script>
