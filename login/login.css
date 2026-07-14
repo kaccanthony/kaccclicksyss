@@ -44,14 +44,18 @@ html, body {
     z-index: 1;
 }
 
-/* ── Glass card ─────────────────────────────────────── */
-.card {
+/* ── Flip container (reference-style: forms side-by-side, cover flips over) ── */
+.container {
     position: relative;
+    z-index: 2;
+    width: min(900px, 94vw);
+    perspective: 2200px;
+}
+
+.forms {
     width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    padding: 50px 50px 45px;
     border-radius: 24px;
+    overflow: hidden;
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
@@ -59,6 +63,83 @@ html, body {
     box-shadow:
         0 8px 40px rgba(0, 0, 0, 0.5),
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.form-content {
+    display: flex;
+    align-items: stretch;
+}
+
+.form-pane {
+    width: 50%;
+    padding: 46px 42px 38px;
+}
+
+.form-pane .btn-login { margin-top: 28px; }
+
+/* Card look for each pane (h1 / subtitle / fields inherit existing rules below) */
+.card h1 { color: #fff; font-size: 1.55rem; font-weight: 600; letter-spacing: .02em; margin-bottom: 6px; }
+.subtitle { color: rgba(255, 255, 255, .40); font-size: .82rem; margin-bottom: 32px; }
+
+/* ── The flipping cover panel ───────────────────────── */
+#flip { display: none; }
+
+.container .cover {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    height: 100%;
+    width: 50%;
+    z-index: 5;
+    transition: transform 0.9s ease;
+    transform-origin: left;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+}
+
+#flip:checked ~ .cover { transform: rotateY(-180deg); }
+#flip:checked ~ .forms .login-pane { pointer-events: none; }
+#flip:checked ~ .forms .signup-pane ~ .cover { } /* placeholder for specificity, no-op */
+
+.container .cover .front,
+.container .cover .back {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: url("../images/YSSbgweb.png") center/cover no-repeat;
+    border-radius: 0 24px 24px 0;
+    overflow: hidden;
+}
+.cover .back { transform: rotateY(180deg); border-radius: 24px 0 0 24px; }
+
+.container .cover .front::before,
+.container .cover .back::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, .55);
+}
+.cover .back::before { background: rgba(20, 10, 40, .60); }
+
+.cover-text {
+    position: relative;
+    z-index: 2;
+    padding: 0 36px;
+    text-align: center;
+    color: #fff;
+}
+.cover-title {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.cover-sub {
+    display: block;
+    font-size: .85rem;
+    color: rgba(255, 255, 255, .75);
 }
 
 /* ── Heading ────────────────────────────────────────── */
@@ -315,3 +396,12 @@ html, body {
     text-underline-offset: 3px;
 }
 .switch-text label:hover { color: rgba(255,255,255,.75); }
+
+/* ── Mobile: drop the cover, toggle between panes instead ── */
+@media (max-width: 780px) {
+    .container .cover { display: none; }
+    .form-pane { width: 100%; padding: 38px 26px 32px; }
+    .signup-pane { display: none; }
+    #flip:checked ~ .forms .signup-pane { display: block; }
+    #flip:checked ~ .forms .login-pane { display: none; }
+}
