@@ -412,6 +412,9 @@ if (!empty($sessionRow['live_state'])) {
 <section class="panel" id="main-ast-notes-panel" style="display:none;">
   <div class="panel-title">Main AST Notes <span class="lock-tag" style="opacity:.6;"><i class="fas fa-eye"></i> Visible to Host + Main AST</span></div>
   <textarea class="cell-input" id="main-ast-notes" rows="6" style="width:100%;" placeholder="Notes for the end-of-session report (the Host can see this too, live)..."></textarea>
+<?php if ($viewerRole === 'Host'): ?>
+<button type="button" class="mbtn primary" id="generate-report-btn" style="margin-top:10px;"><i class="fas fa-clipboard-list"></i> Generate Report</button>
+<?php endif; ?>
 </section>
 </main>
 <!-- Floating Bell Widget -->

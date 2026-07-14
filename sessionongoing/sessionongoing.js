@@ -2474,7 +2474,7 @@ ${mainAstNotes || '—'}
 =======TO WHOM IT MAY BE CONCERNED=========`;
 }
 
-document.getElementById('generate-report-btn').addEventListener('click', () => {
+document.getElementById('generate-report-btn')?.addEventListener('click', () => {
   const text = buildReportText();
   navigator.clipboard.writeText(text).then(() => {
     showToast('Report copied to clipboard!');
