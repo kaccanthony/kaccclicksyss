@@ -1950,6 +1950,11 @@ document.getElementById('conclude-session-btn')?.addEventListener('click', async
 const SYNC_INTERVAL_MS = 5000;
 let syncInFlight = false;
 let pendingLiveStateFlush = false;
+const recentLocalEdits = {}; // elementId/rowKey -> timestamp, protects against a stale poll stomping a just-made click
+function markRecentEdit(key) { recentLocalEdits[key] = Date.now(); }
+function wasRecentlyEditedLocally(key, windowMs = 6000) {
+    return recentLocalEdits[key] && (Date.now() - recentLocalEdits[key]) < windowMs;
+}
 let staffCoreDirty = false;
 let overridesDirty = false;
 let statusDirty = false;
@@ -2215,7 +2220,7 @@ const attendanceParts = (session.trainee_attendance || '').split(',');
         const trainerFields = tr.querySelectorAll('.trainer-detail-field');
         const notesArea = tr.querySelector('.trainee-notes-input');
         const attendanceChk = tr.querySelector('.attendance-chk');
-        if (attendanceChk && active !== attendanceChk) {
+        if (attendanceChk && active !== attendanceChk && !wasRecentlyEditedLocally(`attendance-${idx}`)) {
             attendanceChk.checked = attendanceParts[idx - 1] === '1';
         }
 
@@ -2245,7 +2250,9 @@ const attendanceParts = (session.trainee_attendance || '').split(',');
     if (liveState.timeTracker) { Object.assign(timeTracker, liveState.timeTracker); renderTimeTracker(); }
     if (liveState.mainAstNotes !== undefined) {
         const notesEl = document.getElementById('main-ast-notes');
-        if (notesEl && document.activeElement !== notesEl) notesEl.value = liveState.mainAstNotes;
+        if (notesEl && document.activeElement !== notesEl && !wasRecentlyEditedLocally('main-ast-notes')) {
+            notesEl.value = liveState.mainAstNotes;
+        }
     }
     updateMainAstNotesVisibility();
     if (liveState.feedbackData) Object.assign(feedbackData, liveState.feedbackData);
@@ -2291,7 +2298,14 @@ setInterval(async () => {
 
 // Any change to a synced field marks live_state dirty so the next cycle pushes it
 document.getElementById('trainee-rows')?.addEventListener('input', queueLiveStateSync);
-document.getElementById('trainee-rows')?.addEventListener('change', queueLiveStateSync);
+document.getElementById('trainee-rows')?.addEventListener('change', (e) => {
+    const chk = e.target.closest('.attendance-chk');
+    if (chk) {
+        const idx = parseInt(chk.closest('tr').dataset.row, 10) + 1;
+        markRecentEdit(`attendance-${idx}`);
+    }
+    queueLiveStateSync();
+});
 document.getElementById('driver-rows')?.addEventListener('input', queueLiveStateSync);
 document.getElementById('staff-rows')?.addEventListener('input', ()=>{ staffCoreDirty = true; queueLiveStateSync(); });
 document.getElementById('staff-rows')?.addEventListener('change', ()=>{ staffCoreDirty = true; queueLiveStateSync(); });
@@ -2364,9 +2378,11 @@ renderTimeTracker();
 
 /* ================= MAIN AST NOTES (synced, visible to Host + current Main AST) ================= */
 function isCurrentUserMainAst(){
+  const me = (MY_DISPLAY_NAME || '').trim().toLowerCase();
+  if (!me) return false;
   return Array.from(document.querySelectorAll('#staff-rows tr')).some(tr =>
     tr.querySelector('.staff-role-select')?.value === 'Main AST' &&
-    tr.querySelector('.staff-username-select')?.value === MY_DISPLAY_NAME
+    (tr.querySelector('.staff-username-select')?.value || '').trim().toLowerCase() === me
   );
 }
 
@@ -2385,6 +2401,7 @@ updateMainAstNotesVisibility();
 
 document.getElementById('main-ast-notes')?.addEventListener('input', () => {
   if(!isCurrentUserMainAst()) return; // read-only viewers (host) can't push edits
+  markRecentEdit('main-ast-notes');
   queueLiveStateSync();
 });
 
