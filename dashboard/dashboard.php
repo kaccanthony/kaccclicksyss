@@ -130,7 +130,7 @@ $allCards = [
     'setup'        => ['label' => 'Session Setup',     'sub' => 'Head-Staff',           'icon' => '/public/assets/images/icons/HS.png', 'href' => '../setupsesh/setupsesh.php'],
     'my_session'   => ['label' => 'Session Panel', 'sub' => 'All Staff (Manager, HS, ST) (Depending on your role)', 'icon' => '/public/assets/images/icons/ST.png', 'href' => '../sessionongoing/sessionongoing.php?session_id=' . $myLiveSessionId],
     'active'       => ['label' => 'Active Session',    'sub' => '', 'icon' => '/public/assets/images/icons/Inprogress.png', 'href' => '../publicview/active.php'],
-    'upcoming'     => ['label' => 'Upcoming Sessions', 'sub' => '', 'icon' => 'fa-clock', 'href' => 'upcoming.php'],
+    'upcoming'     => ['label' => 'Upcoming Sessions', 'sub' => '', 'icon' => 'fa-clock', 'href' => '../upcomingsesh/upcomingsesh.php'],
     'past'         => ['label' => 'Past Sessions',     'sub' => '', 'icon' => 'fa-fast-backward', 'href' => 'past.php'],
     'staff'        => ['label' => 'Staff Overview',    'sub' => '', 'icon' => 'fa-users', 'href' => 'staff.php'],
 ];
