@@ -400,7 +400,7 @@ function statusBadge($status) {
         </div>
         <?php if ($permLevel >= 10): ?>
         <button class="btn-primary" onclick="openModal('add')">
-            <?php if ($role === 'Head Staff'): ?>
+            <?php if ($role === 'Head Staff' && $permLevel < 20): ?>
                 <i class="fas fa-envelope-open-text"></i> Request Session
             <?php else: ?>
                 <i class="fas fa-plus"></i> Add Session
@@ -704,7 +704,7 @@ function statusBadge($status) {
 <div class="toast-container" id="toast-container"></div>
 <script>
 const IS_MANAGER    = <?= json_encode(in_array($role, ['Community Manager','Operations Manager','Admin']) || $permLevel >= 20) ?>;
-const IS_HEAD_STAFF = <?= json_encode($role === 'Head Staff') ?>;
+const IS_HEAD_STAFF = <?= json_encode($role === 'Head Staff' && $permLevel < 20) ?>;
 const TOAST_FLASH    = <?= json_encode($_SESSION['success'] ?? null) ?>;
 </script>
 <?php unset($_SESSION['success']); ?>
