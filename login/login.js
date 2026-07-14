@@ -23,17 +23,17 @@ function animateBlob() {
 
 animateBlob();
 
-// ── Password show / hide toggle ───────────────────────
-const pwField  = document.getElementById('password');
-const pwToggle = document.getElementById('pw-toggle');
-
-pwToggle.addEventListener('click', () => {
-    const isHidden = pwField.type === 'password';
-    pwField.type = isHidden ? 'text' : 'password';
-
-    const icon = pwToggle.querySelector('i');
-    icon.classList.toggle('fa-eye',       !isHidden);
-    icon.classList.toggle('fa-eye-slash',  isHidden);
+// ── Password show / hide toggle (works for any number of fields) ──
+document.querySelectorAll('.pw-toggle').forEach(btn => {
+    const field = document.getElementById(btn.dataset.target);
+    if (!field) return;
+    btn.addEventListener('click', () => {
+        const isHidden = field.type === 'password';
+        field.type = isHidden ? 'text' : 'password';
+        const icon = btn.querySelector('i');
+        icon.classList.toggle('fa-eye', !isHidden);
+        icon.classList.toggle('fa-eye-slash', isHidden);
+    });
 });
 
 // ── Forgot password modal ─────────────────────────────
@@ -46,3 +46,4 @@ closeBtn.addEventListener('click',  () => backdrop.classList.remove('open'));
 backdrop.addEventListener('click', e => {
     if (e.target === backdrop) backdrop.classList.remove('open');
 });
+

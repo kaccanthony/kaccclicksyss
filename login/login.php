@@ -1,7 +1,7 @@
 <?php
 ini_set('session.gc_maxlifetime', 86400);
 session_set_cookie_params([
-    'lifetime' => 86400, // 24 hours, in seconds
+    'lifetime' => 86400,
     'path'     => '/',
     'secure'   => true,
     'httponly' => true,
@@ -10,25 +10,24 @@ session_set_cookie_params([
 session_start();
 require_once 'cnn.php';
 
-$error   = $_SESSION['error']   ?? '';
-$success = $_SESSION['success'] ?? '';
+$error    = $_SESSION['error']    ?? '';
+$success  = $_SESSION['success']  ?? '';
+$regError = $_SESSION['reg_error'] ?? '';
+$showRegisterFace = $_SESSION['show_register'] ?? false;
 
-unset($_SESSION['error'], $_SESSION['success']);
+unset($_SESSION['error'], $_SESSION['success'], $_SESSION['reg_error'], $_SESSION['show_register']);
 
-// ── If already logged in via session or cookie, skip login ──
 if (isset($_SESSION['user'])) {
     header('Location: /dashboard/dashboard.php');
     exit;
 }
 
-// ── Check remember me cookie ──
+// ── Remember-me cookie (staff only, unchanged) ──
 if (isset($_COOKIE['remember_token'])) {
     $token = $_COOKIE['remember_token'];
-
     $stmt = mysqli_prepare($conn, "
         SELECT s.user_id, s.user_name, s.password_hash,
-            l.staff_rank, l.staff_perm_level, l.staff_roblox_name, 
-            l.staff_avatar, l.display_name, l.discord_username
+            l.staff_rank, l.staff_perm_level, l.staff_roblox_name
         FROM pp_staff_pp s
         LEFT JOIN staff_list l ON l.staff_id = s.user_id
         WHERE s.remember_token = ?
@@ -50,19 +49,18 @@ if (isset($_COOKIE['remember_token'])) {
         header('Location: /dashboard/dashboard.php');
         exit;
     }
-
-    // Token invalid — clear it
     setcookie('remember_token', '', time() - 3600, '/', '', true, true);
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// ── LOGIN — checks staff first, then regular users ──
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
     $username    = trim($_POST['username'] ?? '');
     $password    = $_POST['password'] ?? '';
     $remember_me = isset($_POST['remember_me']);
 
     $stmt = mysqli_prepare($conn, "
         SELECT s.user_id, s.user_name, s.password_hash,
-            l.staff_rank, l.staff_perm_level, l.staff_roblox_name, l.staff_avatar
+            l.staff_rank, l.staff_perm_level, l.staff_roblox_name
         FROM pp_staff_pp s
         LEFT JOIN staff_list l ON l.staff_id = s.user_id
         WHERE s.user_name = ?
@@ -70,51 +68,122 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     mysqli_stmt_bind_param($stmt, "s", $username);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
+    $row = mysqli_num_rows($result) > 0 ? mysqli_fetch_assoc($result) : null;
+    $isStaff = $row !== null;
 
-    if (mysqli_num_rows($result) == 0) {
+    // Not a staff account — try regular users
+    if (!$row) {
+        $stmtU = mysqli_prepare($conn, "
+            SELECT u.user_id, u.user_name, u.password_hash,
+                l.user_roblox_name
+            FROM pp_user_pp u
+            LEFT JOIN user_list l ON l.user_id = u.user_id
+            WHERE u.user_name = ?
+        ");
+        mysqli_stmt_bind_param($stmtU, "s", $username);
+        mysqli_stmt_execute($stmtU);
+        $resultU = mysqli_stmt_get_result($stmtU);
+        if (mysqli_num_rows($resultU) > 0) $row = mysqli_fetch_assoc($resultU);
+    }
+
+    if (!$row || !password_verify($password, $row['password_hash'])) {
         $_SESSION['error'] = 'Invalid username or password';
         header('Location: login.php');
         exit;
     }
 
-    $row = mysqli_fetch_assoc($result);
-
-    if (!password_verify($password, $row['password_hash'])) {
-        $_SESSION['error'] = 'Invalid username or password';
-        header('Location: login.php');
-        exit;
-    }
-
-    $_SESSION['user'] = [
+    $_SESSION['user'] = $isStaff ? [
         'id'          => $row['user_id'],
         'username'    => $row['user_name'],
         'role'        => $row['staff_rank'],
         'perm_level'  => $row['staff_perm_level'],
         'roblox_name' => $row['staff_roblox_name'],
         'avatar'      => $row['user_id'],
+    ] : [
+        'id'          => $row['user_id'],
+        'username'    => $row['user_name'],
+        'role'        => '',
+        'perm_level'  => 0,
+        'roblox_name' => $row['user_roblox_name'] ?? '',
+        'avatar'      => $row['user_id'],
     ];
 
-    // ── Set remember me cookie ──
-    if ($remember_me) {
-        $token = bin2hex(random_bytes(32)); // secure random token
-
-        // Save token to DB
+    if ($remember_me && $isStaff) {
+        $token = bin2hex(random_bytes(32));
         $stmt2 = mysqli_prepare($conn, "UPDATE pp_staff_pp SET remember_token = ? WHERE user_id = ?");
         mysqli_stmt_bind_param($stmt2, "ss", $token, $row['user_id']);
         mysqli_stmt_execute($stmt2);
-
-        // Set cookie for 30 days
         setcookie('remember_token', $token, [
             'expires'  => time() + (30 * 24 * 60 * 60),
-            'path'     => '/',
-            'secure'   => true,
-            'httponly' => true,
-            'samesite' => 'Lax',
+            'path'     => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax',
         ]);
     }
 
     $_SESSION['success'] = 'Login successful! Redirecting…';
     header('Location: /dashboard/dashboard.php');
+    exit;
+}
+
+// ── REGISTER — regular users only ──
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
+    $regUsername    = trim($_POST['reg_username'] ?? '');
+    $regDisplayName = trim($_POST['reg_display_name'] ?? '');
+    $regRoblox      = trim($_POST['reg_roblox'] ?? '');
+    $regPassword    = $_POST['reg_password'] ?? '';
+    $regConfirm     = $_POST['reg_confirm'] ?? '';
+
+    $fail = function ($msg) {
+        $_SESSION['reg_error']    = $msg;
+        $_SESSION['show_register'] = true;
+        header('Location: login.php');
+        exit;
+    };
+
+    if ($regUsername === '' || $regDisplayName === '' || $regRoblox === '' || $regPassword === '') {
+        $fail('Please fill in every field.');
+    }
+    if (strlen($regPassword) < 8) {
+        $fail('Password must be at least 8 characters.');
+    }
+    if ($regPassword !== $regConfirm) {
+        $fail('Passwords do not match.');
+    }
+
+    // Username must be unique across BOTH staff and user login tables
+    $stmtCheck = mysqli_prepare($conn, "
+        SELECT 1 FROM pp_staff_pp WHERE user_name = ?
+        UNION SELECT 1 FROM pp_user_pp WHERE user_name = ?
+    ");
+    mysqli_stmt_bind_param($stmtCheck, "ss", $regUsername, $regUsername);
+    mysqli_stmt_execute($stmtCheck);
+    if (mysqli_stmt_get_result($stmtCheck)->num_rows > 0) {
+        $fail('That username is already taken.');
+    }
+
+    $newId       = bin2hex(random_bytes(16)); // synthetic ID — this app doesn't use Discord OAuth for regular users
+    $passwordHash = password_hash($regPassword, PASSWORD_DEFAULT);
+
+    mysqli_begin_transaction($conn);
+    try {
+        $stmtPp = mysqli_prepare($conn, "INSERT INTO pp_user_pp (user_id, user_name, password_hash) VALUES (?, ?, ?)");
+        mysqli_stmt_bind_param($stmtPp, "sss", $newId, $regUsername, $passwordHash);
+        if (!mysqli_stmt_execute($stmtPp)) throw new Exception(mysqli_error($conn));
+
+        $emptyAvatar = '';
+        $stmtList = mysqli_prepare($conn, "INSERT INTO user_list
+            (user_id, user_name, user_display_name, user_roblox_name, user_avatar, user_num_sesh_attend, hide_stats)
+            VALUES (?, ?, ?, ?, ?, 0, 0)");
+        mysqli_stmt_bind_param($stmtList, "sssss", $newId, $regUsername, $regDisplayName, $regRoblox, $emptyAvatar);
+        if (!mysqli_stmt_execute($stmtList)) throw new Exception(mysqli_error($conn));
+
+        mysqli_commit($conn);
+    } catch (Exception $e) {
+        mysqli_rollback($conn);
+        $fail('Something went wrong creating your account. Please try again.');
+    }
+
+    $_SESSION['success'] = 'Account created! You can log in now.';
+    header('Location: login.php');
     exit;
 }
 ?>
@@ -134,47 +203,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div id="bg"></div>
 <div id="bg-glow"></div>
 
-<div class="card">
-<h1>YSS Session Manager</h1>
-<p class="subtitle">Sign in to continue</p>
+<input type="checkbox" id="flip" <?= $showRegisterFace ? 'checked' : '' ?> />
 
-<?php if ($error): ?>
-    <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
-<?php endif; ?>
-<?php if ($success): ?>
-    <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
-<?php endif; ?>
+<div class="flip-scene">
+  <div class="flip-card">
 
-<form method="POST" action="" autocomplete="off">
-    <div class="field">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" placeholder="your_username"
-            value="<?= htmlspecialchars($_POST['username'] ?? '') ?>"
-            required autocomplete="off" />
+    <!-- FRONT — Login -->
+    <div class="flip-face front">
+      <div class="card">
+        <h1>YSS Session Manager</h1>
+        <p class="subtitle">Sign in to continue</p>
+
+        <?php if ($error): ?><div class="alert alert-error"><?= htmlspecialchars($error) ?></div><?php endif; ?>
+        <?php if ($success): ?><div class="alert alert-success"><?= htmlspecialchars($success) ?></div><?php endif; ?>
+
+        <form method="POST" action="" autocomplete="off">
+            <input type="hidden" name="login_submit" value="1"/>
+            <div class="field">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="your_username"
+                    value="<?= htmlspecialchars($_POST['username'] ?? '') ?>"
+                    required autocomplete="off" />
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <div class="pw-wrap">
+                    <input type="password" id="password" name="password"
+                        placeholder="••••••••" required autocomplete="current-password" />
+                    <button type="button" class="pw-toggle" data-target="password" aria-label="Show password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="remember-row">
+                <label class="remember-label">
+                    <input type="checkbox" name="remember_me" id="remember_me" />
+                    <span>Remember me</span>
+                </label>
+                <button type="button" id="forgot-btn">Forgot password?</button>
+            </div>
+            <button type="submit" class="btn-login">Sign in</button>
+            <div class="switch-text">Don't have an account? <label for="flip">Register now</label></div>
+        </form>
+      </div>
     </div>
 
-    <div class="field">
-        <label for="password">Password</label>
-        <div class="pw-wrap">
-            <input type="password" id="password" name="password"
-                placeholder="••••••••" required autocomplete="current-password" />
-            <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Show password">
-                <i class="fas fa-eye"></i>
-            </button>
-        </div>
+    <!-- BACK — Register -->
+    <div class="flip-face back">
+      <div class="card">
+        <h1>Create Account</h1>
+        <p class="subtitle">Register as a user</p>
+
+        <?php if ($regError): ?><div class="alert alert-error"><?= htmlspecialchars($regError) ?></div><?php endif; ?>
+
+        <form method="POST" action="" autocomplete="off">
+            <input type="hidden" name="register_submit" value="1"/>
+            <div class="field">
+                <label for="reg_username">Username</label>
+                <input type="text" id="reg_username" name="reg_username" placeholder="choose_a_username"
+                    value="<?= htmlspecialchars($_POST['reg_username'] ?? '') ?>" required autocomplete="off" />
+            </div>
+            <div class="field">
+                <label for="reg_display_name">Display Name</label>
+                <input type="text" id="reg_display_name" name="reg_display_name" placeholder="How others see you"
+                    value="<?= htmlspecialchars($_POST['reg_display_name'] ?? '') ?>" required autocomplete="off" />
+            </div>
+            <div class="field">
+                <label for="reg_roblox">Roblox Username</label>
+                <input type="text" id="reg_roblox" name="reg_roblox" placeholder="Your Roblox username"
+                    value="<?= htmlspecialchars($_POST['reg_roblox'] ?? '') ?>" required autocomplete="off" />
+            </div>
+            <div class="field">
+                <label for="reg_password">Password</label>
+                <div class="pw-wrap">
+                    <input type="password" id="reg_password" name="reg_password"
+                        placeholder="At least 8 characters" required autocomplete="new-password" />
+                    <button type="button" class="pw-toggle" data-target="reg_password" aria-label="Show password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="field">
+                <label for="reg_confirm">Confirm Password</label>
+                <div class="pw-wrap">
+                    <input type="password" id="reg_confirm" name="reg_confirm"
+                        placeholder="Re-enter password" required autocomplete="new-password" />
+                    <button type="button" class="pw-toggle" data-target="reg_confirm" aria-label="Show password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" class="btn-login">Create account</button>
+            <div class="switch-text">Already have an account? <label for="flip">Login now</label></div>
+        </form>
+      </div>
     </div>
 
-    <!-- ── Remember me ── -->
-    <div class="remember-row">
-        <label class="remember-label">
-            <input type="checkbox" name="remember_me" id="remember_me" />
-            <span>Remember me</span>
-        </label>
-        <button type="button" id="forgot-btn">Forgot password?</button>
-    </div>
-
-    <button type="submit" class="btn-login">Sign in</button>
-</form>
+  </div>
 </div>
 
 <div class="modal-backdrop" id="modal-backdrop">
