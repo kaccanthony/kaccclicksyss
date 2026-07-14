@@ -132,7 +132,7 @@ $allCards = [
     'active'       => ['label' => 'Active Session',    'sub' => '', 'icon' => '/public/assets/images/icons/Inprogress.png', 'href' => '../publicview/active.php'],
     'upcoming'     => ['label' => 'Upcoming Sessions', 'sub' => '', 'icon' => 'fa-clock', 'href' => '../upcomingsesh/upcomingsesh.php'],
     'past'         => ['label' => 'Past Sessions',     'sub' => '', 'icon' => 'fa-fast-backward', 'href' => 'past.php'],
-    'staff'        => ['label' => 'Staff Overview',    'sub' => '', 'icon' => 'fa-users', 'href' => 'staff.php'],
+    'staff'        => ['label' => 'Staff Overview',    'sub' => '', 'icon' => 'fa-users', 'href' => '../staff/staff.php'],
 ];
 
 $roleCards = [
