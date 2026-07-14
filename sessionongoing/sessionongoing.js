@@ -166,6 +166,7 @@ document.querySelectorAll('.ovr-btn').forEach(btn=>{
     overrides[key] = !overrides[key];
     btn.classList.toggle('on', overrides[key]);
     applyOverrides();
+    overridesDirty = true;
     queueLiveStateSync();
   });
 });
@@ -1586,7 +1587,6 @@ setInterval(()=>{
 }, 1000);
 
 /* ================= BELL SYSTEM ================= */
-/* ================= BELL SYSTEM (LOCAL SIMULATION — testing only, no server calls yet) ================= */
 const BELL_BUTTON_COOLDOWN_MS = 5000;
 const BELL_GLOBAL_COOLDOWN_MS = 5 * 60 * 1000;
 const BELL_MAX_INITIATIONS = 3;
@@ -1951,6 +1951,8 @@ const SYNC_INTERVAL_MS = 5000;
 let syncInFlight = false;
 let pendingLiveStateFlush = false;
 let staffCoreDirty = false;
+let overridesDirty = false;
+let statusDirty = false;
 
 function queueLiveStateSync() { pendingLiveStateFlush = true; }
 
@@ -1963,8 +1965,13 @@ function isEditingField(el) {
 // Core columns: real DB fields, safe to push straight through
 function collectCoreUpdates() {
     const updates = {};
-    const statusVal = document.getElementById('status-select').value;
-    updates.session_status = statusVal;
+    if (statusDirty) {
+        const statusVal = document.getElementById('status-select').value;
+        if (statusVal !== 'concluded') { // 'concluded' only ever commits via the Conclude Session confirm flow
+            updates.session_status = statusVal;
+        }
+        statusDirty = false;
+    }
 
     let staffAttendance = '';
     document.querySelectorAll('#staff-rows .chk').forEach(cb => { staffAttendance += cb.checked ? '1' : '0'; });
@@ -2076,13 +2083,16 @@ function collectLiveState() {
         drivers: drivers,
         staffShift: staffShift,
         feedbackData: feedbackData,
-        overrides: overrides,
         completedRows: completedRows,
         slotOrder: slotOrder,
         unallocatedTrainees: unallocatedTrainees,
         timeTracker: timeTracker,
         mainAstNotes: document.getElementById('main-ast-notes')?.value || '',
     };
+    if (overridesDirty) {
+        payload.overrides = overrides;
+        overridesDirty = false;
+    }
     if (pendingAnnouncement) {
         payload.announcement = pendingAnnouncement;
         pendingAnnouncement = null;
@@ -2473,7 +2483,7 @@ document.getElementById('generate-report-btn').addEventListener('click', () => {
   });
 });
 document.getElementById('session-host-select')?.addEventListener('change', refreshTrainerDropdowns);
-document.getElementById('status-select').addEventListener('change', queueLiveStateSync);
+document.getElementById('status-select').addEventListener('change', ()=>{ statusDirty = true; queueLiveStateSync(); });
 
 // Initial load: seed local state from SESSION_DATA / LIVE_STATE if the page provided them
 if (typeof SESSION_DATA !== 'undefined' && SESSION_DATA) {
