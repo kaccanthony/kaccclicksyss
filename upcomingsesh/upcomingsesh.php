@@ -22,13 +22,7 @@ $username  = htmlspecialchars($user['username']);
 require_once __DIR__ . '/../public/assets/misc/role_display.php';
 $role = htmlspecialchars(formatRoleDisplay($user['role'] ?? '', (int)($user['perm_level'] ?? 0)));
 $staffId   = $user['id'] ?? '';
-
-// Same access tier as Setup Session — adjust if Upcoming Sessions should be open to more roles
-$allowedRoles = ['Head Staff', 'Operations Manager', 'Community Manager'];
-if (!in_array($role, $allowedRoles)) {
-    header('Location: ../dashboard/dashboard.php');
-    exit;
-}
+// No role restriction — open to any logged-in account (staff or, eventually, regular users).
 
 $hasAvatar = false;
 if ($staffId) {
