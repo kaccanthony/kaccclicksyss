@@ -19,7 +19,8 @@ if (!isset($_SESSION['user'])) {
 
 $user      = $_SESSION['user'];
 $username  = htmlspecialchars($user['username']);
-$role      = htmlspecialchars($user['role'] ?? '');
+require_once __DIR__ . '/../public/assets/misc/role_display.php';
+$role = htmlspecialchars(formatRoleDisplay($user['role'] ?? '', (int)($user['perm_level'] ?? 0)));
 $staffId   = $user['id'] ?? '';
 
 // Same access tier as Setup Session — adjust if Upcoming Sessions should be open to more roles

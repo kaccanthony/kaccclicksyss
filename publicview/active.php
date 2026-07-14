@@ -7,6 +7,66 @@ if (!isset($_SESSION['user'])) {
     exit;
 }
 
+$user     = $_SESSION['user'];
+require_once __DIR__ . '/../public/assets/role_display.php';
+$username = htmlspecialchars($user['username'] ?? '');
+$role     = htmlspecialchars(formatRoleDisplay($user['role'] ?? '', (int)($user['perm_level'] ?? 0)));
+$staffId  = $user['id'] ?? '';
+
+$hasAvatar = false;
+if ($staffId) {
+    $stmtAv = mysqli_prepare($conn, "SELECT 1 FROM staff_list WHERE staff_id = ? AND LENGTH(staff_avatar) > 0");
+    mysqli_stmt_bind_param($stmtAv, "s", $staffId);
+    mysqli_stmt_execute($stmtAv);
+    mysqli_stmt_store_result($stmtAv);
+    $hasAvatar = mysqli_stmt_num_rows($stmtAv) > 0;
+}
+
+$user     = $_SESSION['user'];
+require_once __DIR__ . '/../public/assets/role_display.php';
+$username = htmlspecialchars($user['username'] ?? '');
+$role     = htmlspecialchars(formatRoleDisplay($user['role'] ?? '', (int)($user['perm_level'] ?? 0)));
+$staffId  = $user['id'] ?? '';
+
+$hasAvatar = false;
+if ($staffId) {
+    $stmtAv = mysqli_prepare($conn, "SELECT 1 FROM staff_list WHERE staff_id = ? AND LENGTH(staff_avatar) > 0");
+    mysqli_stmt_bind_param($stmtAv, "s", $staffId);
+    mysqli_stmt_execute($stmtAv);
+    mysqli_stmt_store_result($stmtAv);
+    $hasAvatar = mysqli_stmt_num_rows($stmtAv) > 0;
+}
+
+$user     = $_SESSION['user'];
+require_once __DIR__ . '/../public/assets/role_display.php';
+$username = htmlspecialchars($user['username'] ?? '');
+$role     = htmlspecialchars(formatRoleDisplay($user['role'] ?? '', (int)($user['perm_level'] ?? 0)));
+$staffId  = $user['id'] ?? '';
+
+$hasAvatar = false;
+if ($staffId) {
+    $stmtAv = mysqli_prepare($conn, "SELECT 1 FROM staff_list WHERE staff_id = ? AND LENGTH(staff_avatar) > 0");
+    mysqli_stmt_bind_param($stmtAv, "s", $staffId);
+    mysqli_stmt_execute($stmtAv);
+    mysqli_stmt_store_result($stmtAv);
+    $hasAvatar = mysqli_stmt_num_rows($stmtAv) > 0;
+}
+
+$user     = $_SESSION['user'];
+require_once __DIR__ . '/../public/assets/role_display.php';
+$username = htmlspecialchars($user['username'] ?? '');
+$role     = htmlspecialchars(formatRoleDisplay($user['role'] ?? '', (int)($user['perm_level'] ?? 0)));
+$staffId  = $user['id'] ?? '';
+
+$hasAvatar = false;
+if ($staffId) {
+    $stmtAv = mysqli_prepare($conn, "SELECT 1 FROM staff_list WHERE staff_id = ? AND LENGTH(staff_avatar) > 0");
+    mysqli_stmt_bind_param($stmtAv, "s", $staffId);
+    mysqli_stmt_execute($stmtAv);
+    mysqli_stmt_store_result($stmtAv);
+    $hasAvatar = mysqli_stmt_num_rows($stmtAv) > 0;
+}
+
 // Pick a specific session via ?session_id=, or fall back to the most recently started one.
 $sessionId = (int)($_GET['session_id'] ?? 0);
 if ($sessionId) {
@@ -49,6 +109,40 @@ if ($session && !empty($session['live_state'])) {
   <div class="live-pill"><span class="live-dot"></span> LIVE SESSION</div>
   <span class="sync-note" id="sync-note">synced 2s ago</span>
   <a href="../dashboard/dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
+
+  <div class="topbar-right">
+    <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
+      <div class="avatar">
+        <?php if ($hasAvatar): ?>
+          <i class="fas fa-user avatar-fallback-icon"></i>
+          <img class="js-avatar" data-avatar-id="<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+        <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
+      </div>
+      <div class="profile-meta">
+        <span class="profile-name"><?= $username ?></span>
+        <span class="profile-role"><?= $role ?></span>
+      </div>
+      <i class="fas fa-chevron-down chev" id="chev"></i>
+    </button>
+    <div class="profile-popup" id="profile-popup">
+      <div class="popup-header">
+        <div class="popup-avatar">
+          <?php if ($hasAvatar): ?>
+            <i class="fas fa-user avatar-fallback-icon"></i>
+            <img class="js-avatar" data-avatar-id="<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+          <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
+        </div>
+        <div>
+          <div class="popup-name"><?= $username ?></div>
+          <div class="popup-role"><?= $role ?></div>
+        </div>
+      </div>
+      <div class="popup-divider"></div>
+      <a href="../dashboard/notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>
+      <a href="../settings/settings.php" class="popup-item"><i class="fas fa-cog"></i> Settings</a>
+      <a href="../dashboard/dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-sign-out-alt"></i> Log out</a>
+    </div>
+  </div>
 </header>
 
 <main>
@@ -96,5 +190,6 @@ if ($session && !empty($session['live_state'])) {
 const SESSION_ID = <?= $session ? (int)$session['session_id'] : 'null' ?>;
 </script>
 <script src="active.js?v=<?= filemtime(__DIR__ . '/active.js') ?>"></script>
+<script src="../public/assets/avatar-cache.js"></script>
 </body>
 </html>
