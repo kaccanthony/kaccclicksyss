@@ -133,6 +133,8 @@ $allCards = [
     'upcoming'     => ['label' => 'Upcoming Sessions', 'sub' => '', 'icon' => 'fa-clock', 'href' => '../upcomingsesh/upcomingsesh.php'],
     'past'         => ['label' => 'Past Sessions',     'sub' => '', 'icon' => 'fa-fast-backward', 'href' => 'past.php'],
     'staff'        => ['label' => 'Staff Overview',    'sub' => '', 'icon' => 'fa-users', 'href' => '../staff/staff.php'],
+    'manage_staff' => ['label' => 'Manage Staff', 'sub' => 'Manager & Admin', 'icon' => 'fa-user-gear', 'href' => '../managestaff/managestaff.php', 'comingSoon' => true],
+    'admin_panel'  => ['label' => 'Admin Panel', 'sub' => 'Admin only', 'icon' => 'fa-shield-halved', 'href' => '../adminpanel/adminpanel.php', 'comingSoon' => true],
 ];
 
 $roleCards = [
@@ -148,6 +150,11 @@ foreach (($roleCards[$role] ?? []) as $key) {
     if ($key === 'my_session' && !$myLiveSessionId) continue; // hide entirely when nothing to jump to
     if (isset($allCards[$key])) $cards[] = $allCards[$key];
 }
+
+// Permission-level gates (staff_list.staff_perm_level) rather than role-name lookups —
+// Manager (15) and Admin (20) both qualify for Manage Staff; only Admin (20) gets Admin Panel.
+if ($permLevel >= 15) $cards[] = $allCards['manage_staff'];
+if ($permLevel >= 20) $cards[] = $allCards['admin_panel'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -237,7 +244,9 @@ foreach (($roleCards[$role] ?? []) as $key) {
 
     <div class="bento-grid" id="bento-grid">
         <?php foreach ($cards as $i => $card): ?>
-        <a href="<?= htmlspecialchars($card['href']) ?>" class="bento-card" style="--i:<?= $i ?>">
+        <?php $tag = !empty($card['comingSoon']) ? 'div' : 'a'; ?>
+        <<?= $tag ?> <?= $tag === 'a' ? 'href="' . htmlspecialchars($card['href']) . '"' : '' ?> class="bento-card<?= !empty($card['comingSoon']) ? ' bento-card-disabled' : '' ?>" style="--i:<?= $i ?>">
+            <?php if (!empty($card['comingSoon'])): ?><span class="bento-ribbon">Coming Soon</span><?php endif; ?>
             <div class="bento-icon">
                 <?php if (str_starts_with($card['icon'], '/')): ?>
                     <img src="<?= htmlspecialchars($card['icon']) ?>"
@@ -254,7 +263,7 @@ foreach (($roleCards[$role] ?? []) as $key) {
                 <?php endif; ?>
             </div>
             <i class="fas fa-arrow-right bento-arrow"></i>
-        </a>
+        </<?= $tag ?>>
         <?php endforeach; ?>
 
         <?php if (empty($cards)): ?>

@@ -438,3 +438,8 @@ html, body {
     .app-name { display: none; }
     .profile-meta { display: none; }
 }
+
+.bento-card-disabled{cursor:default;opacity:.72;}
+.bento-card-disabled:hover{transform:none;background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.11);}
+.bento-card-disabled .bento-arrow{display:none;}
+.bento-ribbon{position:absolute;top:12px;right:-30px;transform:rotate(35deg);background:#ff9f43;color:#2a1500;font-size:.62rem;font-weight:700;letter-spacing:.03em;padding:3px 34px;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,.35);}
