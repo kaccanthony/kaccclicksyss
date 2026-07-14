@@ -69,8 +69,7 @@ if ($session && !empty($session['live_state'])) {
     <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
       <div class="avatar">
         <?php if ($hasAvatar): ?>
-          <i class="fas fa-user avatar-fallback-icon"></i>
-          <img class="js-avatar" data-avatar-id="<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+          <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
         <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
       </div>
       <div class="profile-meta">
@@ -83,8 +82,7 @@ if ($session && !empty($session['live_state'])) {
       <div class="popup-header">
         <div class="popup-avatar">
           <?php if ($hasAvatar): ?>
-            <i class="fas fa-user avatar-fallback-icon"></i>
-            <img class="js-avatar" data-avatar-id="<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+            <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
           <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
         </div>
         <div>
@@ -145,6 +143,6 @@ if ($session && !empty($session['live_state'])) {
 const SESSION_ID = <?= $session ? (int)$session['session_id'] : 'null' ?>;
 </script>
 <script src="active.js?v=<?= filemtime(__DIR__ . '/active.js') ?>"></script>
-<script src="../public/assets/avatar-cache.js"></script>
+<script src="../public/assets/js/avatar-cache.js"></script>
 </body>
 </html>
