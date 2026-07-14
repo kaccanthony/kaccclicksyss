@@ -130,7 +130,7 @@ if (isset($_GET['member']) && $_GET['member'] !== '') {
 <main class="main">
 <?php if ($viewingMember): ?>
     <!-- ── Temporary individual member view (stats not implemented yet) ── -->
-    <a href="/staff/" class="back-btn" style="margin-bottom:24px;display:inline-flex;"><i class="fas fa-arrow-left"></i> Back to Staff Overview</a>
+    <a href="/staff/staff.php" class="back-btn" style="margin-bottom:24px;display:inline-flex;"><i class="fas fa-arrow-left"></i> Back to Staff Overview</a>
     <div class="member-detail-card">
         <div class="member-detail-avatar">
             <?php if (!empty($viewingMember['staff_avatar'])): ?>
