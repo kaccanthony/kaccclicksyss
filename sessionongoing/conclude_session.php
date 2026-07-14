@@ -41,8 +41,13 @@ try {
     $timersByRow = $liveState['timers'] ?? [];
 
     // 1. session_staff_logs — one summary row
-    $startTime = $s['started_at'] ? date('H:i:s', strtotime($s['started_at'])) : date('H:i:s');
-    $endTime   = date('H:i:s');
+    // started_at was stored via gmdate() (UTC) in sessionongoing.php, so it must be parsed as UTC
+    // here, then converted to Europe/London — this also correctly handles the BST/GMT switch.
+    $london = new DateTimeZone('Europe/London');
+    $startTime = $s['started_at']
+        ? (new DateTime($s['started_at'], new DateTimeZone('UTC')))->setTimezone($london)->format('H:i:s')
+        : (new DateTime('now', $london))->format('H:i:s');
+    $endTime = (new DateTime('now', $london))->format('H:i:s');
     $stmtLog = mysqli_prepare($conn, "INSERT INTO session_staff_logs
         (session_id, host, cohost_1, cohost_2, cohost_3, `cohost_4/supervisor`, assistant_1, assistant_2, assistant_3, assistant_4, date, started, ended, duration)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");

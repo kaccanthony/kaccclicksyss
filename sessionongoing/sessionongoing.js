@@ -2080,6 +2080,8 @@ function collectLiveState() {
         completedRows: completedRows,
         slotOrder: slotOrder,
         unallocatedTrainees: unallocatedTrainees,
+        timeTracker: timeTracker,
+        mainAstNotes: document.getElementById('main-ast-notes')?.value || '',
     };
     if (pendingAnnouncement) {
         payload.announcement = pendingAnnouncement;
@@ -2230,6 +2232,12 @@ const attendanceParts = (session.trainee_attendance || '').split(',');
     if (liveState.drivers) applyRemoteDrivers(liveState.drivers);
     if (liveState.staffShift) applyRemoteStaff(liveState.staffShift);
     if (liveState.unallocatedTrainees) applyRemoteUnallocated(liveState.unallocatedTrainees);
+    if (liveState.timeTracker) { Object.assign(timeTracker, liveState.timeTracker); renderTimeTracker(); }
+    if (liveState.mainAstNotes !== undefined) {
+        const notesEl = document.getElementById('main-ast-notes');
+        if (notesEl && document.activeElement !== notesEl) notesEl.value = liveState.mainAstNotes;
+    }
+    updateMainAstNotesVisibility();
     if (liveState.feedbackData) Object.assign(feedbackData, liveState.feedbackData);
     if (liveState.overrides) {
         const changed = JSON.stringify(overrides) !== JSON.stringify(liveState.overrides);
@@ -2279,6 +2287,191 @@ document.getElementById('staff-rows').addEventListener('input', ()=>{ staffCoreD
 document.getElementById('staff-rows').addEventListener('change', ()=>{ staffCoreDirty = true; queueLiveStateSync(); });
 document.getElementById('staff-rows').addEventListener('change', refreshTrainerDropdowns);
 document.getElementById('staff-rows').addEventListener('input', refreshTrainerDropdowns);
+document.getElementById('staff-rows').addEventListener('change', updateMainAstNotesVisibility);
+document.getElementById('staff-rows').addEventListener('input', updateMainAstNotesVisibility);
+
+/* ================= TIME TRACKER (Host only) — BST/GMT wall-clock stamps ================= */
+const TIME_TRACKER_KEYS = ['briefingStart', 'sgShiftStart', 'screenieTime'];
+const timeTracker = (LIVE_STATE.timeTracker && typeof LIVE_STATE.timeTracker === 'object') ? { ...LIVE_STATE.timeTracker } : {};
+
+function formatUKTime(ts){
+  if(!ts) return null;
+  return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ts));
+}
+
+// Converts a "HH:MM" the host typed (meant as UK wall-clock time, today) into a real epoch ms,
+// correctly accounting for BST vs GMT without needing a timezone library.
+function londonTimeStringToTimestamp(hh, mm){
+  const now = new Date();
+  const ukDateParts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
+  const y = +ukDateParts.find(p => p.type === 'year').value;
+  const mo = +ukDateParts.find(p => p.type === 'month').value;
+  const d = +ukDateParts.find(p => p.type === 'day').value;
+  const guess = Date.UTC(y, mo - 1, d, hh, mm);
+  const guessUkStr = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(guess));
+  const [guessH, guessM] = guessUkStr.split(':').map(Number);
+  const diffMinutes = (hh * 60 + mm) - (guessH * 60 + guessM);
+  return guess + diffMinutes * 60000;
+}
+
+function renderTimeTracker(){
+  TIME_TRACKER_KEYS.forEach(key => {
+    const row = document.querySelector(`.time-tracker-row[data-key="${key}"]`);
+    const valueEl = document.getElementById(`tt-${key}-value`);
+    const recordBtn = document.querySelector(`.tt-record-btn[data-key="${key}"]`);
+    const editBtn = document.querySelector(`.tt-edit-btn[data-key="${key}"]`);
+    const ts = timeTracker[key];
+    if(valueEl) valueEl.textContent = ts ? `${formatUKTime(ts)} BST/GMT` : '— not recorded —';
+    if(row) row.dataset.recorded = ts ? 'true' : 'false';
+    if(recordBtn) recordBtn.style.display = ts ? 'none' : '';
+    if(editBtn) editBtn.style.display = ts ? '' : 'none';
+  });
+}
+
+document.querySelectorAll('.tt-record-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    timeTracker[btn.dataset.key] = Date.now(); // real UTC epoch — always correct, no conversion needed
+    renderTimeTracker();
+    queueLiveStateSync();
+  });
+});
+
+document.querySelectorAll('.tt-edit-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.key;
+    const current = timeTracker[key] ? formatUKTime(timeTracker[key]) : '00:00';
+    const input = prompt('Override time (HH:MM, 24h, BST/GMT):', current);
+    if(input === null) return;
+    const m = /^(\d{1,2}):(\d{2})$/.exec(input.trim());
+    if(!m){ showToast('Enter the time as HH:MM.'); return; }
+    timeTracker[key] = londonTimeStringToTimestamp(parseInt(m[1], 10), parseInt(m[2], 10));
+    renderTimeTracker();
+    queueLiveStateSync();
+  });
+});
+
+renderTimeTracker();
+
+/* ================= MAIN AST NOTES (synced, visible to Host + current Main AST) ================= */
+function isCurrentUserMainAst(){
+  return Array.from(document.querySelectorAll('#staff-rows tr')).some(tr =>
+    tr.querySelector('.staff-role-select')?.value === 'Main AST' &&
+    tr.querySelector('.staff-username-select')?.value === MY_DISPLAY_NAME
+  );
+}
+
+function updateMainAstNotesVisibility(){
+  const panel = document.getElementById('main-ast-notes-panel');
+  const notesEl = document.getElementById('main-ast-notes');
+  if(!panel || !notesEl) return;
+  const canEdit = isCurrentUserMainAst();
+  panel.style.display = (isHost || canEdit) ? '' : 'none';
+  notesEl.readOnly = !canEdit;
+  notesEl.placeholder = canEdit
+    ? 'Notes for the end-of-session report (the Host can see this too, live)...'
+    : 'Only the current Main AST can edit this — you\'re viewing as Host.';
+}
+updateMainAstNotesVisibility();
+
+document.getElementById('main-ast-notes').addEventListener('input', () => {
+  if(!isCurrentUserMainAst()) return; // read-only viewers (host) can't push edits
+  queueLiveStateSync();
+});
+
+/* ================= GENERATE REPORT (Host only) ================= */
+function getStaffDiscordNamesByRole(role){
+  return Array.from(document.querySelectorAll('#staff-rows tr'))
+    .filter(tr => tr.querySelector('.staff-role-select')?.value === role)
+    .map(tr => tr.querySelector('.staff-username-select')?.value.trim())
+    .filter(Boolean);
+}
+
+function buildReportText(){
+  const joinOrDash = arr => arr.length ? arr.join('\n') : '—';
+
+  const hostName = SESSION_DATA.host || '';
+  const dateVal = document.getElementById('session-date-input')?.value || SESSION_DATA.session_date || '';
+  const dp = dateVal.split('-'); // yyyy-mm-dd -> dd/mm/yyyy
+  const dateFormatted = dp.length === 3 ? `${dp[2]}/${dp[1]}/${dp[0]}` : dateVal;
+
+  const mainAstList = getStaffDiscordNamesByRole('Main AST');
+  const mainAst = mainAstList[0] || '';
+  const assistants = getStaffDiscordNamesByRole('Assistant');
+  if(mainAst) assistants.unshift(mainAst); // Main AST is mentioned again here
+  const cohosts = getStaffDiscordNamesByRole('Co-Host');
+  const ihs = getStaffDiscordNamesByRole('Internal Helper');
+
+  const traineeRows = Array.from(document.querySelectorAll('#trainee-rows tr'))
+    .filter(tr => (tr.querySelector('.trainee-name')?.value || '').trim() !== '');
+  const allocated = traineeRows.filter(tr => !tr.dataset.uid);
+  const unalloc = traineeRows.filter(tr => tr.dataset.uid);
+
+  const cancelledNoShow = traineeRows
+    .filter(tr => !tr.querySelector('.chk')?.checked)
+    .map(tr => tr.querySelector('.trainee-name').value.trim());
+
+  const drivers = Array.from(document.querySelectorAll('#driver-rows tr'))
+    .map(tr => tr.querySelectorAll('.driver-field')[0]?.value.trim())
+    .filter(Boolean);
+
+  let n = 1;
+  const traineeLines = [...allocated, ...unalloc].map(tr => {
+    const name = tr.querySelector('.trainee-name')?.value.trim() || '';
+    const trainer = tr.querySelector('.trainer-name-select')?.value.trim() || '';
+    return `T${n++}: ${name} - ${trainer}`;
+  });
+
+  const mainAstNotes = document.getElementById('main-ast-notes')?.value.trim() || '';
+
+  return `========REPORT BASED ON THE SIGNALLING PRACTICE==========
+Host: ${hostName}
+Date: ${dateFormatted}
+Time: ${formatUKTime(Date.now())} BST/GMT
+
+----------
+Actual Briefing start: ${timeTracker.briefingStart ? formatUKTime(timeTracker.briefingStart) : '—'}
+Actual SG Shift start: ${timeTracker.sgShiftStart ? formatUKTime(timeTracker.sgShiftStart) : '—'}
+Actual Screenie time: ${timeTracker.screenieTime ? formatUKTime(timeTracker.screenieTime) : '—'}
+
+----------
+
+Main AST:
+${mainAst || '—'}
+
+Assistants:
+${joinOrDash(assistants)}
+
+Co-Hosts:
+${joinOrDash(cohosts)}
+IH:(If any):
+${joinOrDash(ihs)}
+
+Total no. of trainees in panel: ${traineeRows.length}
+
+Cancelled/No-show trainee:
+${joinOrDash(cancelledNoShow)}
+
+Driver(s) if any:
+${joinOrDash(drivers)}
+
+Trainee data:
+S.no | Trainee | Trainer
+${traineeLines.length ? traineeLines.join('\n') : '—'}
+
+Notes from Main AST(if any):
+${mainAstNotes || '—'}
+
+=======TO WHOM IT MAY BE CONCERNED=========`;
+}
+
+document.getElementById('generate-report-btn').addEventListener('click', () => {
+  const text = buildReportText();
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Report copied to clipboard!');
+  }).catch(() => {
+    showToast('Could not copy — check clipboard permissions.');
+  });
+});
 document.getElementById('session-host-select')?.addEventListener('change', refreshTrainerDropdowns);
 document.getElementById('status-select').addEventListener('change', queueLiveStateSync);
 

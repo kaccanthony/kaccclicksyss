@@ -526,6 +526,12 @@ table.resizable-cols{table-layout:fixed;}
 .pip-setup-edit-btn{width:24px;height:24px;border-radius:50%;border:1px solid var(--border-strong);background:rgba(124,196,255,.1);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:.62rem;}
 .pip-setup-edit-btn:hover{background:rgba(124,196,255,.2);}
 
+.time-tracker-grid{display:flex;flex-direction:column;gap:14px;}
+.time-tracker-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.time-tracker-row .pip-label{min-width:190px;color:rgba(255,255,255,.65);font-size:.85rem;}
+.time-tracker-value{font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:600;padding:4px 12px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid var(--border-strong);color:rgba(255,255,255,.55);}
+.time-tracker-row[data-recorded="true"] .time-tracker-value{background:rgba(74,222,128,.14);border-color:rgba(74,222,128,.4);color:var(--live);}
+
 /* Conclude Button styles */
 .conclude-panel-body{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
 .conclude-desc{font-size:.78rem;color:var(--text-dim);max-width:520px;}

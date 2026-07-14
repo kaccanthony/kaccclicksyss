@@ -287,6 +287,31 @@ if (!empty($sessionRow['live_state'])) {
       </div>
   </section>
 
+  <!-- Time Tracker (Host only) -->
+  <section class="panel host-only" id="time-tracker-panel">
+    <div class="panel-title">Time Tracker <span class="lock-tag" style="opacity:.6;"><i class="fas fa-clock"></i> BST/GMT</span></div>
+    <div class="time-tracker-grid" id="time-tracker-grid">
+      <div class="time-tracker-row" data-key="briefingStart">
+        <span class="pip-label">Actual Briefing Start</span>
+        <span class="time-tracker-value" id="tt-briefingStart-value">— not recorded —</span>
+        <button type="button" class="mini-override-btn tt-record-btn" data-key="briefingStart" title="Record now"><i class="fas fa-play"></i></button>
+        <button type="button" class="pip-setup-edit-btn tt-edit-btn" data-key="briefingStart" style="display:none;" title="Override time"><i class="fas fa-pen"></i></button>
+      </div>
+      <div class="time-tracker-row" data-key="sgShiftStart">
+        <span class="pip-label">Actual SG Shift Start</span>
+        <span class="time-tracker-value" id="tt-sgShiftStart-value">— not recorded —</span>
+        <button type="button" class="mini-override-btn tt-record-btn" data-key="sgShiftStart" title="Record now"><i class="fas fa-play"></i></button>
+        <button type="button" class="pip-setup-edit-btn tt-edit-btn" data-key="sgShiftStart" style="display:none;" title="Override time"><i class="fas fa-pen"></i></button>
+      </div>
+      <div class="time-tracker-row" data-key="screenieTime">
+        <span class="pip-label">Actual Screenie Time</span>
+        <span class="time-tracker-value" id="tt-screenieTime-value">— not recorded —</span>
+        <button type="button" class="mini-override-btn tt-record-btn" data-key="screenieTime" title="Record now"><i class="fas fa-play"></i></button>
+        <button type="button" class="pip-setup-edit-btn tt-edit-btn" data-key="screenieTime" style="display:none;" title="Override time"><i class="fas fa-pen"></i></button>
+      </div>
+    </div>
+  </section>
+
   <!-- Trainees table -->
   <section class="panel">
   <div class="panel-title">
@@ -381,6 +406,12 @@ if (!empty($sessionRow['live_state'])) {
       <i class="fas fa-flag-checkered"></i> Conclude Session
     </button>
   </div>
+</section>
+
+<!-- Main AST Notes — visible to the Host and to whoever currently holds the Main AST role -->
+<section class="panel" id="main-ast-notes-panel" style="display:none;">
+  <div class="panel-title">Main AST Notes <span class="lock-tag" style="opacity:.6;"><i class="fas fa-eye"></i> Visible to Host + Main AST</span></div>
+  <textarea class="cell-input" id="main-ast-notes" rows="6" style="width:100%;" placeholder="Notes for the end-of-session report (the Host can see this too, live)..."></textarea>
 </section>
 </main>
 <!-- Floating Bell Widget -->
@@ -632,6 +663,7 @@ const LIVE_STATE = <?= json_encode($liveState, JSON_HEX_TAG | JSON_HEX_APOS | JS
 const STAFF_DIRECTORY = <?= json_encode($staffDirectory, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) ?>;
 const SESSION_STARTED_AT = <?= json_encode($sessionRow['started_at']) ?>; // e.g. "2026-07-10 14:32:00"
 const MY_ROLE = <?= json_encode(strtolower(str_replace('-', '', $viewerRole))) ?>; // 'host' | 'cohost' | 'assistant'
+const MY_DISPLAY_NAME = <?= json_encode($myDisplayName) ?>;
 const PLAY_TRAINEE_WARNING_SOUND = <?= json_encode($prefTraineeWarning !== '0') ?>;
 const ANNOUNCEMENT_DISPLAY_PREF = <?= json_encode($prefAnnouncementDisplay ?: 'toast') ?>;
 const ANNOUNCEMENT_ENABLED_PREF = <?= json_encode($prefAnnouncementEnabled !== '0') ?>;

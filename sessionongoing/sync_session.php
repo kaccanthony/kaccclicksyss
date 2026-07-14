@@ -113,7 +113,7 @@ if (isset($data['live_state']) && is_array($data['live_state'])) {
     // "timers" or "unallocatedTrainees" wipes out another client's concurrent edit
     // to a different row/uid inside that same object.
     $merged = array_replace($existing, $incoming);
-    foreach (['timers', 'completedRows'] as $keyedObjectField) {
+    foreach (['timers', 'completedRows', 'timeTracker'] as $keyedObjectField) {
         if (isset($incoming[$keyedObjectField]) && is_array($incoming[$keyedObjectField])) {
             $merged[$keyedObjectField] = array_replace($existing[$keyedObjectField] ?? [], $incoming[$keyedObjectField]);
         }
