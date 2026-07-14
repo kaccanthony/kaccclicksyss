@@ -44,6 +44,20 @@ $groupConfig = [
 ];
 $rankOrder = array_keys($groupConfig);
 
+// Decides the AOS animation for a card based on where it sits in its own row:
+// odd row size → sides fade in from their edge, dead center zooms in.
+// even row size → first half fades from the left, second half fades from the right.
+function aosForPosition(int $pos, int $rowSize): string {
+    if ($rowSize <= 1) return 'fade-up';
+    if ($rowSize % 2 === 1) {
+        $mid = intdiv($rowSize, 2);
+        if ($pos < $mid) return 'fade-right';
+        if ($pos > $mid) return 'fade-left';
+        return 'zoom-in';
+    }
+    return $pos < $rowSize / 2 ? 'fade-right' : 'fade-left';
+}
+
 $staffByRank = [];
 $resStaff = mysqli_query($conn, "SELECT * FROM staff_list WHERE staff_rank IN ('" . implode("','", array_map('mysqli_real_escape_string', array_fill(0, count($rankOrder), $conn), $rankOrder)) . "') ORDER BY staff_display_name ASC");
 // (escaping done per-value above; array_fill trick just repeats $conn for array_map's second arg)
@@ -82,6 +96,7 @@ if (isset($_GET['member']) && $_GET['member'] !== '') {
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://kit.fontawesome.com/6c33013ae6.js" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="staff.css?v=<?= filemtime(__DIR__ . '/staff.css') ?>"/>
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 </head>
 <body>
 <div id="bg"></div>
@@ -165,14 +180,22 @@ if (isset($_GET['member']) && $_GET['member'] !== '') {
             <div class="staff-coming-soon"><i class="fas fa-user-slash"></i> No one currently holds this rank.</div>
         <?php else: ?>
         <div class="<?= $rowClass ?>">
-            <?php foreach ($members as $m):
+            <?php
+            $rowSize = $cfg['perRow'] === 0 ? count($members) : $cfg['perRow'];
+            foreach ($members as $i => $m):
                 $name = $m['staff_display_name'] ?: $m['staff_name'];
                 $bio  = $m['staff_bio'] ?? '';
                 $suffix = $rankKey === 'Head Staff' ? headStaffSuffix($m) : '';
                 $hasAv = !empty($m['staff_avatar']);
+                $posInRow = $rowSize > 0 ? $i % $rowSize : 0;
+                $aosAnim = aosForPosition($posInRow, $rowSize);
+                $aosDelay = $posInRow * 80;
             ?>
             <a href="/staff/<?= rawurlencode($name) ?>"
                class="staff-card"
+               data-aos="<?= $aosAnim ?>"
+               data-aos-delay="<?= $aosDelay ?>"
+               data-aos-duration="600"
                style="--c1:<?= $cfg['colors'][0] ?>;--c2:<?= $cfg['colors'][1] ?>;">
                 <div class="staff-card-img" style="<?= $hasAv ? "background-image:url('../modules/profiles/avatar.php?id=" . htmlspecialchars($m['staff_id']) . "')" : '' ?>">
                     <?php if (!$hasAv): ?><i class="fas fa-user staff-card-noimg"></i><?php endif; ?>
@@ -195,6 +218,8 @@ if (isset($_GET['member']) && $_GET['member'] !== '') {
 <?php endif; ?>
 </main>
 
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init();</script>
 <script src="staff.js?v=<?= filemtime(__DIR__ . '/staff.js') ?>"></script>
 <?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
 <script src="../public/assets/js/avatar-cache.js"></script>

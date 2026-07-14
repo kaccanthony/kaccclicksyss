@@ -50,7 +50,7 @@ html,body{min-height:100vh;font-family:'Inter',sans-serif;background:#080808;col
 
 /* single-row groups (Ops/Community Managers) */
 .staff-row{display:flex;gap:16px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;}
-.staff-row .staff-card{flex:1 1 0;min-width:220px;}
+.staff-row .staff-card{flex:0 0 auto;width:190px;}
 
 /* fixed-per-row grids — CSS Grid divides width evenly, no vw math needed */
 .staff-grid{display:grid;gap:16px;}
@@ -62,11 +62,9 @@ html,body{min-height:100vh;font-family:'Inter',sans-serif;background:#080808;col
     position:relative;display:block;aspect-ratio:3/4;border-radius:20px;overflow:hidden;
     text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.10);
     background:#141414;
-    opacity:0;transform:translateX(-60px);
-    transition:opacity .55s cubic-bezier(.22,.9,.32,1), transform .55s cubic-bezier(.22,.9,.32,1);
 }
-.staff-card.slide-right{transform:translateX(60px);}
-.staff-card.in-view{opacity:1;transform:translateX(0);}
+.staff-card-img{transition:transform .4s cubic-bezier(.22,.9,.32,1);}
+.staff-card:hover .staff-card-img[style*="background-image"]{transform:scale(1.08);}
 
 .staff-card-img{position:absolute;inset:0;background-size:cover;background-position:center;background-color:#1b1b1b;display:flex;align-items:center;justify-content:center;}
 .staff-card-noimg{font-size:2.4rem;color:rgba(255,255,255,.15);}
