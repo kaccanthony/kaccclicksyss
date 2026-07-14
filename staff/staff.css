@@ -49,8 +49,7 @@ html,body{min-height:100vh;font-family:'Inter',sans-serif;background:#080808;col
 .staff-coming-soon{padding:22px;border-radius:14px;border:1px dashed rgba(255,255,255,.14);color:rgba(255,255,255,.32);font-size:.85rem;display:flex;align-items:center;gap:10px;}
 
 /* single-row groups (Ops/Community Managers) */
-.staff-row{display:flex;gap:16px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;}
-.staff-row .staff-card{flex:0 0 auto;width:190px;}
+.staff-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
 
 /* fixed-per-row grids — CSS Grid divides width evenly, no vw math needed */
 .staff-grid{display:grid;gap:16px;}
