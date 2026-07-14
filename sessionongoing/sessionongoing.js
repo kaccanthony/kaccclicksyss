@@ -130,8 +130,8 @@ function closeConfirm(result){
   setTimeout(()=> confirmModal.classList.remove('closing'), 200);
   if(confirmResolver){ confirmResolver(result); confirmResolver = null; }
 }
-document.getElementById('confirm-ok').addEventListener('click', ()=> closeConfirm(true));
-document.getElementById('confirm-cancel').addEventListener('click', ()=> closeConfirm(false));
+document.getElementById('confirm-ok')?.addEventListener('click', ()=> closeConfirm(true));
+document.getElementById('confirm-cancel')?.addEventListener('click', ()=> closeConfirm(false));
 confirmModal.addEventListener('click', (e)=>{ if(e.target === confirmModal) closeConfirm(false); });
 
 /* ================= LOCK HELPERS ================= */
@@ -274,7 +274,7 @@ const statusMap = {
   cancelled: {label:'Cancelled', cls:'status-cancelled'},
   concluded: {label:'Concluded', cls:'status-concluded'},
 };
-document.getElementById('status-select').addEventListener('change', (e)=>{
+document.getElementById('status-select')?.addEventListener('change', (e)=>{
   const s = statusMap[e.target.value];
   const badge = document.getElementById('status-badge');
   badge.className = 'status-badge status-badge-large ' + s.cls;
@@ -515,7 +515,7 @@ function addTraineeRow(unallocated, uid){
   renderAnnouncementPreview(idx);
   updateStatusLockState();
 }
-document.getElementById('add-trainee-btn').addEventListener('click', (e)=> {
+document.getElementById('add-trainee-btn')?.addEventListener('click', (e)=> {
   if(e.currentTarget.classList.contains('is-locked')) return;
   addTraineeRow(true);
   queueLiveStateSync();
@@ -524,10 +524,10 @@ document.getElementById('add-trainee-btn').addEventListener('click', (e)=> {
 const initialTraineeCount = parseInt(SESSION_DATA.num_slots, 10) || 10;
 for(let i=0;i<initialTraineeCount;i++) addTraineeRow(false);
 
-document.getElementById('signal-time-apply').addEventListener('click', applySignalMinutes);
+document.getElementById('signal-time-apply')?.addEventListener('click', applySignalMinutes);
 
 /* timer controls (event delegation) */
-document.getElementById('trainee-rows').addEventListener('click', (e)=>{
+document.getElementById('trainee-rows')?.addEventListener('click', (e)=>{
   const timerBtn = e.target.closest('.timer-btn');
   if(timerBtn){
     const row = timerBtn.dataset.row;
@@ -635,17 +635,17 @@ const announceCopyBtn = e.target.closest('.announcement-copy-btn');
     }
 });
 
-document.getElementById('trainee-rows').addEventListener('input', (e)=>{
+document.getElementById('trainee-rows')?.addEventListener('input', (e)=>{
   if(e.target.classList.contains('trainee-name')){
     renderAnnouncementPreview(e.target.closest('tr').dataset.row);
   }
 });
-document.getElementById('trainee-rows').addEventListener('change', (e)=>{
+document.getElementById('trainee-rows')?.addEventListener('change', (e)=>{
   if(e.target.matches('select.trainee-detail-field')){
     renderAnnouncementPreview(e.target.closest('tr').dataset.row);
   }
 });
-document.getElementById('trainee-rows').addEventListener('change', (e)=>{
+document.getElementById('trainee-rows')?.addEventListener('change', (e)=>{
   if(e.target.classList.contains('trainer-name-select')){
     const idInput = e.target.closest('tr').querySelector('.trainer-discord-id');
     if(idInput) idInput.value = STAFF_DIRECTORY[e.target.value] || '';
@@ -708,7 +708,7 @@ function updateStaffAddState(){
   document.getElementById('add-staff-btn').disabled = document.querySelectorAll('#staff-rows tr').length >= STAFF_LIMIT;
 }
 
-document.getElementById('add-staff-btn').addEventListener('click', ()=>{ addStaffRow(); staffCoreDirty = true; queueLiveStateSync(); });
+document.getElementById('add-staff-btn')?.addEventListener('click', ()=>{ addStaffRow(); staffCoreDirty = true; queueLiveStateSync(); });
 
 function applyRemoteStaff(staffArr) {
     if (!Array.isArray(staffArr)) return;
@@ -768,7 +768,7 @@ if (LIVE_STATE.staffShift && LIVE_STATE.staffShift.length) {
 }
 staffEverSynced = true;
 
-document.getElementById('staff-rows').addEventListener('click', (e)=>{
+document.getElementById('staff-rows')?.addEventListener('click', (e)=>{
   const delBtn = e.target.closest('.staff-del-btn');
   if(delBtn){
     if(delBtn.classList.contains('is-locked')) return;
@@ -780,7 +780,7 @@ document.getElementById('staff-rows').addEventListener('click', (e)=>{
 });
 
 // Only one "Main AST" allowed at a time — assigning it to a row bumps whoever had it down to Assistant.
-document.getElementById('staff-rows').addEventListener('change', (e)=>{
+document.getElementById('staff-rows')?.addEventListener('change', (e)=>{
   const select = e.target.closest('.staff-role-select');
   if(!select) return;
   populateStaffNameOptions(select.closest('tr'));
@@ -834,10 +834,10 @@ function applyRemoteDrivers(driversArr) {
         inputs[2].checked = !!d.attended;
     });
 }
-document.getElementById('add-driver-btn').addEventListener('click', ()=>{ addDriverRow(); queueLiveStateSync(); });
+document.getElementById('add-driver-btn')?.addEventListener('click', ()=>{ addDriverRow(); queueLiveStateSync(); });
 applyRemoteDrivers(LIVE_STATE.drivers);
 
-document.getElementById('driver-rows').addEventListener('click', (e)=>{
+document.getElementById('driver-rows')?.addEventListener('click', (e)=>{
   const delBtn = e.target.closest('.driver-del-btn');
   if(delBtn){
     delBtn.closest('tr').remove();
@@ -1054,7 +1054,7 @@ function openFeedbackModal(triggerBtn){
   feedbackModal.classList.add('open');
 }
 
-document.getElementById('fb-trains').addEventListener('input', (e)=>{
+document.getElementById('fb-trains')?.addEventListener('input', (e)=>{
   if(activeFeedbackRow === null) return;
   getFeedbackData(activeFeedbackRow).trains = e.target.value;
   queueLiveStateSync();
@@ -1077,18 +1077,18 @@ function closeFeedbackModal(){
   activeFeedbackRow = null;
 }
 
-document.getElementById('fb-timer-toggle').addEventListener('click', ()=>{
+document.getElementById('fb-timer-toggle')?.addEventListener('click', ()=>{
   if(activeFeedbackRow !== null) toggleTimer(activeFeedbackRow);
 });
-document.getElementById('fb-timer-reset').addEventListener('click', ()=>{
+document.getElementById('fb-timer-reset')?.addEventListener('click', ()=>{
   if(activeFeedbackRow !== null) resetTimer(activeFeedbackRow);
 });
-document.getElementById('fb-timer-override').addEventListener('click', ()=>{
+document.getElementById('fb-timer-override')?.addEventListener('click', ()=>{
   if(activeFeedbackRow === null) return;
   const input = prompt('Set timer to MM:SS (e.g. 05:30):', fmt(computeCurrentRemaining(timers[activeFeedbackRow])));
   if(input !== null) setTimerValue(activeFeedbackRow, input);
 });
-document.getElementById('fb-setup-done').addEventListener('click', ()=>{
+document.getElementById('fb-setup-done')?.addEventListener('click', ()=>{
   if(activeFeedbackRow === null) return;
   const row = activeFeedbackRow;
   const modalBtn = document.getElementById('fb-setup-done');
@@ -1099,11 +1099,11 @@ document.getElementById('fb-setup-done').addEventListener('click', ()=>{
   if(rowBtn) rowBtn.classList.add('done');
 });
 
-document.getElementById('fb-setup-override').addEventListener('click', ()=>{
+document.getElementById('fb-setup-override')?.addEventListener('click', ()=>{
   if(activeFeedbackRow !== null) overrideSetupTime(activeFeedbackRow);
 });
 
-document.getElementById('copy-feedback-btn').addEventListener('click', ()=>{
+document.getElementById('copy-feedback-btn')?.addEventListener('click', ()=>{
   const btn = document.getElementById('copy-feedback-btn');
   navigator.clipboard.writeText(buildFeedbackMessage()).then(()=>{
     btn.classList.add('copied');
@@ -1124,12 +1124,12 @@ document.querySelectorAll('#feedback-modal [data-lock-msg]').forEach(el=>{
   });
 });
 
-document.getElementById('modal-close').addEventListener('click', closeFeedbackModal);
-document.getElementById('fb-cancel').addEventListener('click', closeFeedbackModal);
+document.getElementById('modal-close')?.addEventListener('click', closeFeedbackModal);
+document.getElementById('fb-cancel')?.addEventListener('click', closeFeedbackModal);
 feedbackModal.addEventListener('click', (e)=>{ if(e.target === feedbackModal) closeFeedbackModal(); });
 document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeFeedbackModal(); });
 
-document.getElementById('fb-save').addEventListener('click', ()=>{
+document.getElementById('fb-save')?.addEventListener('click', ()=>{
   if(activeFeedbackBtn){
     activeFeedbackBtn.classList.add('filled');
     activeFeedbackBtn.classList.remove('requested');
@@ -1157,7 +1157,7 @@ notesFloatTextarea.addEventListener('input', ()=>{
   if(rowTextarea) rowTextarea.value = notesFloatTextarea.value;
 });
 
-document.getElementById('notes-float-close').addEventListener('click', ()=>{
+document.getElementById('notes-float-close')?.addEventListener('click', ()=>{
   notesFloat.style.display = 'none';
   notesFloatRow = null;
 });
@@ -1288,17 +1288,17 @@ function buildTraineePip(win){
     <div><label>${f.label}</label><textarea rows="2" data-field="${f.key}"></textarea></div>
   `).join('');
 
-  win.document.getElementById('tpip-note').addEventListener('input', (e)=>{
+  win.document.getElementById('tpip-note')?.addEventListener('input', (e)=>{
     const rowTextarea = document.querySelector(`tr[data-row="${pipRow}"] .trainee-notes-input`);
     if(rowTextarea) rowTextarea.value = e.target.value;
     queueLiveStateSync();
   });
-  win.document.getElementById('tpip-attendance').addEventListener('change', (e)=>{
+  win.document.getElementById('tpip-attendance')?.addEventListener('change', (e)=>{
     const rowChk = document.querySelector(`tr[data-row="${pipRow}"] .chk`);
     if(rowChk) rowChk.checked = e.target.checked;
     queueLiveStateSync();
   });
-  win.document.getElementById('tpip-trains').addEventListener('input', (e)=>{
+  win.document.getElementById('tpip-trains')?.addEventListener('input', (e)=>{
     getFeedbackData(pipRow).trains = e.target.value;
     const modalTrains = document.getElementById('fb-trains');
     if(modalTrains && String(activeFeedbackRow) === String(pipRow)) modalTrains.value = e.target.value;
@@ -1312,7 +1312,7 @@ function buildTraineePip(win){
       queueLiveStateSync();
     });
   });
-  win.document.getElementById('tpip-copy-fb').addEventListener('click', ()=>{
+  win.document.getElementById('tpip-copy-fb')?.addEventListener('click', ()=>{
     win.navigator.clipboard.writeText(buildFeedbackMessageForRow(pipRow)).then(()=>{
       const btn = win.document.getElementById('tpip-copy-fb');
       btn.classList.add('copied');
@@ -1320,11 +1320,11 @@ function buildTraineePip(win){
       setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 1200);
     });
   });
-  win.document.getElementById('tpip-open-modal-btn').addEventListener('click', ()=>{
+  win.document.getElementById('tpip-open-modal-btn')?.addEventListener('click', ()=>{
     const rowBtn = document.querySelector(`tr[data-row="${pipRow}"] .feedback-btn`);
     if(rowBtn) openFeedbackModal(rowBtn);
   });
-  win.document.getElementById('tpip-complete-btn').addEventListener('click', ()=>{
+  win.document.getElementById('tpip-complete-btn')?.addEventListener('click', ()=>{
     const rowBtn = document.querySelector(`tr[data-row="${pipRow}"] .complete-btn`);
     if(!rowBtn) return;
     const done = rowBtn.classList.toggle('done');
@@ -1378,13 +1378,13 @@ function refreshTraineePipContent(){
       <button class="timer-btn setup-done" id="tpip-setup-done" style="width:24px" title="Mark setup done (stops timer)"><i class="fas fa-check"></i></button>
       <button class="timer-btn override" id="tpip-override" title="Override timer"><i class="fas fa-exclamation-triangle"></i></button>
     `;
-    pipWin.document.getElementById('tpip-play').addEventListener('click', ()=> toggleTimer(pipRow));
-    pipWin.document.getElementById('tpip-reset').addEventListener('click', ()=> resetTimer(pipRow));
-    pipWin.document.getElementById('tpip-override').addEventListener('click', ()=>{
+    pipWin.document.getElementById('tpip-play')?.addEventListener('click', ()=> toggleTimer(pipRow));
+    pipWin.document.getElementById('tpip-reset')?.addEventListener('click', ()=> resetTimer(pipRow));
+    pipWin.document.getElementById('tpip-override')?.addEventListener('click', ()=>{
       const input = pipWin.prompt('Set timer to MM:SS:', fmt(computeCurrentRemaining(timers[pipRow])));
       if(input !== null) setTimerValue(pipRow, input);
     });
-    pipWin.document.getElementById('tpip-setup-done').addEventListener('click', ()=>{
+    pipWin.document.getElementById('tpip-setup-done')?.addEventListener('click', ()=>{
       const btn = pipWin.document.getElementById('tpip-setup-done');
       if(btn.classList.contains('done')) return; // locked once marked — use the Edit link instead
       btn.classList.add('done');
@@ -1468,9 +1468,9 @@ function buildTimerPip(win){
       <button class="timer-btn" id="tmpip-reset" title="Reset"><i class="fas fa-redo"></i></button>
       <button class="timer-btn override" id="tmpip-override" title="Override timer"><i class="fas fa-exclamation-triangle"></i></button>
     `;
-    win.document.getElementById('tmpip-play').addEventListener('click', ()=> toggleTimer(pipRow));
-    win.document.getElementById('tmpip-reset').addEventListener('click', ()=> resetTimer(pipRow));
-    win.document.getElementById('tmpip-override').addEventListener('click', ()=>{
+    win.document.getElementById('tmpip-play')?.addEventListener('click', ()=> toggleTimer(pipRow));
+    win.document.getElementById('tmpip-reset')?.addEventListener('click', ()=> resetTimer(pipRow));
+    win.document.getElementById('tmpip-override')?.addEventListener('click', ()=>{
       const input = win.prompt('Set timer to MM:SS:', fmt(computeCurrentRemaining(timers[pipRow])));
       if(input !== null) setTimerValue(pipRow, input);
     });
@@ -1506,7 +1506,7 @@ function openTimerPip(row){
 // pop-out (which already has the condensed feedback fields built in) — a
 // separate feedback-only window isn't possible alongside it (one PiP window
 // per tab).
-document.getElementById('fb-popout').addEventListener('click', ()=>{
+document.getElementById('fb-popout')?.addEventListener('click', ()=>{
   if (activeFeedbackRow === null) return;
   openTraineePip(activeFeedbackRow);
   closeFeedbackModal();
@@ -1533,7 +1533,7 @@ function openAnnouncementFloat(row){
   announcementFloat.style.display = 'flex';
 }
 
-document.getElementById('announcement-float-close').addEventListener('click', ()=>{
+document.getElementById('announcement-float-close')?.addEventListener('click', ()=>{
   announcementFloat.style.display = 'none';
 });
 
@@ -1596,7 +1596,7 @@ const bellFab = document.getElementById('bell-fab');
 const bellFabDot = document.getElementById('bell-fab-dot');
 const bellPanel = document.getElementById('bell-panel');
 
-document.getElementById('bell-panel-close').addEventListener('click', ()=> bellPanel.classList.remove('open'));
+document.getElementById('bell-panel-close')?.addEventListener('click', ()=> bellPanel.classList.remove('open'));
 document.addEventListener('click', (e)=>{
   if(!e.target.closest('#bell-widget')) bellPanel.classList.remove('open');
 });
@@ -1879,7 +1879,7 @@ colPickerMenu.addEventListener('change', (e)=>{
   if(cb) setColumnVisible(parseInt(cb.dataset.col,10), cb.checked);
 });
 
-document.getElementById('col-picker-toggle').addEventListener('click', (e)=>{
+document.getElementById('col-picker-toggle')?.addEventListener('click', (e)=>{
   e.stopPropagation();
   colPickerMenu.classList.toggle('open');
 });
@@ -1887,11 +1887,11 @@ document.addEventListener('click', (e)=>{
   if(!e.target.closest('.col-picker-wrap')) colPickerMenu.classList.remove('open');
 });
 
-document.getElementById('hide-extras-btn').addEventListener('click', ()=>{
+document.getElementById('hide-extras-btn')?.addEventListener('click', ()=>{
   EXTRA_COLUMNS.forEach(n=> setColumnVisible(n, false));
   resetColumnWidths();
 });
-document.getElementById('show-all-cols-btn').addEventListener('click', ()=>{
+document.getElementById('show-all-cols-btn')?.addEventListener('click', ()=>{
   TRAINEE_COLUMNS.forEach(col=> setColumnVisible(col.n, true));
   resetColumnWidths();
 });
@@ -1904,10 +1904,10 @@ function updateConcludeButtonState(){
   setLocked(btn, !unlocked);
 }
 
-document.getElementById('status-select').addEventListener('change', updateConcludeButtonState);
+document.getElementById('status-select')?.addEventListener('change', updateConcludeButtonState);
 updateConcludeButtonState();
 
-document.getElementById('conclude-session-btn').addEventListener('click', async (e)=>{
+document.getElementById('conclude-session-btn')?.addEventListener('click', async (e)=>{
   if(e.currentTarget.classList.contains('is-locked')) return;
   const incompleteRows = Array.from(document.querySelectorAll('#trainee-rows tr'))
     .filter(tr => !tr.querySelector('.complete-btn')?.classList.contains('done'))
@@ -2290,15 +2290,15 @@ setInterval(async () => {
 }, SYNC_INTERVAL_MS);
 
 // Any change to a synced field marks live_state dirty so the next cycle pushes it
-document.getElementById('trainee-rows').addEventListener('input', queueLiveStateSync);
-document.getElementById('trainee-rows').addEventListener('change', queueLiveStateSync);
-document.getElementById('driver-rows').addEventListener('input', queueLiveStateSync);
-document.getElementById('staff-rows').addEventListener('input', ()=>{ staffCoreDirty = true; queueLiveStateSync(); });
-document.getElementById('staff-rows').addEventListener('change', ()=>{ staffCoreDirty = true; queueLiveStateSync(); });
-document.getElementById('staff-rows').addEventListener('change', refreshTrainerDropdowns);
-document.getElementById('staff-rows').addEventListener('input', refreshTrainerDropdowns);
-document.getElementById('staff-rows').addEventListener('change', updateMainAstNotesVisibility);
-document.getElementById('staff-rows').addEventListener('input', updateMainAstNotesVisibility);
+document.getElementById('trainee-rows')?.addEventListener('input', queueLiveStateSync);
+document.getElementById('trainee-rows')?.addEventListener('change', queueLiveStateSync);
+document.getElementById('driver-rows')?.addEventListener('input', queueLiveStateSync);
+document.getElementById('staff-rows')?.addEventListener('input', ()=>{ staffCoreDirty = true; queueLiveStateSync(); });
+document.getElementById('staff-rows')?.addEventListener('change', ()=>{ staffCoreDirty = true; queueLiveStateSync(); });
+document.getElementById('staff-rows')?.addEventListener('change', refreshTrainerDropdowns);
+document.getElementById('staff-rows')?.addEventListener('input', refreshTrainerDropdowns);
+document.getElementById('staff-rows')?.addEventListener('change', updateMainAstNotesVisibility);
+document.getElementById('staff-rows')?.addEventListener('input', updateMainAstNotesVisibility);
 
 /* ================= TIME TRACKER (Host only) — BST/GMT wall-clock stamps ================= */
 const TIME_TRACKER_KEYS = ['briefingStart', 'sgShiftStart', 'screenieTime'];
@@ -2383,7 +2383,7 @@ function updateMainAstNotesVisibility(){
 }
 updateMainAstNotesVisibility();
 
-document.getElementById('main-ast-notes').addEventListener('input', () => {
+document.getElementById('main-ast-notes')?.addEventListener('input', () => {
   if(!isCurrentUserMainAst()) return; // read-only viewers (host) can't push edits
   queueLiveStateSync();
 });
@@ -2483,7 +2483,7 @@ document.getElementById('generate-report-btn')?.addEventListener('click', () => 
   });
 });
 document.getElementById('session-host-select')?.addEventListener('change', refreshTrainerDropdowns);
-document.getElementById('status-select').addEventListener('change', ()=>{ statusDirty = true; queueLiveStateSync(); });
+document.getElementById('status-select')?.addEventListener('change', ()=>{ statusDirty = true; queueLiveStateSync(); });
 
 // Initial load: seed local state from SESSION_DATA / LIVE_STATE if the page provided them
 if (typeof SESSION_DATA !== 'undefined' && SESSION_DATA) {
@@ -2524,7 +2524,7 @@ const announceWidget = document.getElementById('announce-widget');
 const announcePanel = document.getElementById('announce-panel');
 
 if (announceFab) {
-  document.getElementById('announce-panel-close').addEventListener('click', ()=> announcePanel.classList.remove('open'));
+  document.getElementById('announce-panel-close')?.addEventListener('click', ()=> announcePanel.classList.remove('open'));
   document.addEventListener('click', (e)=>{
     if (!e.target.closest('#announce-widget')) announcePanel.classList.remove('open');
   });
@@ -2554,7 +2554,7 @@ if (announceFab) {
     });
   })();
 
-  document.getElementById('announce-send-btn').addEventListener('click', ()=>{
+  document.getElementById('announce-send-btn')?.addEventListener('click', ()=>{
     const input = document.getElementById('announce-message-input');
     const message = input.value.trim();
     if (!message) return;
@@ -2632,12 +2632,12 @@ const stationSelect = document.getElementById('station-select');
 if(stationSelect){
   stationSelect.innerHTML = STATION_LIST.map(s=>`<option value="${s.code}">${s.code} — ${s.name}</option>`).join('');
 
-  document.getElementById('station-shuffle-btn').addEventListener('click', ()=>{
+  document.getElementById('station-shuffle-btn')?.addEventListener('click', ()=>{
     const random = STATION_LIST[Math.floor(Math.random() * STATION_LIST.length)];
     stationSelect.value = random.code;
   });
 
-  document.getElementById('station-copy-btn').addEventListener('click', ()=>{
+  document.getElementById('station-copy-btn')?.addEventListener('click', ()=>{
     const station = STATION_LIST.find(s => s.code === stationSelect.value) || STATION_LIST[0];
     const btn = document.getElementById('station-copy-btn');
     navigator.clipboard.writeText(buildStationAnnouncement(station)).then(()=>{
