@@ -139,6 +139,7 @@ $allCards = [
 ];
 
 $roleCards = [
+    'Admin'                => ['admin_panel', 'manage_staff','booking','setup','my_session','active','upcoming','past','staff'],
     'Operations Manager'   => ['booking','setup','my_session','active','upcoming','past','staff'],
     'Community Manager'    => ['booking','setup','my_session','active','upcoming','past','staff'],
     'Head Staff'           => ['booking','setup','my_session','active','upcoming','past','staff'],
