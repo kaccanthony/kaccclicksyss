@@ -8,52 +8,7 @@ if (!isset($_SESSION['user'])) {
 }
 
 $user     = $_SESSION['user'];
-require_once __DIR__ . '/../public/assets/role_display.php';
-$username = htmlspecialchars($user['username'] ?? '');
-$role     = htmlspecialchars(formatRoleDisplay($user['role'] ?? '', (int)($user['perm_level'] ?? 0)));
-$staffId  = $user['id'] ?? '';
-
-$hasAvatar = false;
-if ($staffId) {
-    $stmtAv = mysqli_prepare($conn, "SELECT 1 FROM staff_list WHERE staff_id = ? AND LENGTH(staff_avatar) > 0");
-    mysqli_stmt_bind_param($stmtAv, "s", $staffId);
-    mysqli_stmt_execute($stmtAv);
-    mysqli_stmt_store_result($stmtAv);
-    $hasAvatar = mysqli_stmt_num_rows($stmtAv) > 0;
-}
-
-$user     = $_SESSION['user'];
-require_once __DIR__ . '/../public/assets/role_display.php';
-$username = htmlspecialchars($user['username'] ?? '');
-$role     = htmlspecialchars(formatRoleDisplay($user['role'] ?? '', (int)($user['perm_level'] ?? 0)));
-$staffId  = $user['id'] ?? '';
-
-$hasAvatar = false;
-if ($staffId) {
-    $stmtAv = mysqli_prepare($conn, "SELECT 1 FROM staff_list WHERE staff_id = ? AND LENGTH(staff_avatar) > 0");
-    mysqli_stmt_bind_param($stmtAv, "s", $staffId);
-    mysqli_stmt_execute($stmtAv);
-    mysqli_stmt_store_result($stmtAv);
-    $hasAvatar = mysqli_stmt_num_rows($stmtAv) > 0;
-}
-
-$user     = $_SESSION['user'];
-require_once __DIR__ . '/../public/assets/role_display.php';
-$username = htmlspecialchars($user['username'] ?? '');
-$role     = htmlspecialchars(formatRoleDisplay($user['role'] ?? '', (int)($user['perm_level'] ?? 0)));
-$staffId  = $user['id'] ?? '';
-
-$hasAvatar = false;
-if ($staffId) {
-    $stmtAv = mysqli_prepare($conn, "SELECT 1 FROM staff_list WHERE staff_id = ? AND LENGTH(staff_avatar) > 0");
-    mysqli_stmt_bind_param($stmtAv, "s", $staffId);
-    mysqli_stmt_execute($stmtAv);
-    mysqli_stmt_store_result($stmtAv);
-    $hasAvatar = mysqli_stmt_num_rows($stmtAv) > 0;
-}
-
-$user     = $_SESSION['user'];
-require_once __DIR__ . '/../public/assets/role_display.php';
+require_once __DIR__ . '/../public/assets/misc/role_display.php';
 $username = htmlspecialchars($user['username'] ?? '');
 $role     = htmlspecialchars(formatRoleDisplay($user['role'] ?? '', (int)($user['perm_level'] ?? 0)));
 $staffId  = $user['id'] ?? '';
