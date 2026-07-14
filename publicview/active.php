@@ -58,7 +58,7 @@ if ($session && !empty($session['live_state'])) {
   <div class="logo-wrap">
     <div class="pulse-ring"></div>
     <div class="pulse-ring ring2"></div>
-    <div class="logo-img"></div>
+    <img src="/public/assets/images/YSS Logo.png" alt="YSS Logo" class="logo-img"/>
   </div>
   <span class="app-name">YSS Session Manager</span>
   <div class="live-pill"><span class="live-dot"></span> LIVE SESSION</div>
