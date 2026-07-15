@@ -48,17 +48,38 @@ try {
         ? (new DateTime($s['started_at'], new DateTimeZone('UTC')))->setTimezone($london)->format('H:i:s')
         : (new DateTime('now', $london))->format('H:i:s');
     $endTime = (new DateTime('now', $london))->format('H:i:s');
+    $fullStaffJson = json_encode($liveState['staffShift'] ?? []);
     $stmtLog = mysqli_prepare($conn, "INSERT INTO session_staff_logs
-        (session_id, host, cohost_1, cohost_2, cohost_3, `cohost_4/supervisor`, assistant_1, assistant_2, assistant_3, assistant_4, date, started, ended, duration)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    mysqli_stmt_bind_param($stmtLog, "isssssssssssss",
+        (session_id, host, cohost_1, cohost_2, cohost_3, `cohost_4/supervisor`, assistant_1, assistant_2, assistant_3, assistant_4, full_staff_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    mysqli_stmt_bind_param($stmtLog, "isssssssssss",
         $sessionId, $s['host'], $s['co_host1'], $s['co_host2'], $s['co_host3'], $s['co_host4/supervisor'],
-        $s['assistant_1'], $s['assistant_2'], $s['assistant_3'], $s['assistant_4'],
-        $s['session_date'], $startTime, $endTime, $s['session_duration']
+        $s['assistant_1'], $s['assistant_2'], $s['assistant_3'], $s['assistant_4'], $fullStaffJson
     );
     if (!mysqli_stmt_execute($stmtLog)) throw new Exception(mysqli_error($conn));
 
+    // session_post_logs — one summary row per concluded session
+    $runtimeSeconds = null;
+    if (!empty($s['started_at'])) {
+        $startDt = new DateTime($s['started_at'], new DateTimeZone('UTC'));
+        $nowUtc  = new DateTime('now', new DateTimeZone('UTC'));
+        $runtimeSeconds = $nowUtc->getTimestamp() - $startDt->getTimestamp();
+    }
+    $actualSlotsProvided = (int)($s['num_slots'] ?? 0) + count($liveState['unallocatedTrainees'] ?? []);
+    $mainAstNotes = $liveState['mainAstNotes'] ?? null;
+
+    $stmtPost = mysqli_prepare($conn, "INSERT INTO session_post_logs
+        (session_id, session_name, session_desc, session_status, session_date, session_duration_expected,
+         session_runtime_actual, num_slots, actual_slots_provided, additional_notes, main_ast_notes, started, ended, concluded_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+    mysqli_stmt_bind_param($stmtPost, "isssssiiisss",
+        $sessionId, $s['session_name'], $s['session_desc'], $s['session_status'], $s['session_date'], $s['session_duration'],
+        $runtimeSeconds, $s['num_slots'], $actualSlotsProvided, $s['additional_notes'], $mainAstNotes, $startTime, $endTime
+    );
+    if (!mysqli_stmt_execute($stmtPost)) throw new Exception(mysqli_error($conn));
+
     // Bump quota progress for everyone who actually played a role this session.
+
     // Provisional rank→letter mapping — TODOs below need your input before this is fully correct.
     $RANK_TO_QUOTA_LETTER = [
         'Community Manager'   => 'M',
