@@ -163,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
     }
 
     $newId       = bin2hex(random_bytes(16)); // synthetic ID — this app doesn't use Discord OAuth for regular users
-    $passwordHash = password_hash($regPassword, PASSWORD_DEFAULT);
+    $passwordHash = password_hash($regPassword, PASSWORD_ARGON2ID);
 
     mysqli_begin_transaction($conn);
     try {
@@ -214,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
     <!-- LOGIN -->
     <div class="form-pane login-pane">
       <div class="form-inner">
-        <h1>YSS Session Manager</h1>
+        <h1>Yoshi's Signalling Server Web</h1>
         <p class="subtitle">Sign in to continue</p>
 
         <?php if ($error): ?><div class="alert alert-error"><?= htmlspecialchars($error) ?></div><?php endif; ?>
