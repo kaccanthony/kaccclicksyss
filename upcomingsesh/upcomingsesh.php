@@ -78,6 +78,28 @@ while ($row = mysqli_fetch_assoc($resS)) {
     $row['trainee_filled']   = $traineeFilled;
     $row['trainee_total']    = (int)($row['num_slots'] ?? 0);
 
+    // Build a clean trainee list for the detail popup — Discord name + zone + trainer only.
+    // Roblox username, Discord ID, and notes never make it into this array or the JSON payload.
+    $trainees = [];
+    for ($t = 1; $t <= 10; $t++) {
+        if (!empty($row["trainee_{$t}_discord"])) {
+            $trainees[] = [
+                'discord' => $row["trainee_{$t}_discord"],
+                'zone'    => $row["trainee_{$t}_zone"] ?? '',
+                'trainer' => $row["trainee_{$t}_trainer_name"] ?? '',
+            ];
+        }
+        unset(
+            $row["trainee_{$t}_name"],       // Roblox username — hidden
+            $row["trainee_{$t}_discord_id"], // Discord ID — hidden
+            $row["trainee_{$t}_note"],       // Notes — hidden
+            $row["trainee_{$t}_discord"],
+            $row["trainee_{$t}_zone"],
+            $row["trainee_{$t}_trainer_name"]
+        );
+    }
+    $row['trainees'] = $trainees;
+
     $sessions[] = $row;
 }
 ?>
@@ -148,8 +170,8 @@ while ($row = mysqli_fetch_assoc($resS)) {
             <p class="section-sub">Every scheduled session from right now onward <span class="bst-badge">BST</span></p>
         </div>
         <div class="view-switcher" id="view-switcher">
-            <button type="button" class="view-btn active" data-view="grid" title="Grid view"><i class="fas fa-table-cells-large"></i> Grid</button>
-            <button type="button" class="view-btn" data-view="focus" title="Focus view"><i class="fas fa-list-check"></i> Focus</button>
+            <button type="button" class="view-btn active" data-view="grid" title="Grid view"><i class="fas fa-th-large"></i> Grid</button>
+            <button type="button" class="view-btn" data-view="focus" title="Focus view"><i class="fas fa-bullseye"></i> Focus</button>
             <button type="button" class="view-btn" data-view="list" title="List view"><i class="fas fa-bars"></i> List</button>
             <button type="button" class="view-btn" data-view="card" title="Card view"><i class="fas fa-id-card"></i> Card</button>
         </div>
@@ -157,6 +179,17 @@ while ($row = mysqli_fetch_assoc($resS)) {
 
     <div id="view-root"><!-- populated entirely by JS, no reload on view switch --></div>
 </main>
+
+<!-- ── Session Detail Popup ── -->
+<div class="modal-backdrop" id="detail-modal-backdrop">
+    <div class="modal detail-modal">
+        <div class="modal-header">
+            <span>Session Details</span>
+            <button type="button" class="detail-modal-close" id="detail-modal-close" aria-label="Close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="detail-modal-body" id="detail-modal-body"><!-- populated by JS --></div>
+    </div>
+</div>
 
 <script>
 const SESSIONS_DATA = <?= json_encode($sessions, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
