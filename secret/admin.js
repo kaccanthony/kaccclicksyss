@@ -406,11 +406,6 @@ sorted.forEach((row, i) => {
     tr.style.animationDelay = `${Math.min(i * 25, 300)}ms`;
     tr.innerHTML = cols.map(([col, def]) => `<td>${formatCell(def, row[col], row, cfg)}</td>`).join('');
 
-        // After building the table HTML string and inserting it into the DOM:
-    document.querySelectorAll('.ms-avatar-thumb').forEach((img, i) => {
-        // matches row order 1:1 since formatCell runs in the same forEach as the rows
-    });
-
     if(!cfg.readOnly){
     const actionsTd = document.createElement('td');
     actionsTd.innerHTML = `
@@ -544,8 +539,106 @@ const modalSave = document.getElementById('record-save-btn');
 
 addBtn.addEventListener('click', () => {
 const cfg = TABLE_CONFIG[currentTable];
-if(cfg) openRecordModal(cfg, null);
+if(!cfg) return;
+if(cfg.displayMode === 'notification_composer') openNotificationComposer(cfg);
+else openRecordModal(cfg, null);
 });
+
+const NOTIF_CATEGORIES = ['Session','Event','Website','System','Manager','Admin','Update'];
+const NOTIF_CAT_CLASS = {
+Session: 'cat-session', Event: 'cat-event', Website: 'cat-website',
+System: 'cat-system', Manager: 'cat-manager', Admin: 'cat-admin', Update: 'cat-update',
+};
+
+function openNotificationComposer(cfg){
+editingPk = null;
+modalTitle.textContent = 'New Announcement';
+modalBody.innerHTML = `
+    <div class="ms-composer">
+    <div>
+        <label style="display:block;margin-bottom:8px;font-size:.75rem;color:rgba(255,255,255,.5);">Category</label>
+        <div class="ms-composer-cats">
+        ${NOTIF_CATEGORIES.map((c, i) => `
+            <button type="button" class="ms-notif-pill ${NOTIF_CAT_CLASS[c]} ${i === 0 ? 'selected' : ''}" data-category="${c}">${c}</button>
+        `).join('')}
+        </div>
+    </div>
+    <div>
+        <label style="display:block;margin-bottom:8px;font-size:.75rem;color:rgba(255,255,255,.5);">Title</label>
+        <input type="text" id="notif-title" maxlength="100" placeholder="Short, punchy title…"/>
+        <div class="ms-composer-charcount" id="notif-charcount">0 / 100</div>
+    </div>
+    <div>
+        <label style="display:block;margin-bottom:8px;font-size:.75rem;color:rgba(255,255,255,.5);">Description</label>
+        <textarea id="notif-desc" rows="5" placeholder="What's this about?"></textarea>
+    </div>
+    <div>
+        <label style="display:block;margin-bottom:8px;font-size:.75rem;color:rgba(255,255,255,.5);">Preview</label>
+        <div class="ms-notif-preview">
+        <span class="ms-notif-pill ${NOTIF_CAT_CLASS[NOTIF_CATEGORIES[0]]}" id="notif-preview-pill">${NOTIF_CATEGORIES[0]}</span>
+        <div class="ms-notif-preview-title" id="notif-preview-title">Untitled</div>
+        <div class="ms-notif-preview-desc" id="notif-preview-desc">No description yet.</div>
+        </div>
+    </div>
+    </div>
+`;
+
+let selectedCategory = NOTIF_CATEGORIES[0];
+modalBody.querySelectorAll('.ms-composer-cats button').forEach(btn => {
+    btn.addEventListener('click', () => {
+    modalBody.querySelectorAll('.ms-composer-cats button').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedCategory = btn.dataset.category;
+    const previewPill = document.getElementById('notif-preview-pill');
+    previewPill.className = `ms-notif-pill ${NOTIF_CAT_CLASS[selectedCategory]}`;
+    previewPill.textContent = selectedCategory;
+    });
+});
+
+const titleInput = document.getElementById('notif-title');
+const charCount = document.getElementById('notif-charcount');
+titleInput.addEventListener('input', () => {
+    charCount.textContent = `${titleInput.value.length} / 100`;
+    charCount.classList.toggle('over', titleInput.value.length >= 100);
+    document.getElementById('notif-preview-title').textContent = titleInput.value || 'Untitled';
+});
+
+const descInput = document.getElementById('notif-desc');
+descInput.addEventListener('input', () => {
+    document.getElementById('notif-preview-desc').textContent = descInput.value || 'No description yet.';
+});
+
+modalSave.onclick = async () => {
+    const title = titleInput.value.trim();
+    const description = descInput.value.trim();
+    if(!title || !description){
+    showToast('Title and description are both required.', 'error');
+    return;
+    }
+    if(!confirm(`Post this ${selectedCategory} announcement to everyone now?`)) return;
+
+    try {
+    const res = await fetch('admin_records.php', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ table: 'notifications', data: { category: selectedCategory, title, description } }),
+    });
+    const result = await res.json();
+    if(result.success){
+        showToast('Announcement posted.', 'success');
+        closeRecordModal();
+        modalSave.onclick = null; // reset back to the default handler below
+        selectBoard(currentTable);
+    } else {
+        showToast(result.message || 'Failed to post.', 'error');
+    }
+    } catch (err) {
+    showToast('Failed to post.', 'error');
+    }
+};
+
+modalBackdrop.classList.add('open');
+}
 
 function fieldEditableNow(def, isEdit){
 if(isEdit && def.editableOnUpdate === false) return false;

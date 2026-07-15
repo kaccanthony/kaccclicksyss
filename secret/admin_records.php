@@ -2,7 +2,7 @@
 // manage_records.php
 session_start();
 require_once '../login/cnn.php';
-require_once __DIR__ . '/managestaff_tables.php';
+require_once __DIR__ . '/admin_tables.php';
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['user'])) {
