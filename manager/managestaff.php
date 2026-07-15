@@ -2,8 +2,8 @@
 // managestaff.php
 session_start();
 require_once '../login/cnn.php';
-require_once __DIR__ . 'managestaff_tables.php';
-require_once __DIR__ . '/../public/assets/role_display.php';
+require_once __DIR__ . '/managestaff_tables.php';
+require_once __DIR__ . '/../public/assets/misc/role_display.php';
 
 if (!isset($_SESSION['user'])) {
     header('Location: ../login/login.php');
