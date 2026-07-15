@@ -426,6 +426,11 @@ table.resizable-cols{table-layout:fixed;}
 
 /* Trainee table column widths */
 
+body.assistant-view #trainee-scroll table th:nth-child(1),
+body.assistant-view #trainee-scroll table td:nth-child(1),
+body.assistant-view #trainee-scroll table th:nth-child(12),
+body.assistant-view #trainee-scroll table td:nth-child(12){ display:none; }
+
 #trainee-scroll table th:nth-child(1){min-width:70px; max-width:80px; width:74px;}    /* Pop-out */
 #trainee-scroll table th:nth-child(2){min-width:64px; max-width:80px; width:70px;}                    /* Slot */
 #trainee-scroll table th:nth-child(3){min-width:110px; max-width:160px; width:130px;}                  /* Trainee Discord */
@@ -528,7 +533,7 @@ table.resizable-cols{table-layout:fixed;}
 
 .time-tracker-grid{display:flex;flex-direction:column;gap:14px;}
 .time-tracker-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.time-tracker-row .pip-label{min-width:190px;color:rgba(255,255,255,.65);font-size:.85rem;}
+.time-tracker-row .pip-label{min-width:190px;color:rgba(255,255,255,.65);font-size:.85rem;margin-left:20px;}
 .time-tracker-value{font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:600;padding:4px 12px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid var(--border-strong);color:rgba(255,255,255,.55);}
 .time-tracker-row[data-recorded="true"] .time-tracker-value{background:rgba(74,222,128,.14);border-color:rgba(74,222,128,.4);color:var(--live);}
 

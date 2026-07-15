@@ -12,6 +12,9 @@ const overrides = { 'session-details':false, 'trainees':false, 'staff-roles':fal
 
 const myRole = MY_ROLE; // 'host' | 'cohost' | 'assistant' — set server-side in sessionongoing.php
 const isHost = myRole === 'host';
+const isCohost = myRole === 'cohost';
+const isAssistant = myRole === 'assistant';
+if(isAssistant) document.body.classList.add('assistant-view'); // hides Pop-out + Feedback columns, see CSS
 
 const myClientId = (function(){
   let id = localStorage.getItem('yss_client_id');
@@ -478,10 +481,10 @@ function addTraineeRow(unallocated, uid){
     <td>
       <div class="timer-cell">
         <span class="timer-display" data-timer="${idx}">${fmt(COUNTDOWN_START)}</span>
-        <button class="timer-btn play" data-action="start" data-row="${idx}" title="Start/pause"><i class="fas fa-play"></i></button>
-        <button class="timer-btn" data-action="reset" data-row="${idx}" title="Reset to 12:00"><i class="fas fa-redo"></i></button>
-        <button class="timer-btn setup-done" style="width:24px" data-action="setup-done" data-row="${idx}" title="Mark setup done (stops timer)"><i class="fas fa-check"></i></button>
-        <button class="timer-btn override" data-action="override" data-row="${idx}" title="Override timer value"><i class="fas fa-exclamation-triangle"></i></button>
+        <button class="timer-btn play ${isAssistant ? 'is-locked' : ''}" data-action="start" data-row="${idx}" title="Start/pause" data-lock-msg="Only the Host or Co-Host can control trainee timers."><i class="fas fa-play"></i></button>
+        <button class="timer-btn ${isAssistant ? 'is-locked' : ''}" data-action="reset" data-row="${idx}" title="Reset to 12:00" data-lock-msg="Only the Host or Co-Host can control trainee timers."><i class="fas fa-redo"></i></button>
+        <button class="timer-btn setup-done ${isAssistant ? 'is-locked' : ''}" style="width:24px" data-action="setup-done" data-row="${idx}" title="Mark setup done (stops timer)" data-lock-msg="Only the Host or Co-Host can control trainee timers."><i class="fas fa-check"></i></button>
+        <button class="timer-btn override ${isAssistant ? 'is-locked' : ''}" data-action="override" data-row="${idx}" title="Override timer value" data-lock-msg="Only the Host or Co-Host can control trainee timers."><i class="fas fa-exclamation-triangle"></i></button>
       </div>
     </td>
     <td style="text-align:center;">
@@ -511,7 +514,7 @@ function addTraineeRow(unallocated, uid){
       </div>
     </td>
     <td style="text-align:center;">
-      <button class="complete-btn" data-row="${idx}">Mark done</button>
+      <button class="complete-btn ${isAssistant ? 'is-locked' : ''}" data-row="${idx}" data-lock-msg="Only the Host or Co-Host can mark a trainee as done.">Mark done</button>
     </td>
     <td style="text-align:center;">
       <button class="row-del-btn trainee-del-btn" data-row="${idx}" data-lock-msg="This requires the Override Trainees toggle. Ask the host to enable it." title="Requires Override Trainees"><i class="fas fa-trash"></i></button>
@@ -539,6 +542,7 @@ document.getElementById('signal-time-apply')?.addEventListener('click', applySig
 document.getElementById('trainee-rows')?.addEventListener('click', (e)=>{
   const timerBtn = e.target.closest('.timer-btn');
   if(timerBtn){
+    if(isAssistant) return;
     const row = timerBtn.dataset.row;
     const action = timerBtn.dataset.action;
     if(action === 'start') toggleTimer(row);
@@ -559,6 +563,7 @@ document.getElementById('trainee-rows')?.addEventListener('click', (e)=>{
 
   const completeBtn = e.target.closest('.complete-btn');
   if(completeBtn){
+    if(isAssistant) return;
     const done = completeBtn.classList.toggle('done');
     completeBtn.innerHTML = done
       ? 'Done'
@@ -584,6 +589,7 @@ document.getElementById('trainee-rows')?.addEventListener('click', (e)=>{
 
   const fbBtn = e.target.closest('.feedback-btn');
   if(fbBtn){
+    if(isAssistant) return;
     openFeedbackModal(fbBtn);
   }
 
@@ -607,6 +613,7 @@ document.getElementById('trainee-rows')?.addEventListener('click', (e)=>{
 
 const pipBtn = e.target.closest('.pip-btn');
     if(pipBtn){
+      if(isAssistant) return;
       openTraineePip(pipBtn.dataset.row);
       return;
     }
