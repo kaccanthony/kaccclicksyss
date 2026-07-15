@@ -99,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
         'perm_level'  => $row['staff_perm_level'],
         'roblox_name' => $row['staff_roblox_name'],
         'avatar'      => $row['user_id'],
+        'is_staff'    => true,
     ] : [
         'id'          => $row['user_id'],
         'username'    => $row['user_name'],
@@ -106,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
         'perm_level'  => 0,
         'roblox_name' => $row['user_roblox_name'] ?? '',
         'avatar'      => $row['user_id'],
+        'is_staff'    => false,
     ];
 
     if ($remember_me && $isStaff) {
@@ -179,7 +181,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
         mysqli_commit($conn);
     } catch (Exception $e) {
         mysqli_rollback($conn);
-        $fail('Something went wrong creating your account. Please try again.');
+        error_log('Registration insert failed: ' . $e->getMessage()); // check your PHP error log for this
+        $fail('Something went wrong creating your account. Please try again.'); // TEMP for debugging: $fail($e->getMessage());
     }
 
     $_SESSION['success'] = 'Account created! You can log in now.';
@@ -304,12 +307,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
       <div class="overlay">
         <div class="overlay-panel overlay-left">
           <span class="cover-title">Welcome Back</span>
-          <span class="cover-sub">"Every session is a step closer to mastery."<br>Already have an account?</span>
+          <span class="cover-sub">"Every practice is a closer step to mastery."<br>Already have an account?</span>
           <label for="flip" class="ghost-btn">Sign In</label>
         </div>
         <div class="overlay-panel overlay-right">
           <span class="cover-title">New Here?</span>
-          <span class="cover-sub">"Great journeys begin with a single step."<br>Join YSS today.</span>
+          <span class="cover-sub">"A great signaller comes with great responsibility."<br>Join YSS today.</span>
           <label for="flip" class="ghost-btn">Register</label>
         </div>
       </div>

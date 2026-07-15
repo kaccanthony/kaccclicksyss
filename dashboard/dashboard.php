@@ -95,7 +95,9 @@ if ($myDisplayName) {
     }
 }
 
-if (empty($user['role'])) {
+// Only STAFF accounts are required to have a role. Regular self-registered users
+// (session-goers) are expected to have an empty role — don't bounce them for that.
+if (!empty($user['is_staff']) && empty($user['role'])) {
     $_SESSION['error'] = 'Your account has no role assigned. Contact an admin.';
     header('Location: /login/login.php');
     exit;
@@ -145,6 +147,7 @@ $roleCards = [
     'Head Staff'           => ['booking','setup','my_session','active','upcoming','past','staff'],
     'Co-Host Authorized'   => ['my_session','active','upcoming','past','staff'],
     'Assistant Authorized' => ['my_session','active','upcoming','past','staff'],
+    ''                     => ['active','upcoming','past'], // regular (non-staff) users
 ];
 
 $cards = [];

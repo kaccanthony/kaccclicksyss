@@ -80,7 +80,7 @@ function buildRelativeBadge(rel) {
 }
 
 function buildDetailBtn(id) {
-    return `<button type="button" class="view-details-btn" onclick="openDetailModal(${parseInt(id, 10)})" title="View full details"><i class="fas fa-circle-info"></i> Details</button>`;
+    return `<button type="button" class="view-details-btn" onclick="openDetailModal(${parseInt(id, 10)})" title="View full details"><i class="fas fa-info-circle"></i> Details</button>`;
 }
 
 // ── Session Detail Popup (Discord name only — no Roblox name / Discord ID / notes) ──
