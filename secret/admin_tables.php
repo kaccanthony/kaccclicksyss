@@ -66,7 +66,7 @@ function getTableConfig(): array {
             'primaryKey' => 'quota_id', 'displayMode' => 'table',
             'columns' => [
                 'quota_id'            => ['label' => 'Quota ID', 'type' => 'text', 'editableOnCreate' => true, 'editableOnUpdate' => false],
-                'discord_id'          => ['label' => 'Staff Name', 'type' => 'text'],
+                'discord_id'          => ['label' => 'Staff Name', 'type' => 'text', 'resolveId' => true],
                 'quota_level'         => ['label' => 'Level', 'type' => 'number'],
                 'quota_period'        => ['label' => 'Period (YYYY-MM)', 'type' => 'text'],
                 'quota_assist'        => ['label' => 'Assists', 'type' => 'number'],

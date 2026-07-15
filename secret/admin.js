@@ -731,6 +731,16 @@ if(isQuotaAdd){
     });
 }
 
+const avatarPreview = modalBody.querySelector('.ms-avatar-preview');
+if(avatarPreview){
+    if(isEdit){
+      avatarPreview.src = `../modules/profiles/avatar.php?id=${encodeURIComponent(row[cfg.primaryKey])}`;
+      avatarPreview.onerror = () => { avatarPreview.style.display = 'none'; };
+    } else {
+      avatarPreview.style.display = 'none'; // nothing to preview yet on a brand-new record
+    }
+}
+
 modalBackdrop.classList.add('open');
 }
 
