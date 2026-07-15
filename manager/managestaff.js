@@ -555,7 +555,11 @@ Object.entries(cfg.columns).forEach(([col, def]) => {
     return;
     }
     if(!isEdit && def.editableOnCreate === false) return; // matches manage_records.php's own create filter
-    const editable = fieldEditableNow(def, isEdit);
+    let editable = fieldEditableNow(def, isEdit);
+    if (isEdit && cfg === TABLE_CONFIG.staff_list && col === 'staff_rank'
+        && Number(row.staff_perm_level) >= 15 && MY_PERM_LEVEL < 20) {
+      editable = false;
+    }
     modalBody.insertAdjacentHTML('beforeend', buildFieldGroup(col, def, row ? row[col] : '', !editable));
 });
 

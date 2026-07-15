@@ -91,6 +91,20 @@ if ($method === 'POST') {
 // ── UPDATE ────────────────────────────────────────────────────────
 if ($method === 'PUT') {
     $pkVal = $body['pk'] ?? null;
+
+    // Row-specific guard, Staff Directory only: once a staff member is already Manager/Admin
+    // rank (perm 15+), only an Admin (level 20) may change their staff_rank. This depends on
+    // the TARGET row's current data, not a fixed column minLevel, so it lives here rather than
+    // in the table config.
+    $targetPermLevel = null;
+    if ($table === 'staff_list') {
+        $stmtTarget = mysqli_prepare($conn, "SELECT staff_perm_level FROM staff_list WHERE staff_id = ?");
+        mysqli_stmt_bind_param($stmtTarget, "s", $pkVal);
+        mysqli_stmt_execute($stmtTarget);
+        $targetRow = mysqli_stmt_get_result($stmtTarget)->fetch_assoc();
+        $targetPermLevel = $targetRow ? (int)$targetRow['staff_perm_level'] : null;
+    }
+
     $data = $body['data'] ?? [];
     if ($pkVal === null) {
         echo json_encode(['success' => false, 'message' => 'Missing primary key value.']);
@@ -101,6 +115,7 @@ if ($method === 'PUT') {
         if ($col === $pk) continue; // never update the primary key itself here
         if (($def['editableOnUpdate'] ?? true) === false) continue;
         if (!empty($def['minLevel']) && $permLevel < $def['minLevel']) continue;
+        if ($table === 'staff_list' && $col === 'staff_rank' && $targetPermLevel !== null && $targetPermLevel >= 15 && $permLevel < 20) continue;
         if (!array_key_exists($col, $data)) continue;
         $val = $data[$col];
         if (($def['type'] ?? '') === 'bool') $val = !empty($val) ? 1 : 0;

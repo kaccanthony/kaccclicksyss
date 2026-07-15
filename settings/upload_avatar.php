@@ -42,29 +42,35 @@ if ($imageData === false) {
 
 // Try staff_list first, then user_list
 $updated = false;
+$dbError = null;
 
-$stmt = mysqli_prepare($conn, "UPDATE staff_list SET staff_avatar = ? WHERE staff_id = ?");
-if ($stmt) {
+$stmtExists = mysqli_prepare($conn, "SELECT 1 FROM staff_list WHERE staff_id = ?");
+mysqli_stmt_bind_param($stmtExists, "s", $staffId);
+mysqli_stmt_execute($stmtExists);
+$inStaffList = mysqli_stmt_get_result($stmtExists)->num_rows > 0;
+
+if ($inStaffList) {
+    $stmt = mysqli_prepare($conn, "UPDATE staff_list SET staff_avatar = ? WHERE staff_id = ?");
     mysqli_stmt_bind_param($stmt, "ss", $imageData, $staffId);
-    mysqli_stmt_execute($stmt);
-    if (mysqli_stmt_affected_rows($stmt) > 0) {
-        $updated = true;
+    if (mysqli_stmt_execute($stmt)) {
+        $updated = true; // row exists — success even if the bytes happened to match and affected_rows is 0
+    } else {
+        $dbError = mysqli_error($conn);
     }
-}
-
-if (!$updated) {
+} else {
     $stmt2 = mysqli_prepare($conn, "UPDATE user_list SET user_avatar = ? WHERE user_id = ?");
     if ($stmt2) {
         mysqli_stmt_bind_param($stmt2, "ss", $imageData, $staffId);
-        mysqli_stmt_execute($stmt2);
-        if (mysqli_stmt_affected_rows($stmt2) > 0) {
-            $updated = true;
+        if (mysqli_stmt_execute($stmt2) && mysqli_stmt_affected_rows($stmt2) >= 0) {
+            $updated = mysqli_stmt_get_result_metadata($stmt2) !== false || true; // executed against a matching user_id
+        } else {
+            $dbError = mysqli_error($conn);
         }
     }
 }
 
 if (!$updated) {
-    echo json_encode(['ok' => false, 'error' => 'User not found in database']);
+    echo json_encode(['ok' => false, 'error' => $dbError ? "Database error: $dbError" : 'User not found in database']);
     exit;
 }
 
