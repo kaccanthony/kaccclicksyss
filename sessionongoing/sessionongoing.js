@@ -54,6 +54,8 @@ const concludePanel = document.getElementById('conclude-panel');
 if(concludePanel && isHost) concludePanel.classList.add('visible');
 const sessionControlsPanel = document.getElementById('session-controls-panel');
 if(sessionControlsPanel && isHost) sessionControlsPanel.classList.add('visible');
+const timeTrackerPanel = document.getElementById('time-tracker-panel');
+if(timeTrackerPanel && isHost) timeTrackerPanel.classList.add('visible');
 /* ================= ZONE DATA and announcement template (must exist before the first trainee rows are built below) ================= */
 const ZONE_DATA = {
   'Zone 1':  { coverage: 'WFD <-> STV/STB/CHP', notes: 'Willowfield <-> Stepford Victoria/Stepford Bay/City Hospital', depot: 'Willowfield C.S. / Marston Hill TMD / Beechley Kingsway C.S', depotNearby: 'Trinity Way TMD' },
@@ -157,6 +159,10 @@ document.addEventListener('mousedown', (e)=>{
 document.querySelectorAll('.ovr-btn').forEach(btn=>{
   btn.addEventListener('click', async ()=>{
     const key = btn.dataset.ovr;
+    if(!isHost){
+      showToast('Only the Host can toggle overrides.');
+      return;
+    }
     if(key === 'allow-all' && !overrides[key]){
       const ok = await showConfirm(
         'This unlocks every field for every user and bypasses all individual overrides, including host-only ones. This can\'t be undone quietly — everyone will be able to edit everything.',
@@ -236,15 +242,17 @@ function updateStatusLockState(){
   const rows = document.querySelectorAll('#trainee-rows tr');
   const allDone = rows.length > 0 && Array.from(rows).every(tr => tr.querySelector('.complete-btn')?.classList.contains('done'));
   const sessionUnlocked = overrides['allow-all'] || overrides['session-details'];
-  const unlocked = sessionUnlocked || allDone;
+  const unlocked = sessionUnlocked || allDone || isHost;
   setLocked(statusSelect, !unlocked);
   statusSelect.dataset.lockMsg = unlocked ? '' : 'Session status unlocks once every trainee is marked done, or via Override Session Details.';
   if(hint){
-    hint.textContent = sessionUnlocked
-      ? 'Unlocked — Override Session Details active'
-      : allDone
-        ? 'Unlocked — all trainees marked done'
-        : 'Locked — unlocks once all trainees are marked done';
+    hint.textContent = isHost
+      ? 'Unlocked — Host'
+      : sessionUnlocked
+        ? 'Unlocked — Override Session Details active'
+        : allDone
+          ? 'Unlocked — all trainees marked done'
+          : 'Locked — unlocks once all trainees are marked done';
   }
 }
 
@@ -1959,6 +1967,8 @@ function wasRecentlyEditedLocally(key, windowMs = 6000) {
 let staffCoreDirty = false;
 let overridesDirty = false;
 let statusDirty = false;
+let traineeAttendanceDirty = false;
+const traineeRowDirty = new Set(); // tr.dataset.row values this client actually edited
 
 function queueLiveStateSync() { pendingLiveStateFlush = true; }
 
@@ -1972,29 +1982,36 @@ function isEditingField(el) {
 function collectCoreUpdates() {
     const updates = {};
     if (statusDirty) {
-        const statusVal = document.getElementById('status-select').value;
-        if (statusVal !== 'concluded') { // 'concluded' only ever commits via the Conclude Session confirm flow
-            updates.session_status = statusVal;
-        }
+        // 'concluded' now persists like any other status — only the Conclude Session button
+        // actually archives/deletes the row, so there's no harm in the dropdown value itself
+        // sticking. (Previously this silently refused to save 'concluded', which is why the
+        // status kept bouncing back to whatever the DB already had.)
+        updates.session_status = document.getElementById('status-select').value;
         statusDirty = false;
     }
 
-    let staffAttendance = '';
-    document.querySelectorAll('#staff-rows .chk').forEach(cb => { staffAttendance += cb.checked ? '1' : '0'; });
-    if (staffAttendance) updates.staff_attendance = staffAttendance;
+    // Only push trainee_attendance when THIS client actually toggled an attendance box.
+    // Pushing it unconditionally on every sync tick let any client's stale local checkbox
+    // snapshot silently overwrite someone else's concurrent attendance change.
+    if (traineeAttendanceDirty) {
+        const traineeAttendanceParts = [];
+        document.querySelectorAll('#trainee-rows tr').forEach(tr => {
+            const chk = tr.querySelector('.attendance-chk');
+            traineeAttendanceParts.push(chk && chk.checked ? '1' : '0');
+        });
+        if (traineeAttendanceParts.length) updates.trainee_attendance = traineeAttendanceParts.join(',');
+        traineeAttendanceDirty = false;
+    }
 
-    const traineeAttendanceParts = [];
-    document.querySelectorAll('#trainee-rows tr').forEach(tr => {
-        const chk = tr.querySelector('.attendance-chk');
-        traineeAttendanceParts.push(chk && chk.checked ? '1' : '0');
-    });
-    if (traineeAttendanceParts.length) updates.trainee_attendance = traineeAttendanceParts.join(',');
-
-    // Only recompute + push co_host1-4/assistant_1-4 when THIS client actually edited the
-    // Staff panel (staffCoreDirty). Pushing it unconditionally on every sync tick — even
-    // for unrelated changes like a trainee note — let any client's stale local staff-rows
-    // view silently overwrite the real assignment for everyone else.
+    // Only recompute + push co_host1-4/assistant_1-4/staff_attendance when THIS client actually
+    // edited the Staff panel (staffCoreDirty). Pushing it unconditionally on every sync tick —
+    // even for unrelated changes like a trainee note — let any client's stale local staff-rows
+    // view silently overwrite the real assignment/attendance for everyone else.
     if (staffCoreDirty) {
+        let staffAttendance = '';
+        document.querySelectorAll('#staff-rows .chk').forEach(cb => { staffAttendance += cb.checked ? '1' : '0'; });
+        if (staffAttendance) updates.staff_attendance = staffAttendance;
+
         const cohostCols = ['co_host1', 'co_host2', 'co_host3', 'co_host4/supervisor'];
         const assistantCols = ['assistant_1', 'assistant_2', 'assistant_3', 'assistant_4'];
         let cohostIdx = 0, assistantIdx = 0;
@@ -2011,8 +2028,11 @@ function collectCoreUpdates() {
         staffCoreDirty = false;
     }
 
+    // Only push a trainee row's own detail columns when THIS client actually edited THAT row —
+    // same clobber risk as above, just per-row instead of one global flag.
     document.querySelectorAll('#trainee-rows tr').forEach(tr => {
         const row = tr.dataset.row;
+        if (!traineeRowDirty.has(row)) return;
         const idx = parseInt(row, 10) + 1;
         const nameEl = tr.querySelector('.trainee-name');
         const detailFields = tr.querySelectorAll('.trainee-detail-field');
@@ -2026,6 +2046,7 @@ function collectCoreUpdates() {
         const notesArea = tr.querySelector('.trainee-notes-input');
         if (notesArea) updates[`trainee_${idx}_note`] = notesArea.value.trim();
         if (trainerFields[0]) updates[`trainee_${idx}_trainer_name`] = trainerFields[0].value.trim();
+        traineeRowDirty.delete(row);
     });
 
     return updates;
@@ -2298,13 +2319,21 @@ setInterval(async () => {
 }, SYNC_INTERVAL_MS);
 
 // Any change to a synced field marks live_state dirty so the next cycle pushes it
-document.getElementById('trainee-rows')?.addEventListener('input', queueLiveStateSync);
+function markTraineeRowDirty(e){
+    const tr = e.target.closest('tr[data-row]');
+    if (tr && e.target.matches('.trainee-name, .trainee-detail-field, .trainer-detail-field, .trainee-notes-input')) {
+        traineeRowDirty.add(tr.dataset.row);
+    }
+}
+document.getElementById('trainee-rows')?.addEventListener('input', (e) => { markTraineeRowDirty(e); queueLiveStateSync(); });
 document.getElementById('trainee-rows')?.addEventListener('change', (e) => {
     const chk = e.target.closest('.attendance-chk');
     if (chk) {
         const idx = parseInt(chk.closest('tr').dataset.row, 10) + 1;
         markRecentEdit(`attendance-${idx}`);
+        traineeAttendanceDirty = true;
     }
+    markTraineeRowDirty(e);
     queueLiveStateSync();
 });
 document.getElementById('driver-rows')?.addEventListener('input', queueLiveStateSync);

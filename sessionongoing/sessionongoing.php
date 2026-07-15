@@ -103,13 +103,24 @@ if (empty($sessionRow['started_at'])) {
     $sessionRow['started_at'] = $now;
 }
 
-$myDisplayName = $username; // adjust if your session lookup key differs from $_SESSION['user']['username']
-$viewerRole = 'Assistant';
-if ($sessionRow['host'] === $myDisplayName) {
-    $viewerRole = 'Host';
-} elseif (in_array($myDisplayName, [$sessionRow['co_host1'], $sessionRow['co_host2'], $sessionRow['co_host3'], $sessionRow['co_host4/supervisor']], true)) {
-    $viewerRole = 'Co-Host';
+// Match by staff_id, not by name — $sessionRow's host/co-host columns store staff
+// *display names*, but $_SESSION['user']['username'] is the login username, which is
+// very often a different string. Comparing names directly silently failed to recognize
+// the actual Host/Co-Host, which is why every host-only control (overrides, Conclude
+// Session, Time Tracker) stayed locked even for the real host.
+$myDisplayName = null;
+foreach ($staffDirectory as $displayName => $sid) {
+    if ((string)$sid === (string)$staffId) { $myDisplayName = $displayName; break; }
 }
+$viewerRole = 'Assistant';
+if ($myDisplayName !== null) {
+    if ($sessionRow['host'] === $myDisplayName) {
+        $viewerRole = 'Host';
+    } elseif (in_array($myDisplayName, [$sessionRow['co_host1'], $sessionRow['co_host2'], $sessionRow['co_host3'], $sessionRow['co_host4/supervisor']], true)) {
+        $viewerRole = 'Co-Host';
+    }
+}
+if ($myDisplayName === null) $myDisplayName = $username; // fallback so MY_DISPLAY_NAME isn't null downstream
 
 $liveState = [];
 if (!empty($sessionRow['live_state'])) {
