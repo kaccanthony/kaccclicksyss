@@ -195,6 +195,7 @@ while ($row = mysqli_fetch_assoc($resS)) {
 const SESSIONS_DATA = <?= json_encode($sessions, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 </script>
 <script src="upcomingsesh.js?v=<?= filemtime(__DIR__ . '/upcomingsesh.js') ?>"></script>
+<?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
 <script src="../public/assets/js/avatar-cache.js"></script>
 </body>
 </html>

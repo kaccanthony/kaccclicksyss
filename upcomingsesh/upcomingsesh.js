@@ -341,7 +341,7 @@ function sessionRowHtml(s) {
         <div class="sesh-row-time"><span class="bst-time">${t.bst}</span>${t.local} your time</div>
         <div class="sesh-row-title"><div class="sesh-title">${escapeHtml(s.session_name || 'Unnamed Session')}</div></div>
         <div class="sesh-row-pills">${buildPillRow(s)}</div>
-        <div class="sesh-row-relative">${buildRelativeBadge(t.relative)}</div>
+        <div class="sesh-row-relative">${buildRelativeBadge(t.relative)}${buildDetailBtn(s.session_id)}</div>
     </div>`;
 }
 
