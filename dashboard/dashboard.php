@@ -135,7 +135,7 @@ $allCards = [
     'my_session'   => ['label' => 'Session Panel', 'sub' => 'All Staff (Manager, HS, ST) (Depending on your role)', 'icon' => '/public/assets/images/icons/ST.png', 'href' => '../sessionongoing/sessionongoing.php?session_id=' . $myLiveSessionId],
     'active'       => ['label' => 'Active Session',    'sub' => '', 'icon' => '/public/assets/images/icons/Inprogress.png', 'href' => '../publicview/active.php'],
     'upcoming'     => ['label' => 'Upcoming Sessions', 'sub' => '', 'icon' => 'fa-clock', 'href' => '../upcomingsesh/upcomingsesh.php'],
-    'past'         => ['label' => 'Past Sessions',     'sub' => '', 'icon' => 'fa-fast-backward', 'href' => 'past.php'],
+    'past'         => ['label' => 'Past Sessions',     'sub' => '', 'icon' => 'fa-fast-backward', 'href' => '../past/past.php'],
     'staff'        => ['label' => 'Staff Overview',    'sub' => '', 'icon' => 'fa-users', 'href' => '../staff/staff.php'],
     'manage_staff' => ['label' => 'Manage Staff', 'sub' => 'Manager & Admin', 'icon' => '/public/assets/images/icons/OM.png', 'href' => '../manager/managestaff.php'],
     'admin_panel'  => ['label' => 'Admin Panel', 'sub' => 'Admin only', 'icon' => 'fa-user-tie', 'href' => '../secret/admin.php'],
