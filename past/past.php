@@ -111,9 +111,8 @@ while ($row = mysqli_fetch_assoc($res)) {
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
                 <?php if ($hasAvatar): ?>
-                    <i class="fas fa-user avatar-fallback-icon"></i>
-                    <img class="js-avatar" data-avatar-id="<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
-                <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
+                        <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                    <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
             </div>
             <div class="profile-meta">
                 <span class="profile-name"><?= $username ?></span>
@@ -125,8 +124,7 @@ while ($row = mysqli_fetch_assoc($res)) {
             <div class="popup-header">
                 <div class="popup-avatar">
                     <?php if ($hasAvatar): ?>
-                        <i class="fas fa-user avatar-fallback-icon"></i>
-                        <img class="js-avatar" data-avatar-id="<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                        <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                     <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
                 </div>
                 <div>
@@ -150,8 +148,8 @@ while ($row = mysqli_fetch_assoc($res)) {
             <p class="section-sub">Every concluded or cancelled session on record</p>
         </div>
         <div class="view-switcher" id="view-switcher">
-            <button type="button" class="view-btn active" data-view="grid" title="Grid view"><i class="fas fa-table-cells-large"></i> Grid</button>
-            <button type="button" class="view-btn" data-view="focus" title="Focus view"><i class="fas fa-list-check"></i> Focus</button>
+            <button type="button" class="view-btn active" data-view="grid" title="Grid view"><i class="fas fa-th-large"></i> Grid</button>
+            <button type="button" class="view-btn" data-view="focus" title="Focus view"><i class="fas fa-bullseye"></i> Focus</button>
             <button type="button" class="view-btn" data-view="list" title="List view"><i class="fas fa-bars"></i> List</button>
             <button type="button" class="view-btn" data-view="card" title="Card view"><i class="fas fa-id-card"></i> Card</button>
         </div>
