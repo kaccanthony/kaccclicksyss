@@ -223,8 +223,6 @@ function sessionFullCardHtml(s) {
     return `
     <div class="sesh-fullcard">
         <div class="sesh-tile-top">${buildRelativeBadge(t.relative)}${buildDetailBtn(s.session_id)}</div>
-        <div class="sesh-row-pills">${buildPillRow(s)}</div>
-        <div class="sesh-row-relative">${buildRelativeBadge(t.relative)}${buildDetailBtn(s.session_id)}</div>
         <div class="sesh-title">${escapeHtml(s.session_name || 'Unnamed Session')}</div>
         <div class="sesh-time-line">
             <span class="bst-time">${t.bst}</span>
@@ -300,7 +298,7 @@ function renderFocusDetail() {
 
     const t = formatSessionTimes(s.session_datetime_iso);
     detailEl.innerHTML = `
-        ${buildRelativeBadge(t.relative)}${buildDetailBtn(s.session_id)}
+        <div class="focus-detail-top">${buildRelativeBadge(t.relative)}${buildDetailBtn(s.session_id)}</div>
         <div class="sesh-title">${escapeHtml(s.session_name || 'Unnamed Session')}</div>
         <div class="sesh-time-line">
             <span class="bst-time">${t.bst}</span>

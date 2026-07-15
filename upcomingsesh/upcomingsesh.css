@@ -121,7 +121,7 @@ html, body {
 .sesh-row-title { flex: 1 1 auto; min-width: 0; }
 .sesh-row-title .sesh-title { margin: 0; font-size: 0.92rem; }
 .sesh-row-pills { display: flex; gap: 6px; flex-wrap: wrap; flex: 0 1 auto; justify-content: flex-end; }
-.sesh-row-relative { flex: 0 0 auto; }
+.sesh-row-relative { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
 
 /* ═══════════════ FOCUS VIEW (master-detail, same pattern as Setup Session) ═══════════════ */
 .focus-layout { display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: start; }
@@ -136,6 +136,7 @@ html, body {
 .focus-detail-panel .sesh-pill { padding: 8px 14px; font-size: 0.82rem; }
 .focus-detail-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 80px 20px; color: rgba(255,255,255,0.3); }
 .focus-detail-empty i { font-size: 2rem; opacity: .4; }
+.focus-detail-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 
 @media (max-width: 900px) {
     .focus-layout { grid-template-columns: 1fr; }
