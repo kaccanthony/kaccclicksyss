@@ -138,7 +138,7 @@ $allCards = [
     'past'         => ['label' => 'Past Sessions',     'sub' => '', 'icon' => 'fa-fast-backward', 'href' => 'past.php'],
     'staff'        => ['label' => 'Staff Overview',    'sub' => '', 'icon' => 'fa-users', 'href' => '../staff/staff.php'],
     'manage_staff' => ['label' => 'Manage Staff', 'sub' => 'Manager & Admin', 'icon' => '/public/assets/images/icons/OM.png', 'href' => '../manager/managestaff.php'],
-    'admin_panel'  => ['label' => 'Admin Panel', 'sub' => 'Admin only', 'icon' => 'fa-shield-halved', 'href' => '../adminpanel/adminpanel.php', 'comingSoon' => true],
+    'admin_panel'  => ['label' => 'Admin Panel', 'sub' => 'Admin only', 'icon' => 'fa-user-tie', 'href' => '../secret/admin.php'],
 ];
 
 $roleCards = [
