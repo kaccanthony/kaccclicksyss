@@ -229,11 +229,11 @@ function getTableConfig(): array {
             'columns' => [
                 'log_id'              => ['label' => 'Log ID', 'type' => 'number', 'editableOnUpdate' => false],
                 'session_id'          => ['label' => 'Session ID', 'type' => 'number'],
-                'trainee_id'          => ['label' => 'Trainee Discord ID', 'type' => 'text'],
+                'trainee_id'          => ['label' => 'Trainee Discord ID', 'type' => 'text', 'resolveId' => true],
                 'trainee_roblox'      => ['label' => 'Roblox Username', 'type' => 'text'],
                 'trainee_zone'        => ['label' => 'Zone', 'type' => 'number'],
                 'trainee_attendance'  => ['label' => 'Attended', 'type' => 'bool'],
-                'trainer_id'          => ['label' => 'Trainer Discord ID', 'type' => 'text'],
+                'trainer_id'          => ['label' => 'Trainer Discord ID', 'type' => 'text', 'resolveId' => true],
                 'trainee_notes'       => ['label' => 'Trainee Notes', 'type' => 'textarea'],
                 'staff_notes'         => ['label' => 'Staff Notes', 'type' => 'textarea'],
                 'trainee_assessed'    => ['label' => 'Assessed', 'type' => 'bool'],
@@ -247,8 +247,8 @@ function getTableConfig(): array {
             'columns' => [
                 'log_id'        => ['label' => 'Log ID', 'type' => 'number', 'editableOnUpdate' => false],
                 'session_id'    => ['label' => 'Session ID', 'type' => 'number'],
-                'trainee_id'    => ['label' => 'Trainee Discord ID', 'type' => 'text'],
-                'trainer_id'    => ['label' => 'Trainer Discord ID', 'type' => 'text'],
+                'trainee_id'    => ['label' => 'Trainee Discord ID', 'type' => 'text', 'resolveId' => true],
+                'trainer_id'    => ['label' => 'Trainer Discord ID', 'type' => 'text', 'resolveId' => true],
                 'feedback_json' => ['label' => 'Feedback', 'type' => 'feedback_json'], // special formatter, see below
                 'created_at'    => ['label' => 'Created', 'type' => 'text', 'editableOnUpdate' => false],
             ],

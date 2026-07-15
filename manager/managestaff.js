@@ -87,6 +87,38 @@ const sorter = DEFAULT_SORTERS[table];
 return sorter ? sorter(rows) : rows;
 }
 
+let staffListCache = null;
+async function getStaffList(){
+  if(staffListCache) return staffListCache;
+  try {
+    const res = await fetch('manage_records.php?table=staff_list');
+    const data = await res.json();
+    staffListCache = data.success ? (data.rows || []) : [];
+  } catch { staffListCache = []; }
+  return staffListCache;
+}
+
+// Head Staff with no recognizable suffix defaults to 'S' (Host-Authorized-style quota).
+// Suffix can be written as "Head Staff (G)", "Head Staff - G", or "Head Staff G".
+function letterForStaffRank(rank){
+  if(!rank) return null;
+  const r = String(rank).trim();
+  if(r === 'Community Manager' || r === 'Operations Manager') return 'M';
+  if(r === 'Co-Host Authorized') return 'C';
+  if(r === 'Assistant Authorized') return 'A';
+  if(r === 'Event Authorized') return 'N';
+  if(r.startsWith('Head Staff')){
+    const m = r.match(/[\(\-\s]([SGE])\)?\s*$/i);
+    return m ? m[1].toUpperCase() : 'S';
+  }
+  return null;
+}
+
+function currentPeriod(){
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
 async function getStaffDirectory(){
 if(staffDirectoryCache) return staffDirectoryCache;
 staffDirectoryCache = {};
@@ -99,8 +131,8 @@ try {
 } catch { /* falls back to raw discord_id below */ }
 return staffDirectoryCache;
 }
-function displayValueFor(table, col, value){
-if(table === 'staff_quota' && col === 'discord_id' && staffDirectoryCache){
+function displayValueFor(def, value){
+if(def && def.resolveId && staffDirectoryCache){
     return staffDirectoryCache[value] || value;
 }
 return value;
@@ -158,7 +190,7 @@ const container = document.getElementById('toast-container');
 if(!container) return;
 const el = document.createElement('div');
 el.className = `toast ${type}`;
-el.innerHTML = `<i class="fas ${type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i> ${message}`;
+el.innerHTML = `<i class="${type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-triangle-exclamation'}"></i> ${message}`;
 container.appendChild(el);
 requestAnimationFrame(() => el.classList.add('show'));
 setTimeout(() => {
@@ -268,7 +300,7 @@ try {
     }
     sortState = { col: null, dir: 'default' };
     currentRows = applyDefaultSort(table, data.rows || []);
-    if(table === 'staff_quota') await getStaffDirectory();
+    if(Object.values(cfg.columns).some(d => d.resolveId)) await getStaffDirectory();
     boardSub.textContent = `${currentRows.length} record${currentRows.length === 1 ? '' : 's'}`;
     transitionBoardContent(() => renderBoard(cfg, currentRows));
 } catch (err) {
@@ -285,7 +317,7 @@ boardContent.innerHTML = `<div class="ms-spinner-wrap"><div class="ms-spinner"><
 function renderError(message){
 boardContent.innerHTML = `
     <div class="ms-empty">
-    <i class="fas fa-triangle-exclamation" style="font-size:1.6rem;"></i>
+    <i class="fa-solid fa-triangle-exclamation" style="font-size:1.6rem;"></i>
     <div>${escapeHtml(message || 'Something went wrong.')}</div>
     </div>`;
 }
@@ -404,7 +436,7 @@ const tbody = wrapEl.querySelector('tbody');
 sorted.forEach((row, i) => {
     const tr = document.createElement('tr');
     tr.style.animationDelay = `${Math.min(i * 25, 300)}ms`;
-    tr.innerHTML = cols.map(([col, def]) => `<td>${formatCell(def, displayValueFor(currentTable, col, row[col]))}</td>`).join('');
+    tr.innerHTML = cols.map(([col, def]) => `<td>${formatCell(def, displayValueFor(def, row[col]))}</td>`).join('');
 
     if(!cfg.readOnly){
     const actionsTd = document.createElement('td');
@@ -445,8 +477,8 @@ if(value === null || value === undefined || value === ''){
 switch(def.type){
     case 'bool':
     return Number(value)
-        ? '<i class="fas fa-circle-check ms-bool-true"></i>'
-        : '<i class="fas fa-circle-xmark ms-bool-false"></i>';
+        ? '<i class="fa-solid fa-circle-check ms-bool-true"></i>'
+        : '<i class="fa-solid fa-circle-xmark ms-bool-false"></i>';
     case 'select':
     if(def.pill) return `<span class="ms-pill ${pillClassFor(value, def.options)}">${escapeHtml(value)}</span>`;
     return escapeHtml(value);
@@ -542,19 +574,37 @@ if(def.minLevel && MY_PERM_LEVEL < def.minLevel) return false;
 return true;
 }
 
-function openRecordModal(cfg, row){
+async function openRecordModal(cfg, row){
 const isEdit = !!row;
 editingPk = isEdit ? row[cfg.primaryKey] : null;
 modalTitle.textContent = isEdit ? `Edit ${cfg.label}` : `Add ${cfg.label}`;
 modalBody.innerHTML = '';
 
+const isQuotaAdd = currentTable === 'staff_quota' && !isEdit;
+const staffList = isQuotaAdd ? await getStaffList() : null;
+
 Object.entries(cfg.columns).forEach(([col, def]) => {
     if(col === cfg.primaryKey && isEdit){
-    // pk is shown, locked, never resubmitted
     modalBody.insertAdjacentHTML('beforeend', buildFieldGroup(col, def, row[col], true));
     return;
     }
-    if(!isEdit && def.editableOnCreate === false) return; // matches manage_records.php's own create filter
+    if(!isEdit && def.editableOnCreate === false) return;
+
+    if(isQuotaAdd && col === 'discord_id'){
+      const options = staffList.map(s =>
+        `<option value="${escapeHtml(s.staff_id)}" data-rank="${escapeHtml(s.staff_rank || '')}">${escapeHtml(s.staff_display_name || s.staff_name || s.staff_id)}</option>`
+      ).join('');
+      modalBody.insertAdjacentHTML('beforeend', `
+        <div class="ms-form-group">
+          <label>${escapeHtml(def.label)}</label>
+          <select data-col="discord_id" id="quota-staff-select">
+            <option value="">— Select staff —</option>
+            ${options}
+          </select>
+        </div>`);
+      return;
+    }
+
     let editable = fieldEditableNow(def, isEdit);
     if (isEdit && cfg === TABLE_CONFIG.staff_list && col === 'staff_rank'
         && Number(row.staff_perm_level) >= 15 && MY_PERM_LEVEL < 20) {
@@ -562,6 +612,19 @@ Object.entries(cfg.columns).forEach(([col, def]) => {
     }
     modalBody.insertAdjacentHTML('beforeend', buildFieldGroup(col, def, row ? row[col] : '', !editable));
 });
+
+if(isQuotaAdd){
+    const staffSelect = document.getElementById('quota-staff-select');
+    staffSelect?.addEventListener('change', () => {
+      const opt = staffSelect.selectedOptions[0];
+      const letter = letterForStaffRank(opt?.dataset.rank);
+      const period = currentPeriod();
+      const quotaIdField = modalBody.querySelector('[data-col="quota_id"]');
+      const periodField = modalBody.querySelector('[data-col="quota_period"]');
+      if(letter && quotaIdField) quotaIdField.value = `Q-${letter}-${period}`;
+      if(periodField) periodField.value = period;
+    });
+}
 
 modalBackdrop.classList.add('open');
 }
