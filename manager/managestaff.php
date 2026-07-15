@@ -69,9 +69,12 @@ foreach ($tableConfig as $key => $cfg) {
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
                 <?php if ($hasAvatar): ?>
-                    <i class="fas fa-user avatar-fallback-icon"></i>
-                    <img class="js-avatar" data-avatar-id="<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
-                <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
+                    <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>"
+                        alt="Avatar"
+                        style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                <?php else: ?>
+                    <i class="fas fa-user"></i>
+                <?php endif; ?>
             </div>
             <div class="profile-meta">
                 <span class="profile-name"><?= $username ?></span>
@@ -83,9 +86,12 @@ foreach ($tableConfig as $key => $cfg) {
             <div class="popup-header">
                 <div class="popup-avatar">
                     <?php if ($hasAvatar): ?>
-                        <i class="fas fa-user avatar-fallback-icon"></i>
-                        <img class="js-avatar" data-avatar-id="<?= htmlspecialchars($staffId) ?>" alt="Avatar" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
-                    <?php else: ?><i class="fas fa-user"></i><?php endif; ?>
+                        <img src="../modules/profiles/avatar.php?id=<?= htmlspecialchars($staffId) ?>"
+                            alt="Avatar"
+                            style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
+                    <?php else: ?>
+                        <i class="fas fa-user"></i>
+                    <?php endif; ?>
                 </div>
                 <div>
                     <div class="popup-name"><?= $username ?></div>
@@ -164,6 +170,7 @@ const TABLE_CONFIG = <?= json_encode($tableConfig, JSON_HEX_TAG | JSON_HEX_APOS 
 const MY_PERM_LEVEL = <?= (int)$permLevel ?>;
 </script>
 <script src="managestaff.js?v=<?= filemtime(__DIR__ . '/managestaff.js') ?>"></script>
+<?php include __DIR__ . '/../public/assets/version_badge.php'; ?>
 <script src="../public/assets/avatar-cache.js"></script>
 </body>
 </html>

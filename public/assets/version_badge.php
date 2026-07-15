@@ -1,5 +1,5 @@
 <?php
-$YSS_VERSION = 'Alpha - v0.16.9';
+$YSS_VERSION = 'Alpha - v0.17.1';
 ?>
 <style>
   .yss-version-badge{
