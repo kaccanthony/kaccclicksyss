@@ -99,7 +99,7 @@ foreach ($tableConfig as $key => $cfg) {
                 </div>
             </div>
             <div class="popup-divider"></div>
-            <a href="../dashboard/notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>
+            <a href="../notif/notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>
             <a href="../settings/settings.php" class="popup-item"><i class="fas fa-cog"></i> Settings</a>
             <a href="../dashboard/dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-sign-out-alt"></i> Log out</a>
         </div>
