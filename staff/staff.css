@@ -92,7 +92,13 @@ html,body{min-height:100vh;font-family:'Inter',sans-serif;background:#080808;col
 .member-detail-name{font-family:'Libre Baskerville',serif;font-size:1.3rem;font-weight:600;margin-bottom:6px;}
 .member-detail-rank{font-size:.8rem;color:rgba(255,255,255,.45);margin-bottom:20px;}
 .member-detail-soon{font-size:.8rem;color:rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;border:1px dashed rgba(255,255,255,.15);}
-
+.member-detail-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px;}
+.member-stat{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px 10px;text-align:center;}
+.member-stat-value{font-family:'Libre Baskerville',serif;font-size:1.35rem;font-weight:600;color:#fff;margin-bottom:4px;}
+.member-stat-label{font-size:.68rem;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.04em;}
+@media (max-width:420px){
+    .member-detail-stats{grid-template-columns:1fr;}
+}
 /* ── responsive ── */
 @media (max-width:900px){
     .staff-grid-3,.staff-grid-4{grid-template-columns:repeat(2,1fr);}

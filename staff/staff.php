@@ -157,7 +157,29 @@ if (isset($_GET['member']) && $_GET['member'] !== '') {
         </div>
         <div class="member-detail-name"><?= htmlspecialchars($viewingMember['staff_display_name'] ?: $viewingMember['staff_name']) ?></div>
         <div class="member-detail-rank"><?= htmlspecialchars($viewingMember['staff_rank']) ?></div>
-        <div class="member-detail-soon"><i class="fas fa-chart-line"></i> Session statistics coming soon.</div>
+
+        <?php
+        $isOwnProfile = $staffId && $viewingMember['staff_id'] === $staffId;
+        $statsHidden  = !empty($viewingMember['hide_stats']) && !$isOwnProfile;
+        ?>
+        <?php if ($statsHidden): ?>
+            <div class="member-detail-soon"><i class="fas fa-eye-slash"></i> This member has hidden their stats.</div>
+        <?php else: ?>
+            <div class="member-detail-stats">
+                <div class="member-stat">
+                    <div class="member-stat-value"><?= (int)$viewingMember['staff_days'] ?></div>
+                    <div class="member-stat-label">Days as Staff</div>
+                </div>
+                <div class="member-stat">
+                    <div class="member-stat-value"><?= (int)$viewingMember['staff_num_sesh_attend'] ?></div>
+                    <div class="member-stat-label">Sessions Attended</div>
+                </div>
+                <div class="member-stat">
+                    <div class="member-stat-value"><?= htmlspecialchars(date('M j, Y', strtotime($viewingMember['staff_joined']))) ?></div>
+                    <div class="member-stat-label">Joined</div>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
 <?php else: ?>
     <div class="section-label">Staff Overview</div>
