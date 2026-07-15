@@ -22,12 +22,6 @@ $permLevel = (int)($user['perm_level'] ?? 0);
 $avatar    = htmlspecialchars($user['avatar'] ?? '');
 $staffId   = $user['id'] ?? '';
 
-if (empty($user['role'])) {
-    $_SESSION['error'] = 'Your account has no role assigned.';
-    header('Location: ../login/login.php');
-    exit;
-}
-
 // ── Fetch Staff Data ──
 $isStaff = false;
 $staffRow = null;
@@ -50,6 +44,13 @@ if ($stmtU) {
     if ($userRow = mysqli_fetch_assoc($userResult)) {
         $isUser = true;
     }
+}
+
+// Only bounce if this account isn't in EITHER table — 'role' doesn't exist for normal users.
+if (!$isStaff && !$isUser) {
+    $_SESSION['error'] = 'Your account could not be found.';
+    header('Location: ../login/login.php');
+    exit;
 }
 
 // ── Load notification prefs ──
@@ -79,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'save_notifs') {
-        $keys = [
+        $allKeys = [
             'staff_session_reminder','staff_reminder_time','staff_trainee_sound',
             'staff_trainee_warning','staff_announcement_enabled','staff_announcement_display',
             'user_session_reminder','user_reminder_time','user_trainee_sound',
@@ -90,6 +91,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'staff_announcement_enabled','user_session_reminder','user_trainee_sound',
             'user_new_session','user_cancellation','user_browser_notifs',
         ];
+        // Each form only submits its own prefix's fields — only touch that
+        // prefix, or saving one tab wipes the other tab's saved prefs.
+        $scope = $_POST['scope'] ?? '';
+        $keys = ($scope === 'staff' || $scope === 'user')
+            ? array_filter($allKeys, fn($k) => str_starts_with($k, $scope . '_'))
+            : $allKeys;
         foreach ($keys as $k) {
             $val = in_array($k, $checkboxes) ? (isset($_POST[$k]) ? '1' : '0') : ($_POST[$k] ?? '');
             $s3 = mysqli_prepare($conn,
@@ -507,6 +514,7 @@ if ($isStaff && $staffRow) {
     <div class="settings-panel hidden" id="panel-staff-notifs">
         <form method="POST" action="">
             <input type="hidden" name="action" value="save_notifs"/>
+            <input type="hidden" name="scope" value="staff"/>
             <div class="settings-section">
                 <div class="settings-section-title"><i class="fas fa-shield-halved"></i> Staff Notifications</div>
                 <p class="settings-section-desc">Active only while you're in a live session as host, co-host, or assistant.</p>
@@ -618,6 +626,7 @@ if ($isStaff && $staffRow) {
     <div class="settings-panel hidden" id="panel-user-notifs">
         <form method="POST" action="">
             <input type="hidden" name="action" value="save_notifs"/>
+            <input type="hidden" name="scope" value="user"/>
             <div class="settings-section">
                 <div class="settings-section-title"><i class="fas fa-bell"></i> General Notifications</div>
                 <p class="settings-section-desc">These apply to your account at all times.</p>

@@ -58,11 +58,16 @@ if ($inStaffList) {
         $dbError = mysqli_error($conn);
     }
 } else {
-    $stmt2 = mysqli_prepare($conn, "UPDATE user_list SET user_avatar = ? WHERE user_id = ?");
-    if ($stmt2) {
+    $stmtCheckUser = mysqli_prepare($conn, "SELECT 1 FROM user_list WHERE user_id = ?");
+    mysqli_stmt_bind_param($stmtCheckUser, "s", $staffId);
+    mysqli_stmt_execute($stmtCheckUser);
+    $inUserList = mysqli_stmt_get_result($stmtCheckUser)->num_rows > 0;
+
+    if ($inUserList) {
+        $stmt2 = mysqli_prepare($conn, "UPDATE user_list SET user_avatar = ? WHERE user_id = ?");
         mysqli_stmt_bind_param($stmt2, "ss", $imageData, $staffId);
-        if (mysqli_stmt_execute($stmt2) && mysqli_stmt_affected_rows($stmt2) >= 0) {
-            $updated = mysqli_stmt_get_result_metadata($stmt2) !== false || true; // executed against a matching user_id
+        if (mysqli_stmt_execute($stmt2)) {
+            $updated = true; // row exists — success even if bytes match and affected_rows is 0
         } else {
             $dbError = mysqli_error($conn);
         }
