@@ -258,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
         }
         mysqli_stmt_execute($stmt);
         if ($action === 'add') {
-            $_SESSION['success'] = ($role === 'Head Staff')
+            $_SESSION['success'] = ($role === 'Head Staff' && $permLevel < 20)
                 ? 'Session request submitted — a manager will review it.'
                 : 'Session added.';
         } else {

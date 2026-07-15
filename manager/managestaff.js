@@ -129,6 +129,15 @@ try {
     (data.rows || []).forEach(r => { staffDirectoryCache[r.staff_id] = r.staff_display_name || r.staff_name || r.staff_id; });
     }
 } catch { /* falls back to raw discord_id below */ }
+// Trainees are usually regular (non-staff) users — merge the user directory
+// into the same cache so trainee_id/trainer_id resolve too, not just staff.
+try {
+    const res2 = await fetch('manage_records.php?table=user_list');
+    const data2 = await res2.json();
+    if(data2.success){
+    (data2.rows || []).forEach(r => { if(!staffDirectoryCache[r.user_id]) staffDirectoryCache[r.user_id] = r.user_display_name || r.user_name || r.user_id; });
+    }
+} catch { /* falls back to raw discord_id below */ }
 return staffDirectoryCache;
 }
 function displayValueFor(def, value){
