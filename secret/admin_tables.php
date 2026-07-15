@@ -48,7 +48,7 @@ function getTableConfig(): array {
             'label' => 'Staff Timeline', 'group' => 'Staff Management', 'minLevel' => 15,
             'primaryKey' => 'staff_id', 'displayMode' => 'table',
             'columns' => [
-                'staff_id'          => ['label' => 'Discord ID', 'type' => 'text', 'editableOnCreate' => true, 'editableOnUpdate' => false, 'resolvedId' => true],
+                'staff_id'          => ['label' => 'Discord ID', 'type' => 'text', 'editableOnCreate' => true, 'editableOnUpdate' => false, 'resolveId' => true],
                 'days_as_staff'     => ['label' => 'Days as Staff', 'type' => 'number'],
                 'assist_auth_start' => ['label' => 'Assist Auth Start', 'type' => 'date'],
                 'assist_auth_end'   => ['label' => 'Assist Auth End', 'type' => 'date'],
@@ -97,7 +97,7 @@ function getTableConfig(): array {
             'label' => 'Staff Timeline', 'group' => 'Staff Management', 'minLevel' => 15,
             'primaryKey' => 'staff_id', 'displayMode' => 'table',
             'columns' => [
-                'staff_id'          => ['label' => 'Discord ID', 'type' => 'text', 'editableOnCreate' => true, 'editableOnUpdate' => false, 'resolvedId' => true],
+                'staff_id'          => ['label' => 'Discord ID', 'type' => 'text', 'editableOnCreate' => true, 'editableOnUpdate' => false, 'resolveId' => true],
                 'days_as_staff'     => ['label' => 'Days as Staff', 'type' => 'number'],
                 'staff_nationality' => ['label' => 'Nationality', 'type' => 'text'],
                 'assist_auth_start' => ['label' => 'Assist Auth Start', 'type' => 'date'],
@@ -152,7 +152,7 @@ function getTableConfig(): array {
             'primaryKey' => 'user_id', 'displayMode' => 'table', 'readOnly' => true,
             'readOnlyReason' => 'This table has no single-row primary key (user_id + pref_key together make a row unique) — editing here would be ambiguous. Add a synthetic pref_id column to enable full editing.',
             'columns' => [
-                'user_id'    => ['label' => 'Discord ID', 'type' => 'text', 'resolvedId' => true],
+                'user_id'    => ['label' => 'Discord ID', 'type' => 'text', 'resolveId' => true],
                 'pref_key'   => ['label' => 'Preference', 'type' => 'text'],
                 'pref_value' => ['label' => 'Value', 'type' => 'text'],
             ],

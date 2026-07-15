@@ -47,7 +47,7 @@ function getTableConfig(): array {
             'label' => 'Staff Timeline', 'group' => 'Staff Management', 'minLevel' => 15,
             'primaryKey' => 'staff_id', 'displayMode' => 'table',
             'columns' => [
-                'staff_id'          => ['label' => 'Discord ID', 'type' => 'text', 'editableOnCreate' => true, 'editableOnUpdate' => false, 'resolvedId' => true],
+                'staff_id'          => ['label' => 'Discord ID', 'type' => 'text', 'editableOnCreate' => true, 'editableOnUpdate' => false, 'resolveId' => true],
                 'days_as_staff'     => ['label' => 'Days as Staff', 'type' => 'number'],
                 'assist_auth_start' => ['label' => 'Assist Auth Start', 'type' => 'date'],
                 'assist_auth_end'   => ['label' => 'Assist Auth End', 'type' => 'date'],
