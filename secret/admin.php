@@ -109,7 +109,7 @@ foreach ($tableConfig as $key => $cfg) {
 <div class="ms-layout">
     <!-- ── Sidebar: board list, grouped ── -->
     <aside class="ms-sidebar">
-        <div class="ms-sidebar-title">Manage Staff</div>
+        <div class="ms-sidebar-title">Manage Stuff</div>
         <?php foreach ($groupOrder as $groupName): ?>
             <?php if (empty($groups[$groupName])) continue; ?>
             <div class="ms-group-label"><?= htmlspecialchars($groupName) ?></div>
@@ -141,7 +141,7 @@ foreach ($tableConfig as $key => $cfg) {
     <div class="ms-modal">
         <div class="ms-modal-head">
             <h2 id="record-modal-title">Add Record</h2>
-            <button class="ms-modal-close" id="record-modal-close"><i class="fas fa-xmark"></i></button>
+            <button class="ms-modal-close" id="record-modal-close"><i class="fas fa-times"></i></button>
         </div>
         <div class="ms-modal-body" id="record-modal-body"><!-- form fields injected by JS --></div>
         <div class="ms-modal-footer">
