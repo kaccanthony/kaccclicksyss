@@ -612,7 +612,7 @@ if ($isStaff && $staffRow) {
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn-save"><i class="fas fa-floppy-disk"></i> Save</button>
+                    <button type="submit" class="btn-save"><i class="fa-regular fa-floppy-disk"></i> Save</button>
                 </div>
             </div>
         </form>
