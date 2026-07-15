@@ -6,6 +6,7 @@ let driverCount = 0;
 let driversEverSynced = false;
 let staffEverSynced = false;
 let traineeCount = 0;
+let lastSeenAnnouncementId = (LIVE_STATE.announcement && LIVE_STATE.announcement.id) || null;
 const timers = {};
 const overrides = { 'session-details':false, 'trainees':false, 'staff-roles':false, 'drivers-disable':false, 'slot-order':false, 'staff-delete':false, 'trainee-details':false, 'trainer-details':false, 'allow-all':false };
 
@@ -2534,7 +2535,6 @@ function refreshTrainerDropdowns(){
 
 /* ================= HOST ANNOUNCEMENT BROADCAST ================= */
 let pendingAnnouncement = null;
-let lastSeenAnnouncementId = (LIVE_STATE.announcement && LIVE_STATE.announcement.id) || null;
 
 const announceFab = document.getElementById('announce-fab');
 const announceWidget = document.getElementById('announce-widget');
