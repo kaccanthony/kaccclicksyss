@@ -128,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
 
 // ── REGISTER — regular users only ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
+    $regUserId      = trim($_POST['reg_user_id'] ?? '');
     $regUsername    = trim($_POST['reg_username'] ?? '');
     $regDisplayName = trim($_POST['reg_display_name'] ?? '');
     $regRoblox      = trim($_POST['reg_roblox'] ?? '');
@@ -141,8 +142,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
         exit;
     };
 
-    if ($regUsername === '' || $regDisplayName === '' || $regRoblox === '' || $regPassword === '') {
+    if ($regUserId === '' || $regUsername === '' || $regDisplayName === '' || $regRoblox === '' || $regPassword === '') {
         $fail('Please fill in every field.');
+    }
+    if (!ctype_digit($regUserId)) {
+        $fail('Discord User ID must contain digits only.');
     }
     if (strlen($regPassword) < 8) {
         $fail('Password must be at least 8 characters.');
@@ -162,7 +166,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
         $fail('That username is already taken.');
     }
 
-    $newId       = bin2hex(random_bytes(16)); // synthetic ID — this app doesn't use Discord OAuth for regular users
+    // user_id is the primary key on both tables, and it's now user-supplied, so it must
+    // be checked for uniqueness too — otherwise the INSERT below fails with a duplicate-key error.
+    $stmtIdCheck = mysqli_prepare($conn, "
+        SELECT 1 FROM pp_staff_pp WHERE user_id = ?
+        UNION SELECT 1 FROM pp_user_pp WHERE user_id = ?
+    ");
+    mysqli_stmt_bind_param($stmtIdCheck, "ss", $regUserId, $regUserId);
+    mysqli_stmt_execute($stmtIdCheck);
+    if (mysqli_stmt_get_result($stmtIdCheck)->num_rows > 0) {
+        $fail('That Discord User ID is already registered.');
+    }
+
+    $newId       = $regUserId;
     $passwordHash = password_hash($regPassword, PASSWORD_ARGON2ID);
 
     mysqli_begin_transaction($conn);
@@ -261,6 +277,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
 
         <form method="POST" action="" autocomplete="off">
             <input type="hidden" name="register_submit" value="1"/>
+            <div class="field">
+                <label for="reg_user_id">Discord User ID</label>
+                <input type="text" id="reg_user_id" name="reg_user_id" placeholder="e.g. 123456789012345678"
+                    value="<?= htmlspecialchars($_POST['reg_user_id'] ?? '') ?>" required autocomplete="off" />
+            </div>
             <div class="field">
                 <label for="reg_username">Username</label>
                 <input type="text" id="reg_username" name="reg_username" placeholder="choose_a_username"
