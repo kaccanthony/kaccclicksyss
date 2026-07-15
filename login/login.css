@@ -86,7 +86,7 @@ html, body {
     overflow-y: auto;
 }
 .form-inner { width: 100%; padding: 46px; }
-.form-inner h1 { color: #fff; font-size: 1.55rem; font-weight: 600; letter-spacing: .02em; margin-bottom: 6px; margin-top:140px;}
+.form-inner h1 { color: #fff; font-size: 1.55rem; font-weight: 600; letter-spacing: .02em; margin-bottom: 6px; }
 .subtitle { color: rgba(255, 255, 255, .40); font-size: .82rem; margin-bottom: 32px; }
 
 .login-pane  { z-index: 2; opacity: 1; transform: translateX(0); }
