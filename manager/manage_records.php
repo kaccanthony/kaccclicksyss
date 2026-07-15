@@ -44,6 +44,11 @@ if ($method === 'GET') {
     $colNames = array_keys($columns);
     $colList = implode(', ', array_map(fn($c) => "`$c`", $colNames));
     $res = mysqli_query($conn, "SELECT $colList FROM `$table` ORDER BY `$pk` DESC LIMIT 500");
+    if ($res === false) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Config/schema mismatch for this table: ' . mysqli_error($conn)]);
+        exit;
+    }
     $rows = [];
     while ($r = mysqli_fetch_assoc($res)) $rows[] = $r;
     echo json_encode(['success' => true, 'rows' => $rows]);

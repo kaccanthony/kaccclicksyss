@@ -40,12 +40,18 @@ $pk = $tableConfig['primaryKey'];
 $columns = $tableConfig['columns'] ?? [];
 
 // ── LIST ──────────────────────────────────────────────────────────
+
 if ($method === 'GET') {
     // 'password' and 'avatar' columns are never sent to the client — passwords stay
     // server-side entirely, and avatars are large blobs served separately via avatar.php.
     $colNames = array_keys(array_filter($columns, fn($def) => !in_array($def['type'] ?? '', ['password', 'avatar'], true)));
     $colList = implode(', ', array_map(fn($c) => "`$c`", $colNames));
     $res = mysqli_query($conn, "SELECT $colList FROM `$table` ORDER BY `$pk` DESC LIMIT 500");
+    if ($res === false) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Config/schema mismatch for this table: ' . mysqli_error($conn)]);
+        exit;
+    }
     $rows = [];
     while ($r = mysqli_fetch_assoc($res)) $rows[] = $r;
     // Presence flag only — never the actual value — so the UI can still show "•••••••• (set)"
