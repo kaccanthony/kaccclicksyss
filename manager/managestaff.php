@@ -65,7 +65,7 @@ foreach ($tableConfig as $key => $cfg) {
     </div>
     <span class="app-name">YSS Session Manager</span>
     <div class="topbar-right">
-        <a href="../dashboard/dashboard.php" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        <a href="../dashboard/dashboard.php" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Dashboard</a>
         <button class="profile-btn" id="profile-btn" aria-label="Profile menu">
             <div class="avatar">
                 <?php if ($hasAvatar): ?>
@@ -73,14 +73,14 @@ foreach ($tableConfig as $key => $cfg) {
                         alt="Avatar"
                         style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                 <?php else: ?>
-                    <i class="fas fa-user"></i>
+                    <i class="fa-solid fa-user"></i>
                 <?php endif; ?>
             </div>
             <div class="profile-meta">
                 <span class="profile-name"><?= $username ?></span>
                 <span class="profile-role"><?= $role ?></span>
             </div>
-            <i class="fas fa-chevron-down chev" id="chev"></i>
+            <i class="fa-solid fa-chevron-down chev" id="chev"></i>
         </button>
         <div class="profile-popup" id="profile-popup">
             <div class="popup-header">
@@ -90,7 +90,7 @@ foreach ($tableConfig as $key => $cfg) {
                             alt="Avatar"
                             style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>
                     <?php else: ?>
-                        <i class="fas fa-user"></i>
+                        <i class="fa-solid fa-user"></i>
                     <?php endif; ?>
                 </div>
                 <div>
@@ -99,9 +99,9 @@ foreach ($tableConfig as $key => $cfg) {
                 </div>
             </div>
             <div class="popup-divider"></div>
-            <a href="../notif/notifications.php" class="popup-item"><i class="fas fa-bell"></i> Notifications</a>
-            <a href="../settings/settings.php" class="popup-item"><i class="fas fa-cog"></i> Settings</a>
-            <a href="../dashboard/dashboard.php?logout=1" class="popup-item danger"><i class="fas fa-sign-out-alt"></i> Log out</a>
+            <a href="../notif/notifications.php" class="popup-item"><i class="fa-solid fa-bell"></i> Notifications</a>
+            <a href="../settings/settings.php" class="popup-item"><i class="fa-solid fa-cog"></i> Settings</a>
+            <a href="../dashboard/dashboard.php?logout=1" class="popup-item danger"><i class="fa-solid fa-sign-out-alt"></i> Log out</a>
         </div>
     </div>
 </header>
@@ -130,7 +130,7 @@ foreach ($tableConfig as $key => $cfg) {
                 <h1 class="ms-board-title" id="board-title">Select a board</h1>
                 <p class="ms-board-sub" id="board-sub">Pick something from the sidebar to get started.</p>
             </div>
-            <button type="button" class="ms-add-btn" id="board-add-btn" style="display:none;"><i class="fas fa-plus"></i> Add Record</button>
+            <button type="button" class="ms-add-btn" id="board-add-btn" style="display:none;"><i class="fa-solid fa-plus"></i> Add Record</button>
         </div>
         <div id="board-content"><!-- rendered entirely by JS --></div>
     </main>
@@ -141,7 +141,7 @@ foreach ($tableConfig as $key => $cfg) {
     <div class="ms-modal">
         <div class="ms-modal-head">
             <h2 id="record-modal-title">Add Record</h2>
-            <button class="ms-modal-close" id="record-modal-close"><i class="fas fa-times"></i></button>
+            <button class="ms-modal-close" id="record-modal-close"><i class="fa-solid fa-times"></i></button>
         </div>
         <div class="ms-modal-body" id="record-modal-body"><!-- form fields injected by JS --></div>
         <div class="ms-modal-footer">
