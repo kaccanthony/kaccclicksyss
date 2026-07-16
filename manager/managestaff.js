@@ -217,7 +217,7 @@ const container = document.getElementById('toast-container');
 if(!container) return;
 const el = document.createElement('div');
 el.className = `toast ${type}`;
-el.innerHTML = `<i class="${type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-triangle-exclamation'}"></i> ${message}`;
+el.innerHTML = `<i class="${type === 'success' ? 'fa-solid fa-check-circle' : 'fa-solid fa-exclamation-triangle'}"></i> ${message}`;
 container.appendChild(el);
 requestAnimationFrame(() => el.classList.add('show'));
 setTimeout(() => {
@@ -344,7 +344,7 @@ boardContent.innerHTML = `<div class="ms-spinner-wrap"><div class="ms-spinner"><
 function renderError(message){
 boardContent.innerHTML = `
     <div class="ms-empty">
-    <i class="fa-solid fa-triangle-exclamation" style="font-size:1.6rem;"></i>
+    <i class="fa-solid fa-exclamation-triangle" style="font-size:1.6rem;"></i>
     <div>${escapeHtml(message || 'Something went wrong.')}</div>
     </div>`;
 }
@@ -359,7 +359,7 @@ boardContent.innerHTML = `
 
 function renderBoard(cfg, rows){
 if(cfg.readOnly){
-    boardContent.innerHTML = `<div class="ms-readonly-banner"><i class="fas fa-circle-info"></i> ${escapeHtml(cfg.readOnlyReason || 'This table is read-only here.')}</div>`;
+    boardContent.innerHTML = `<div class="ms-readonly-banner"><i class="fas fa-info-circle"></i> ${escapeHtml(cfg.readOnlyReason || 'This table is read-only here.')}</div>`;
 } else {
     boardContent.innerHTML = '';
 }
@@ -513,8 +513,8 @@ if(value === null || value === undefined || value === ''){
 switch(def.type){
     case 'bool':
     return Number(value)
-        ? '<i class="fa-solid fa-circle-check ms-bool-true"></i>'
-        : '<i class="fa-solid fa-circle-xmark ms-bool-false"></i>';
+        ? '<i class="fa-solid fa-check-circle ms-bool-true"></i>'
+        : '<i class="fa-solid fa-times-circle ms-bool-false"></i>';
     case 'select':
     if(def.pill) return `<span class="ms-pill ${pillClassFor(value, def.options)}">${escapeHtml(value)}</span>`;
     return escapeHtml(value);
