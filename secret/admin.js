@@ -1,12 +1,8 @@
-// managestaff.js
+// admin.js
 // Renders every board defined in TABLE_CONFIG (see managestaff_tables.php), talks to
-// manage_records.php for list/create/update/delete, and to ../sessionongoing/conclude_session.php
+// admin.php for list/create/update/delete, and to ../sessionongoing/conclude_session.php
 // for the Force Conclude action on the session_ongoing board.
 
-/* ============================= injected styles =============================
-Self-contained so this file is a drop-in — no managestaff.css edits needed.
-Adds: the sliding sidebar indicator, board fade/slide transitions, row
-stagger-in, and a small spinner. */
 (function injectStyles(){
 const css = `
     .ms-sidebar{position:relative;}
@@ -91,7 +87,7 @@ let staffListCache = null;
 async function getStaffList(){
   if(staffListCache) return staffListCache;
   try {
-    const res = await fetch('manage_records.php?table=staff_list');
+    const res = await fetch('admin_records.php?table=staff_list');
     const data = await res.json();
     staffListCache = data.success ? (data.rows || []) : [];
   } catch { staffListCache = []; }
@@ -123,7 +119,7 @@ async function getStaffDirectory(){
 if(staffDirectoryCache) return staffDirectoryCache;
 staffDirectoryCache = {};
 try {
-    const res = await fetch('manage_records.php?table=staff_list');
+    const res = await fetch('admin_records.php?table=staff_list');
     const data = await res.json();
     if(data.success){
     (data.rows || []).forEach(r => { staffDirectoryCache[r.staff_id] = r.staff_display_name || r.staff_name || r.staff_id; });
@@ -132,7 +128,7 @@ try {
 // Trainees are usually regular (non-staff) users — merge the user directory
 // into the same cache so trainee_id/trainer_id resolve too, not just staff.
 try {
-    const res2 = await fetch('manage_records.php?table=user_list');
+    const res2 = await fetch('admin_records.php?table=user_list');
     const data2 = await res2.json();
     if(data2.success){
     (data2.rows || []).forEach(r => { if(!staffDirectoryCache[r.user_id]) staffDirectoryCache[r.user_id] = r.user_display_name || r.user_name || r.user_id; });
@@ -141,7 +137,7 @@ try {
 // Former staff — only useful once staff_archived actually stores a name (see the
 // ALTER TABLE); staff_list/user_list take priority since they're the current record.
 try {
-    const res3 = await fetch('manage_records.php?table=staff_archived');
+    const res3 = await fetch('admin_records.php?table=staff_archived');
     const data3 = await res3.json();
     if(data3.success){
     (data3.rows || []).forEach(r => {
