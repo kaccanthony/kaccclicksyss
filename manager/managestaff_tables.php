@@ -135,7 +135,7 @@ function getTableConfig(): array {
             'columns' => [
                 'log_id'              => ['label' => 'Log ID', 'type' => 'number', 'editableOnUpdate' => false],
                 'session_id'          => ['label' => 'Session ID', 'type' => 'number'],
-                'trainee_id'          => ['label' => 'Trainee Discord ID', 'type' => 'text', 'resolveId' => true],
+                'trainee_id'          => ['label' => 'Trainee Discord ID', 'type' => 'text', 'resolveId' => true,],
                 'trainee_roblox'      => ['label' => 'Roblox Username', 'type' => 'text'],
                 'trainee_zone'        => ['label' => 'Zone', 'type' => 'number'],
                 'trainee_attendance'  => ['label' => 'Attended', 'type' => 'bool'],
@@ -153,7 +153,7 @@ function getTableConfig(): array {
             'columns' => [
                 'log_id'        => ['label' => 'Log ID', 'type' => 'number', 'editableOnUpdate' => false],
                 'session_id'    => ['label' => 'Session ID', 'type' => 'number'],
-                'trainee_id'    => ['label' => 'Trainee Discord ID', 'type' => 'text', 'resolveId' => true],
+                'trainee_id'    => ['label' => 'Trainee Discord ID', 'type' => 'text', 'resolveId' => true, 'fallbackField' => 'trainee_roblox'],
                 'trainer_id'    => ['label' => 'Trainer Discord ID', 'type' => 'text', 'resolveId' => true],
                 'feedback_json' => ['label' => 'Feedback', 'type' => 'feedback_json'], // special formatter, see below
                 'created_at'    => ['label' => 'Created', 'type' => 'text', 'editableOnUpdate' => false],

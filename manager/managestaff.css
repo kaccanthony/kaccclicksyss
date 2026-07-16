@@ -132,3 +132,4 @@ html,body{height:100%;min-height:100vh;font-family:'Inter',sans-serif;background
     .ms-sidebar{display:flex;overflow-x:auto;gap:6px;border-right:none;border-bottom:1px solid rgba(255,255,255,.09);padding:12px;}
     .ms-group-label{display:none;}
 }
+.ms-unresolved-id{color:rgba(255,159,67,.8);font-family:'JetBrains Mono',monospace;font-size:.85em;border-bottom:1px dotted rgba(255,159,67,.4);cursor:help;}

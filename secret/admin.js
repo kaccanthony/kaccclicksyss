@@ -123,24 +123,44 @@ async function getStaffDirectory(){
 if(staffDirectoryCache) return staffDirectoryCache;
 staffDirectoryCache = {};
 try {
-    const res = await fetch('admin_records.php?table=staff_list');
+    const res = await fetch('manage_records.php?table=staff_list');
     const data = await res.json();
     if(data.success){
     (data.rows || []).forEach(r => { staffDirectoryCache[r.staff_id] = r.staff_display_name || r.staff_name || r.staff_id; });
     }
 } catch { /* falls back to raw discord_id below */ }
+// Trainees are usually regular (non-staff) users — merge the user directory
+// into the same cache so trainee_id/trainer_id resolve too, not just staff.
 try {
-    const res2 = await fetch('admin_records.php?table=user_list');
+    const res2 = await fetch('manage_records.php?table=user_list');
     const data2 = await res2.json();
     if(data2.success){
     (data2.rows || []).forEach(r => { if(!staffDirectoryCache[r.user_id]) staffDirectoryCache[r.user_id] = r.user_display_name || r.user_name || r.user_id; });
     }
 } catch { /* falls back to raw discord_id below */ }
+// Former staff — only useful once staff_archived actually stores a name (see the
+// ALTER TABLE); staff_list/user_list take priority since they're the current record.
+try {
+    const res3 = await fetch('manage_records.php?table=staff_archived');
+    const data3 = await res3.json();
+    if(data3.success){
+    (data3.rows || []).forEach(r => {
+        if(!staffDirectoryCache[r.staff_id] && (r.staff_display_name || r.staff_name)){
+        staffDirectoryCache[r.staff_id] = r.staff_display_name || r.staff_name;
+        }
+    });
+    }
+} catch { /* falls back to raw discord_id below */ }
 return staffDirectoryCache;
 }
-function displayValueFor(def, value){
+function displayValueFor(def, value, row){
 if(def && def.resolveId && staffDirectoryCache){
-    return staffDirectoryCache[value] || value;
+    const resolved = staffDirectoryCache[value];
+    if(resolved) return resolved;
+    if(def.fallbackField && row && row[def.fallbackField]){
+    return row[def.fallbackField];
+    }
+    return `<span class="ms-unresolved-id" title="No matching staff/user/archived record found">${escapeHtml(String(value))}</span>`;
 }
 return value;
 }
@@ -376,7 +396,7 @@ rows.forEach((row, i) => {
     card.insertAdjacentHTML('beforeend', `
         <div class="ms-card-field">
         <span class="ms-card-field-label">${escapeHtml(def.label)}</span>
-        <span>${formatCell(def, row[col], row, cfg)}</span>
+        <span>${formatCell(def, displayValueFor(def, row[col]), row, cfg)}</span>
         </div>`);
     });
 
@@ -443,7 +463,7 @@ const tbody = wrapEl.querySelector('tbody');
 sorted.forEach((row, i) => {
     const tr = document.createElement('tr');
     tr.style.animationDelay = `${Math.min(i * 25, 300)}ms`;
-    tr.innerHTML = cols.map(([col, def]) => `<td>${formatCell(def, row[col], row, cfg)}</td>`).join('');
+    tr.innerHTML = cols.map(([col, def]) => `<td>${formatCell(def, displayValueFor(def, row[col]), row, cfg)}</td>`).join('');
 
     if(!cfg.readOnly){
     const actionsTd = document.createElement('td');
