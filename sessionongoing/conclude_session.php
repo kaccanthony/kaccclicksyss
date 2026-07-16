@@ -52,7 +52,7 @@ try {
     $stmtLog = mysqli_prepare($conn, "INSERT INTO session_staff_logs
         (session_id, host, cohost_1, cohost_2, cohost_3, `cohost_4/supervisor`, assistant_1, assistant_2, assistant_3, assistant_4, full_staff_json)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    mysqli_stmt_bind_param($stmtLog, "isssssssss",
+    mysqli_stmt_bind_param($stmtLog, "issssssssss",
         $sessionId, $s['host'], $s['co_host1'], $s['co_host2'], $s['co_host3'], $s['co_host4/supervisor'],
         $s['assistant_1'], $s['assistant_2'], $s['assistant_3'], $s['assistant_4'], $fullStaffJson
     );
