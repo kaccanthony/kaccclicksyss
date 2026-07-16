@@ -156,13 +156,13 @@ return staffDirectoryCache;
 function displayValueFor(def, value, row){
 if(def && def.resolveId && staffDirectoryCache){
     const resolved = staffDirectoryCache[value];
-    if(resolved) return resolved;
+    if(resolved) return { text: resolved, unresolved: false };
     if(def.fallbackField && row && row[def.fallbackField]){
-    return row[def.fallbackField];
+    return { text: row[def.fallbackField], unresolved: false };
     }
-    return `<span class="ms-unresolved-id" title="No matching staff/user/archived record found">${escapeHtml(String(value))}</span>`;
+    return { text: value, unresolved: true };
 }
-return value;
+return { text: value, unresolved: false };
 }
 
 const boardContent = document.getElementById('board-content');
@@ -497,7 +497,16 @@ for(let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0
 return `ms-pill-${hash % PILL_PALETTE_SIZE}`;
 }
 
-function formatCell(def, value){
+function formatCell(def, valueOrWrapper, row, cfg){
+let value = valueOrWrapper;
+let unresolved = false;
+if(valueOrWrapper && typeof valueOrWrapper === 'object' && 'text' in valueOrWrapper && 'unresolved' in valueOrWrapper){
+    value = valueOrWrapper.text;
+    unresolved = valueOrWrapper.unresolved;
+}
+if(unresolved){
+    return `<span class="ms-unresolved-id" title="No matching staff/user/archived record found">${escapeHtml(String(value))}</span>`;
+}
 if(value === null || value === undefined || value === ''){
     return '<span style="color:rgba(255,255,255,.25);">—</span>';
 }
