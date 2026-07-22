@@ -1583,13 +1583,16 @@ function fmtHMS(seconds) {
 /* ================= GLOBAL TRAINEE TIMER (overall session clock) ================= */
 const sessionStartMs = SESSION_STARTED_AT ? new Date(SESSION_STARTED_AT.replace(' ', 'T') + 'Z').getTime() : Date.now();
 const sessionDurationSeconds = (parseInt(SESSION_DATA.session_duration, 10) || 0) * 60;
+// ISO string already carries the correct +01:00/+00:00 offset from PHP — Date parses it correctly either way.
+const scheduledStartMs = SESSION_SCHEDULED_START_ISO ? new Date(SESSION_SCHEDULED_START_ISO).getTime() : sessionStartMs;
 setInterval(()=>{
   const elapsed = Math.max(0, Math.floor((Date.now() - sessionStartMs) / 1000));
   const el = document.getElementById('global-timer-display');
   if(el) el.textContent = fmtHMS(elapsed);
 
   const overtimePill = document.getElementById('overtime-pill');
-  const isOvertime = sessionDurationSeconds > 0 && elapsed > sessionDurationSeconds;
+  const elapsedSinceScheduledStart = Math.max(0, Math.floor((Date.now() - scheduledStartMs) / 1000));
+  const isOvertime = sessionDurationSeconds > 0 && elapsedSinceScheduledStart > sessionDurationSeconds;
   if (el) el.classList.toggle('overtime', isOvertime);
   if (overtimePill) overtimePill.style.display = isOvertime ? 'inline-flex' : 'none';
 }, 1000);

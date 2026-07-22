@@ -51,12 +51,12 @@ if ($staffId) {
 
 // ── Fetch the logged-in user's display name from staff_list ──
 $hostDisplayName = '';
-$stmtHost = mysqli_prepare($conn, "SELECT staff_roblox_name, staff_name FROM staff_list WHERE staff_id = ?");
+$stmtHost = mysqli_prepare($conn, "SELECT staff_display_name, staff_name FROM staff_list WHERE staff_id = ?");
 mysqli_stmt_bind_param($stmtHost, "s", $staffId);
 mysqli_stmt_execute($stmtHost);
 $resHost = mysqli_stmt_get_result($stmtHost);
 if ($rowHost = mysqli_fetch_assoc($resHost)) {
-    $hostDisplayName = $rowHost['staff_roblox_name'] ?: $rowHost['staff_name'];
+    $hostDisplayName = $rowHost['staff_display_name'] ?: $rowHost['staff_name'];
 }
 
 // ── Fetch today's sessions where logged-in user is Host ──

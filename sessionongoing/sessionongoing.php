@@ -103,6 +103,30 @@ if (empty($sessionRow['started_at'])) {
     $sessionRow['started_at'] = $now;
 }
 
+// Overtime should be measured from the session's SCHEDULED start, not from whenever the
+// host actually clicked "Start Session Setup" — starting early must not shift the window.
+$scheduledStartIso = null;
+if (!empty($sessionRow['session_date']) && !empty($sessionRow['session_time'])) {
+    try {
+        $scheduledDt = new DateTime($sessionRow['session_date'] . ' ' . $sessionRow['session_time'], new DateTimeZone('Europe/London'));
+        $scheduledStartIso = $scheduledDt->format(DateTime::ATOM);
+    } catch (Exception $e) {
+        $scheduledStartIso = null;
+    }
+}
+
+// Overtime should be measured from the session's SCHEDULED start, not from whenever the
+// host actually clicked "Start Session Setup" — starting early must not shift the window.
+$scheduledStartIso = null;
+if (!empty($sessionRow['session_date']) && !empty($sessionRow['session_time'])) {
+    try {
+        $scheduledDt = new DateTime($sessionRow['session_date'] . ' ' . $sessionRow['session_time'], new DateTimeZone('Europe/London'));
+        $scheduledStartIso = $scheduledDt->format(DateTime::ATOM);
+    } catch (Exception $e) {
+        $scheduledStartIso = null;
+    }
+}
+
 // Match by staff_id, not by name — $sessionRow's host/co-host columns store staff
 // *display names*, but $_SESSION['user']['username'] is the login username, which is
 // very often a different string. Comparing names directly silently failed to recognize
@@ -676,6 +700,7 @@ const SESSION_DATA = <?= json_encode($sessionRow, JSON_HEX_TAG | JSON_HEX_APOS |
 const LIVE_STATE = <?= json_encode($liveState, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 const STAFF_DIRECTORY = <?= json_encode($staffDirectory, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) ?>;
 const SESSION_STARTED_AT = <?= json_encode($sessionRow['started_at']) ?>; // e.g. "2026-07-10 14:32:00"
+const SESSION_SCHEDULED_START_ISO = <?= json_encode($scheduledStartIso) ?>; // scheduled start, BST/GMT-aware — used for overtime, NOT the elapsed-time display
 const MY_ROLE = <?= json_encode(strtolower(str_replace('-', '', $viewerRole))) ?>; // 'host' | 'cohost' | 'assistant'
 const MY_DISPLAY_NAME = <?= json_encode($myDisplayName) ?>;
 const PLAY_TRAINEE_WARNING_SOUND = <?= json_encode($prefTraineeWarning !== '0') ?>;
