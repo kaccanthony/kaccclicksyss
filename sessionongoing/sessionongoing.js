@@ -952,7 +952,11 @@ function renderScriptPreview(minutes, targetContainer){
   container.innerHTML = '';
   SCRIPT_LINES.forEach(lineText=>{
     const resolvedText = lineText.replace(/XX/g, displayMinutes);
+    // Strip parenthetical director's notes — e.g. "(Wait for trainee to arrive)" — from
+    // what actually gets copied, while the preview still displays them for context.
+    const copyText = resolvedText.replace(/\([^)]*\)/g, '').replace(/\s{2,}/g, ' ').trim();
     const doc = container.ownerDocument;
+    const win = doc.defaultView || window; // use THIS document's own window — critical inside the PiP popup
     const line = doc.createElement('div');
     line.className = 'script-line';
     const textEl = doc.createElement('div');
@@ -964,7 +968,7 @@ function renderScriptPreview(minutes, targetContainer){
     copyBtn.title = 'Copy this line';
     copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
     copyBtn.addEventListener('click', ()=>{
-      navigator.clipboard.writeText(resolvedText).then(()=>{
+      win.navigator.clipboard.writeText(resolvedText).then(()=>{
         copyBtn.classList.add('copied');
         copyBtn.innerHTML = '<i class="fas fa-check"></i>';
         setTimeout(()=>{
