@@ -968,7 +968,7 @@ function renderScriptPreview(minutes, targetContainer){
     copyBtn.title = 'Copy this line';
     copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
     copyBtn.addEventListener('click', ()=>{
-      win.navigator.clipboard.writeText(resolvedText).then(()=>{
+      win.navigator.clipboard.writeText(copyText).then(()=>{
         copyBtn.classList.add('copied');
         copyBtn.innerHTML = '<i class="fas fa-check"></i>';
         setTimeout(()=>{
