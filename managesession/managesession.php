@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $permLevel >= 10) {
     if ($action === 'add' || $action === 'edit') {
         $sn   = $_POST['session_name']        ?? '';
         $sd   = $_POST['session_desc']        ?? '';
-        $ss   = $_POST['session_status']      ?? 'Scheduled';
+        $ss   = $_POST['session_status']      ?? 'Requested';
         $sb   = isset($_POST['session_booked']) ? 1 : 0;
         $sdur = $_POST['session_duration']    ?? '';
         $ns   = (int)($_POST['num_slots']     ?? 0);

@@ -2,10 +2,11 @@
 session_start();
 require_once '../login/cnn.php';
 
-if (!isset($_SESSION['user'])) {
-    header('Location: ../login/login.php');
-    exit;
-}
+// if (!isset($_SESSION['user'])) {
+//     header('Location: ../login/login.php');
+//     exit;
+// }
+// Temporary disable
 
 $user     = $_SESSION['user'];
 require_once __DIR__ . '/../public/assets/misc/role_display.php';

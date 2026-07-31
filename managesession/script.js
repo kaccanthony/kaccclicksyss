@@ -37,6 +37,46 @@ document.addEventListener('click', (e) => {
     }
 });
 
+const DRAFT_KEY_PREFIX = 'yss_session_draft_';
+
+function currentDraftKey() {
+    const id = formSessionId?.value;
+    return DRAFT_KEY_PREFIX + (id ? `edit_${id}` : 'new');
+}
+
+function saveDraft() {
+    const form = document.getElementById('session-form');
+    if (!form) return;
+    const data = {};
+    form.querySelectorAll('input, select, textarea').forEach(el => {
+        if (!el.name) return;
+        data[el.name] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+    localStorage.setItem(currentDraftKey(), JSON.stringify(data));
+}
+
+function loadDraft() {
+    const raw = localStorage.getItem(currentDraftKey());
+    if (!raw) return false;
+    try {
+        const data = JSON.parse(raw);
+        const form = document.getElementById('session-form');
+        Object.entries(data).forEach(([name, value]) => {
+            const el = form.elements[name];
+            if (!el) return;
+            if (el.type === 'checkbox') el.checked = value;
+            else el.value = value;
+        });
+        return true;
+    } catch { return false; }
+}
+
+function clearDraft() {
+    localStorage.removeItem(currentDraftKey());
+}
+
+document.getElementById('session-form')?.addEventListener('input', saveDraft);
+
 // ── Auto-submit search on Enter ──────────────────────
 document.querySelector('.search-input')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') e.target.closest('form').submit();
@@ -164,6 +204,9 @@ function openModal(mode, data = null) {
 
     updateBookedToggleState();
     applyRoleRestrictions();
+    if (loadDraft()) {
+    showToast('Restored your unsaved draft from last time.');
+    }
     modalBackdrop.classList.add('open');
     document.body.style.overflow = 'hidden';
 }
@@ -217,6 +260,7 @@ modalBackdrop.addEventListener('click', (e) => {
     }
 
     timeError.style.display = 'none';
+    clearDraft();
 });
 
 // ── Time input formatter ─────────────────────────────

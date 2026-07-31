@@ -3,8 +3,8 @@ session_start();
 require_once '../login/cnn.php';
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['user'])) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit; }
-
+// if (!isset($_SESSION['user'])) { http_response_code(401); echo json_encode(['error'=>'Unauthorized']); exit; }
+// Temporary disable
 $sessionId = (int)($_GET['session_id'] ?? 0);
 if (!$sessionId) { echo json_encode(['rows'=>[]]); exit; }
 
