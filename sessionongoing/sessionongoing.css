@@ -19,10 +19,10 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{min-height:100vh;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
-#bg{position:fixed;inset:0;background:linear-gradient(rgba(0,0,0,0.82),rgba(0,0,0,0.82)),url("../public/assets/images/YSSbgweb.png") center/cover no-repeat;filter:blur(3px);scale:1.05;z-index:0;}
+#bg{position:fixed;inset:0;background:linear-gradient(rgba(0,0,0,0.82),rgba(0,0,0,0.82)),url("../public/assets/images/YSSbgweb-blurred.png") center/cover no-repeat;z-index:0;}
 
 /* ── topbar ── */
-.topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--header-h);display:flex;align-items:center;gap:14px;padding:0 28px;background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--header-h);display:flex;align-items:center;gap:14px;padding:0 28px;background:rgba(20,20,20,0.85);border-bottom:1px solid var(--border);}
 .logo-wrap{position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .logo-img{width:36px;height:36px;border-radius:50%;object-fit:cover;position:relative;z-index:2;background:#222;}
 .pulse-ring{position:absolute;inset:-4px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.35);animation:breathe 3s ease-in-out infinite;}
@@ -73,7 +73,7 @@ main{position:relative;z-index:1;padding:calc(var(--header-h) + 26px) 28px 60px;
 .session-sub{font-size:.78rem;color:var(--text-dim);margin-top:4px;}
 
 /* ── panel shell ── */
-.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);margin-bottom:20px;overflow:hidden;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);margin-bottom:20px;overflow:hidden;}
 .panel-title{padding:12px 20px;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55);background:rgba(255,255,255,.04);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
 .panel-title.staff{color:#f0c987;}
 .panel-title.drivers{color:#f2a5b0;}

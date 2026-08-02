@@ -327,7 +327,7 @@ function updateTimerDisplay(row) {
     const t = timers[row];
     if (!t) return;
     const live = computeCurrentRemaining(t);
-    const rowDisplay = document.querySelector(`[data-timer="${row}"]`);
+    const rowDisplay = t.displayEl || document.querySelector(`[data-timer="${row}"]`);
     if (rowDisplay) {
         rowDisplay.textContent = fmt(live);
         rowDisplay.classList.toggle('running', live > 60 && t.running);
@@ -522,7 +522,7 @@ function addTraineeRow(unallocated, uid){
   `;
   document.getElementById('trainee-rows').appendChild(tr);
   refreshTrainerDropdowns();
-  timers[idx] = { remainingSeconds: COUNTDOWN_START, running: false, syncedAt: Date.now(), totalMinutes: COUNTDOWN_START/60, setupSeconds: undefined, warned2min: false, warned1min: false };
+  timers[idx] = { remainingSeconds: COUNTDOWN_START, running: false, syncedAt: Date.now(), totalMinutes: COUNTDOWN_START/60, setupSeconds: undefined, warned2min: false, warned1min: false, displayEl: tr.querySelector(`[data-timer="${idx}"]`) };
   applyOverrides();
   renderAnnouncementPreview(idx);
   updateStatusLockState();
@@ -1986,6 +1986,63 @@ const traineeRowDirty = new Set(); // tr.dataset.row values this client actually
 
 function queueLiveStateSync() { pendingLiveStateFlush = true; }
 
+// One pass over #trainee-rows instead of 4 separate querySelectorAll scans per sync tick.
+let _traineeScanCache = null;
+function scanTraineeRows() {
+    const attendanceParts = [];
+    const completedRows = {};
+    const slotOrder = [];
+    const unallocatedTrainees = [];
+    const dirtyUpdates = {};
+
+    document.querySelectorAll('#trainee-rows tr').forEach(tr => {
+        const row = tr.dataset.row;
+        const isUnalloc = tr.querySelector('.slot-num')?.textContent.trim() === 'Unalloc.';
+
+        const chk = tr.querySelector('.attendance-chk');
+        attendanceParts.push(chk && chk.checked ? '1' : '0');
+
+        completedRows[row] = tr.querySelector('.complete-btn')?.classList.contains('done') || false;
+
+        if (!isUnalloc) {
+            slotOrder.push(row);
+        } else {
+            const detailFields = tr.querySelectorAll('.trainee-detail-field');
+            const trainerFields = tr.querySelectorAll('.trainer-detail-field');
+            const zoneSelect = tr.querySelector('select.trainee-detail-field');
+            const notesArea = tr.querySelector('.trainee-notes-input');
+            unallocatedTrainees.push({
+                uid: tr.dataset.uid,
+                discord: detailFields[0]?.value.trim() || '',
+                discordId: detailFields[1]?.value.trim() || '',
+                roblox: detailFields[2]?.value.trim() || '',
+                zone: (zoneSelect && zoneSelect.value !== 'Select') ? zoneSelect.value : '',
+                notes: notesArea?.value.trim() || '',
+                trainerName: trainerFields[0]?.value.trim() || '',
+            });
+        }
+
+        if (traineeRowDirty.has(row)) {
+            const idx = parseInt(row, 10) + 1;
+            const nameEl = tr.querySelector('.trainee-name');
+            const detailFields = tr.querySelectorAll('.trainee-detail-field');
+            const trainerFields = tr.querySelectorAll('.trainer-detail-field');
+            if (nameEl) dirtyUpdates[`trainee_${idx}_name`] = nameEl.value.trim();
+            if (detailFields[0]) dirtyUpdates[`trainee_${idx}_discord`] = detailFields[0].value.trim();
+            if (detailFields[1]) dirtyUpdates[`trainee_${idx}_discord_id`] = detailFields[1].value.trim();
+            if (detailFields[2]) dirtyUpdates[`trainee_${idx}_name`] = detailFields[2].value.trim();
+            const zoneSelect2 = tr.querySelector('select.trainee-detail-field');
+            if (zoneSelect2) dirtyUpdates[`trainee_${idx}_zone`] = (zoneSelect2.value && zoneSelect2.value !== 'Select') ? parseInt(zoneSelect2.value.replace('Zone ', ''), 10) : null;
+            const notesArea2 = tr.querySelector('.trainee-notes-input');
+            if (notesArea2) dirtyUpdates[`trainee_${idx}_note`] = notesArea2.value.trim();
+            if (trainerFields[0]) dirtyUpdates[`trainee_${idx}_trainer_name`] = trainerFields[0].value.trim();
+            traineeRowDirty.delete(row);
+        }
+    });
+
+    return { attendanceParts, completedRows, slotOrder, unallocatedTrainees, dirtyUpdates };
+}
+
 function isEditingField(el) {
     if (!el) return false;
     const tag = el.tagName;
@@ -2008,12 +2065,8 @@ function collectCoreUpdates() {
     // Pushing it unconditionally on every sync tick let any client's stale local checkbox
     // snapshot silently overwrite someone else's concurrent attendance change.
     if (traineeAttendanceDirty) {
-        const traineeAttendanceParts = [];
-        document.querySelectorAll('#trainee-rows tr').forEach(tr => {
-            const chk = tr.querySelector('.attendance-chk');
-            traineeAttendanceParts.push(chk && chk.checked ? '1' : '0');
-        });
-        if (traineeAttendanceParts.length) updates.trainee_attendance = traineeAttendanceParts.join(',');
+        const scan = _traineeScanCache || scanTraineeRows();
+        if (scan.attendanceParts.length) updates.trainee_attendance = scan.attendanceParts.join(',');
         traineeAttendanceDirty = false;
     }
 
@@ -2044,24 +2097,10 @@ function collectCoreUpdates() {
 
     // Only push a trainee row's own detail columns when THIS client actually edited THAT row —
     // same clobber risk as above, just per-row instead of one global flag.
-    document.querySelectorAll('#trainee-rows tr').forEach(tr => {
-        const row = tr.dataset.row;
-        if (!traineeRowDirty.has(row)) return;
-        const idx = parseInt(row, 10) + 1;
-        const nameEl = tr.querySelector('.trainee-name');
-        const detailFields = tr.querySelectorAll('.trainee-detail-field');
-        const trainerFields = tr.querySelectorAll('.trainer-detail-field');
-        if (nameEl) updates[`trainee_${idx}_name`] = nameEl.value.trim();
-        if (detailFields[0]) updates[`trainee_${idx}_discord`] = detailFields[0].value.trim();
-        if (detailFields[1]) updates[`trainee_${idx}_discord_id`] = detailFields[1].value.trim();
-        if (detailFields[2]) updates[`trainee_${idx}_name`] = detailFields[2].value.trim();
-        const zoneSelect = tr.querySelector('select.trainee-detail-field');
-        if (zoneSelect) updates[`trainee_${idx}_zone`] = (zoneSelect.value && zoneSelect.value !== 'Select') ? parseInt(zoneSelect.value.replace('Zone ', ''), 10) : null;
-        const notesArea = tr.querySelector('.trainee-notes-input');
-        if (notesArea) updates[`trainee_${idx}_note`] = notesArea.value.trim();
-        if (trainerFields[0]) updates[`trainee_${idx}_trainer_name`] = trainerFields[0].value.trim();
-        traineeRowDirty.delete(row);
-    });
+    if (traineeRowDirty.size) {
+        const scan = _traineeScanCache || scanTraineeRows();
+        Object.assign(updates, scan.dirtyUpdates);
+    }
 
     return updates;
 }
@@ -2092,32 +2131,10 @@ function collectLiveState() {
         return { role, discord, notes: notesInput, attended };
     });
 
-    const completedRows = {};
-    document.querySelectorAll('#trainee-rows tr').forEach(tr => {
-        completedRows[tr.dataset.row] = tr.querySelector('.complete-btn')?.classList.contains('done') || false;
-    });
-
-    const slotOrder = Array.from(document.querySelectorAll('#trainee-rows tr'))
-        .filter(tr => tr.querySelector('.slot-num')?.textContent.trim() !== 'Unalloc.')
-        .map(tr => tr.dataset.row);
-
-    const unallocatedTrainees = Array.from(document.querySelectorAll('#trainee-rows tr'))
-        .filter(tr => tr.querySelector('.slot-num')?.textContent.trim() === 'Unalloc.')
-        .map(tr => {
-            const detailFields = tr.querySelectorAll('.trainee-detail-field');
-            const trainerFields = tr.querySelectorAll('.trainer-detail-field');
-            const zoneSelect = tr.querySelector('select.trainee-detail-field');
-            const notesArea = tr.querySelector('.trainee-notes-input');
-            return {
-                uid: tr.dataset.uid,
-                discord: detailFields[0]?.value.trim() || '',
-                discordId: detailFields[1]?.value.trim() || '',
-                roblox: detailFields[2]?.value.trim() || '',
-                zone: (zoneSelect && zoneSelect.value !== 'Select') ? zoneSelect.value : '',
-                notes: notesArea?.value.trim() || '',
-                trainerName: trainerFields[0]?.value.trim() || '',
-            };
-        });
+    const traineeScan = _traineeScanCache || scanTraineeRows();
+    const completedRows = traineeScan.completedRows;
+    const slotOrder = traineeScan.slotOrder;
+    const unallocatedTrainees = traineeScan.unallocatedTrainees;
 
     const payload = {
         timers: timerState,
@@ -2144,6 +2161,7 @@ function collectLiveState() {
 async function pushState() {
     if (!pendingLiveStateFlush) return;
     pendingLiveStateFlush = false;
+    _traineeScanCache = scanTraineeRows();
     try {
         await fetch('sync_session.php', {
             method: 'POST',
@@ -2156,6 +2174,8 @@ async function pushState() {
         });
     } catch (err) {
         console.error('Sync push failed:', err);
+    } finally {
+        _traineeScanCache = null;
     }
 }
 
